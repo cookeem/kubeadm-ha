@@ -100,10 +100,71 @@
 
 #### 版本信息
 
+* Linux版本：CentOS 7.3.1611
+
+```
+cat /etc/redhat-release 
+CentOS Linux release 7.3.1611 (Core) 
+```
+
+* docker版本：1.12.6
+
+```
+$ docker version
+Client:
+ Version:      1.12.6
+ API version:  1.24
+ Go version:   go1.6.4
+ Git commit:   78d1802
+ Built:        Tue Jan 10 20:20:01 2017
+ OS/Arch:      linux/amd64
+
+Server:
+ Version:      1.12.6
+ API version:  1.24
+ Go version:   go1.6.4
+ Git commit:   78d1802
+ Built:        Tue Jan 10 20:20:01 2017
+ OS/Arch:      linux/amd64
+```
+
+* kubeadm版本：v1.6.4
+
+```
+$ kubeadm version
+kubeadm version: version.Info{Major:"1", Minor:"6", GitVersion:"v1.6.4", GitCommit:"d6f433224538d4f9ca2f7ae19b252e6fcb66a3ae", GitTreeState:"clean", BuildDate:"2017-05-19T18:33:17Z", GoVersion:"go1.7.5", Compiler:"gc", Platform:"linux/amd64"}
+```
+
+* kubelet版本：v1.6.4
+
+```
+$ kubelet --version
+Kubernetes v1.6.4
+```
+
 ---
+
 [返回目录](#目录)
 
 #### 所需docker镜像
+
+```
+gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
+gcr.io/google_containers/kube-proxy-amd64:v1.6.4
+gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
+gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
+gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
+quay.io/coreos/flannel:v0.7.1-amd64
+gcr.io/google_containers/heapster-amd64:v1.3.0
+gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
+gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
+gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
+gcr.io/google_containers/etcd-amd64:3.0.17
+gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
+gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
+nginx:latest
+gcr.io/google_containers/pause-amd64:3.0
+```
 
 ---
 [返回目录](#目录)
