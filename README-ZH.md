@@ -72,17 +72,26 @@
 
 > kubelet: kubernetes node agent，负责与node上的docker engine打交道；
 
-> kubeproxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
+> kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
 
 * 负载均衡
 
 > keepalived集群设置一个虚拟ip地址，虚拟ip地址指向k8s-master1、k8s-master2、k8s-master3。
+
 > nginx用于k8s-master1、k8s-master2、k8s-master3的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.60.80)以及nginx端口(8443)访问master集群的apiserver。
 
 ---
 [返回目录](#目录)
 
 #### 主机节点清单
+
+ 主机名 | IP地址 | 说明 | 组件 
+ :--- | :--- | :--- | :---
+ k8s-master1 | 192.168.60.71 | master节点1 | etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy
+ k8s-master2 | 192.168.60.72 | master节点2 | etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy
+ k8s-master3 | 192.168.60.73 | master节点3 | etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy
+ 无 | 192.168.60.80 | keepalived虚拟IP | 无
+ k8s-node1 ~ 8 | 192.168.60.81 ~ 88 | 8个node节点 | kubelet、kube-proxy
 
 ---
 [返回目录](#目录)
