@@ -216,6 +216,8 @@ $ scp -r * root@k8s-node8:/root/kubeadm-ha
 
 #### 系统设置
 
+* 以下在kubernetes所有节点上都是使用root用户进行操作
+
 * 在kubernetes所有节点上增加kubernetes仓库 
 ```
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -265,10 +267,40 @@ $ reboot
 
 #### kubernetes相关服务安装
 
+* 在kubernetes所有节点上验证SELINUX模式，必须保证SELINUX为permissive模式，否则kubernetes启动会出现各种异常
+```
+$ getenforce
+Permissive
+```
+
+* 在kubernetes所有节点上安装并启动kubernetes 
+```
+$ yum install -y docker kubelet kubeadm kubernetes-cni
+$ systemctl enable docker && systemctl start docker
+$ systemctl enable kubelet && systemctl start kubelet
+```
 ---
 [返回目录](#目录)
 
 #### docker镜像导入
+
+* 在kubernetes所有节点上导入docker镜像 
+```
+$ docker load -i /root/kubeadm-ha/images/etcd-amd64
+$ docker load -i /root/kubeadm-ha/images/flannel
+$ docker load -i /root/kubeadm-ha/images/heapster-amd64
+$ docker load -i /root/kubeadm-ha/images/heapster-grafana-amd64
+$ docker load -i /root/kubeadm-ha/images/heapster-influxdb-amd64
+$ docker load -i /root/kubeadm-ha/images/k8s-dns-dnsmasq-nanny-amd64
+$ docker load -i /root/kubeadm-ha/images/k8s-dns-kube-dns-amd64
+$ docker load -i /root/kubeadm-ha/images/k8s-dns-sidecar-amd64
+$ docker load -i /root/kubeadm-ha/images/kube-apiserver-amd64
+$ docker load -i /root/kubeadm-ha/images/kube-controller-manager-amd64
+$ docker load -i /root/kubeadm-ha/images/kube-proxy-amd64
+$ docker load -i /root/kubeadm-ha/images/kubernetes-dashboard-amd64
+$ docker load -i /root/kubeadm-ha/images/kube-scheduler-amd64
+$ docker load -i /root/kubeadm-ha/images/pause-amd64
+```
 
 ---
 [返回目录](#目录)
