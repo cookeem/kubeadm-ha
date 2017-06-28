@@ -51,6 +51,7 @@
 
 ![ha logo](images/ha.png)
 
+    > kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
 
 ---
 [返回目录](#目录)
