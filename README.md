@@ -149,30 +149,114 @@ Kubernetes v1.6.4
 
 [https://www.daocloud.io/mirror#accelerator-doc](https://www.daocloud.io/mirror#accelerator-doc)
 
-* 在本机pull相关docker镜像
+* 在本机MacOSX上pull相关docker镜像
 
 ```
-docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
-docker pull gcr.io/google_containers/kube-proxy-amd64:v1.6.4
-docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
-docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
-docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
-docker pull quay.io/coreos/flannel:v0.7.1-amd64
-docker pull gcr.io/google_containers/heapster-amd64:v1.3.0
-docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
-docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
-docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
-docker pull gcr.io/google_containers/etcd-amd64:3.0.17
-docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
-docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
-docker pull nginx:latest
-docker pull gcr.io/google_containers/pause-amd64:3.0
+$ docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
+$ docker pull gcr.io/google_containers/kube-proxy-amd64:v1.6.4
+$ docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
+$ docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
+$ docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
+$ docker pull quay.io/coreos/flannel:v0.7.1-amd64
+$ docker pull gcr.io/google_containers/heapster-amd64:v1.3.0
+$ docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
+$ docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
+$ docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
+$ docker pull gcr.io/google_containers/etcd-amd64:3.0.17
+$ docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
+$ docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
+$ docker pull nginx:latest
+$ docker pull gcr.io/google_containers/pause-amd64:3.0
+```
+
+* 在本机MacOSX上获取代码，并进入代码目录
+```
+$ git clone https://github.com/cookeem/kubeadm-ha
+$ cd kubeadm-ha
+```
+
+* 在本机MacOSX上把相关docker镜像保存成文件
+
+```
+$ mkdir -p images
+$ docker save -o images/kube-apiserver-amd64 gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
+$ docker save -o images/kube-proxy-amd64 gcr.io/google_containers/kube-proxy-amd64:v1.6.4
+$ docker save -o images/kube-controller-manager-amd64 gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
+$ docker save -o images/kube-scheduler-amd64 gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
+$ docker save -o images/kubernetes-dashboard-amd64 gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
+$ docker save -o images/flannel quay.io/coreos/flannel:v0.7.1-amd64
+$ docker save -o images/heapster-amd64 gcr.io/google_containers/heapster-amd64:v1.3.0
+$ docker save -o images/k8s-dns-sidecar-amd64 gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
+$ docker save -o images/k8s-dns-kube-dns-amd64 gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
+$ docker save -o images/k8s-dns-dnsmasq-nanny-amd64 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
+$ docker save -o images/etcd-amd64 gcr.io/google_containers/etcd-amd64:3.0.17
+$ docker save -o images/heapster-grafana-amd64 gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
+$ docker save -o images/heapster-influxdb-amd64 gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
+$ docker save -o images/nginx nginx:latest
+$ docker save -o images/pause-amd64 gcr.io/google_containers/pause-amd64:3.0
+```
+
+* 在本机MacOSX上把代码以及docker镜像复制到所有节点上
+```
+$ scp -r * root@k8s-master1:/root/kubeadm-ha
+$ scp -r * root@k8s-master2:/root/kubeadm-ha
+$ scp -r * root@k8s-master3:/root/kubeadm-ha
+$ scp -r * root@k8s-node1:/root/kubeadm-ha
+$ scp -r * root@k8s-node2:/root/kubeadm-ha
+$ scp -r * root@k8s-node3:/root/kubeadm-ha
+$ scp -r * root@k8s-node4:/root/kubeadm-ha
+$ scp -r * root@k8s-node5:/root/kubeadm-ha
+$ scp -r * root@k8s-node6:/root/kubeadm-ha
+$ scp -r * root@k8s-node7:/root/kubeadm-ha
+$ scp -r * root@k8s-node8:/root/kubeadm-ha
 ```
 
 ---
 [返回目录](#目录)
 
 #### 系统设置
+
+* 在kubernetes所有节点上增加kubernetes仓库 
+```
+$ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+```
+
+* 在kubernetes所有节点上进行系统更新
+```
+$ yum update -y
+```
+
+* 在kubernetes所有节点上关闭防火墙
+```
+$ systemctl disable firewalld && systemctl stop firewalld && systemctl status firewalld
+```
+
+* 在kubernetes所有节点上设置SELINUX为permissive模式
+```
+$ vi /etc/selinux/config
+SELINUX=permissive
+```
+
+* 在kubernetes所有节点上设置iptables参数，否则kubeadm init会提示错误
+```
+$ vi /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+```
+
+* 在kubernetes所有节点上重启主机
+```
+$ reboot
+```
 
 ---
 [返回目录](#目录)
