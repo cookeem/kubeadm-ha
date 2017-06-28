@@ -60,7 +60,8 @@
 
 ![k8s ha](images/k8s-ha.png)
 
-    a
+    * keepalived集群设置一个虚拟ip地址，虚拟ip地址指向k8s-master1、k8s-master2、k8s-master3。
+    * nginx用于k8s-master1、k8s-master2、k8s-master3的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.60.80)以及nginx端口(8443)访问master集群的apiserver。
 
 ---
 [返回目录](#目录)
