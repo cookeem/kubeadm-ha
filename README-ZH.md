@@ -49,7 +49,7 @@
 
 #### 概要部署架构
 
-![ha logo](images/ha.svg)
+![ha logo](images/ha.png)
 
 
 ---
