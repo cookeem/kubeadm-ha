@@ -145,24 +145,28 @@ Kubernetes v1.6.4
 
 #### 所需docker镜像
 
-建议在
+* 国内可以使用daocloud加速器下载相关镜像，然后通过docker save、docker load把本地下载的镜像放到kubernetes集群的所在机器上，daocloud加速器链接如下：
+
+[https://www.daocloud.io/mirror#accelerator-doc](https://www.daocloud.io/mirror#accelerator-doc)
+
+* 在本机pull相关docker镜像
 
 ```
-gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
-gcr.io/google_containers/kube-proxy-amd64:v1.6.4
-gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
-gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
-gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
-quay.io/coreos/flannel:v0.7.1-amd64
-gcr.io/google_containers/heapster-amd64:v1.3.0
-gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
-gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
-gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
-gcr.io/google_containers/etcd-amd64:3.0.17
-gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
-gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
-nginx:latest
-gcr.io/google_containers/pause-amd64:3.0
+docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
+docker pull gcr.io/google_containers/kube-proxy-amd64:v1.6.4
+docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
+docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
+docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
+docker pull quay.io/coreos/flannel:v0.7.1-amd64
+docker pull gcr.io/google_containers/heapster-amd64:v1.3.0
+docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
+docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
+docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
+docker pull gcr.io/google_containers/etcd-amd64:3.0.17
+docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
+docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
+docker pull nginx:latest
+docker pull gcr.io/google_containers/pause-amd64:3.0
 ```
 
 ---
