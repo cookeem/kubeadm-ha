@@ -192,8 +192,8 @@ $ docker save -o images/k8s-dns-dnsmasq-nanny-amd64 gcr.io/google_containers/k8s
 $ docker save -o images/etcd-amd64 gcr.io/google_containers/etcd-amd64:3.0.17
 $ docker save -o images/heapster-grafana-amd64 gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
 $ docker save -o images/heapster-influxdb-amd64 gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
-$ docker save -o images/nginx nginx:latest
 $ docker save -o images/pause-amd64 gcr.io/google_containers/pause-amd64:3.0
+$ docker save -o images/nginx nginx:latest
 ```
 
 * 在本机MacOSX上把代码以及docker镜像复制到所有节点上
@@ -300,6 +300,25 @@ $ docker load -i /root/kubeadm-ha/images/kube-proxy-amd64
 $ docker load -i /root/kubeadm-ha/images/kubernetes-dashboard-amd64
 $ docker load -i /root/kubeadm-ha/images/kube-scheduler-amd64
 $ docker load -i /root/kubeadm-ha/images/pause-amd64
+$ docker load -i /root/kubeadm-ha/images/nginx
+
+$ docker images
+REPOSITORY                                               TAG                 IMAGE ID            CREATED             SIZE
+gcr.io/google_containers/kube-apiserver-amd64            v1.6.4              4e3810a19a64        5 weeks ago         150.6 MB
+gcr.io/google_containers/kube-proxy-amd64                v1.6.4              e073a55c288b        5 weeks ago         109.2 MB
+gcr.io/google_containers/kube-controller-manager-amd64   v1.6.4              0ea16a85ac34        5 weeks ago         132.8 MB
+gcr.io/google_containers/kube-scheduler-amd64            v1.6.4              1fab9be555e1        5 weeks ago         76.75 MB
+gcr.io/google_containers/kubernetes-dashboard-amd64      v1.6.1              71dfe833ce74        6 weeks ago         134.4 MB
+quay.io/coreos/flannel                                   v0.7.1-amd64        cd4ae0be5e1b        10 weeks ago        77.76 MB
+gcr.io/google_containers/heapster-amd64                  v1.3.0              f9d33bedfed3        3 months ago        68.11 MB
+gcr.io/google_containers/k8s-dns-sidecar-amd64           1.14.1              fc5e302d8309        4 months ago        44.52 MB
+gcr.io/google_containers/k8s-dns-kube-dns-amd64          1.14.1              f8363dbf447b        4 months ago        52.36 MB
+gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64     1.14.1              1091847716ec        4 months ago        44.84 MB
+gcr.io/google_containers/etcd-amd64                      3.0.17              243830dae7dd        4 months ago        168.9 MB
+gcr.io/google_containers/heapster-grafana-amd64          v4.0.2              a1956d2a1a16        5 months ago        131.5 MB
+gcr.io/google_containers/heapster-influxdb-amd64         v1.1.1              d3fccbedd180        5 months ago        11.59 MB
+5000/nginx                                               latest              01f818af747d        6 months ago        181.6 MB
+gcr.io/google_containers/pause-amd64                     3.0                 99e59f495ffa        14 months ago       746.9 kB
 ```
 
 ---
@@ -308,6 +327,92 @@ $ docker load -i /root/kubeadm-ha/images/pause-amd64
 ### 第一台master初始化
 
 #### 独立etcd集群部署
+
+* 在k8s-master1节点上以docker方式启动etcd集群
+```
+$ docker stop etcd && docker rm etcd
+$ rm -rf /var/lib/etcd-cluster
+$ mkdir -p /var/lib/etcd-cluster
+$ docker run -d \
+--restart always \
+-v /etc/ssl/certs:/etc/ssl/certs \
+-v /var/lib/etcd-cluster:/var/lib/etcd \
+-p 4001:4001 \
+-p 2380:2380 \
+-p 2379:2379 \
+--name etcd \
+gcr.io/google_containers/etcd-amd64:3.0.17 \
+etcd --name=etcd0 \
+--advertise-client-urls=http://192.168.60.71:2379,http://192.168.60.71:4001 \
+--listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
+--initial-advertise-peer-urls=http://192.168.60.71:2380 \
+--listen-peer-urls=http://0.0.0.0:2380 \
+--initial-cluster-token=9477af68bbee1b9ae037d6fd9e7efefd \
+--initial-cluster=etcd0=http://192.168.60.71:2380,etcd1=http://192.168.60.72:2380,etcd2=http://192.168.60.73:2380 \
+--initial-cluster-state=new \
+--auto-tls \
+--peer-auto-tls \
+--data-dir=/var/lib/etcd
+```
+
+* 在k8s-master2节点上以docker方式启动etcd集群
+```
+$ docker stop etcd && docker rm etcd
+$ rm -rf /var/lib/etcd-cluster
+$ mkdir -p /var/lib/etcd-cluster
+$ docker run -d \
+--restart always \
+-v /etc/ssl/certs:/etc/ssl/certs \
+-v /var/lib/etcd-cluster:/var/lib/etcd \
+-p 4001:4001 \
+-p 2380:2380 \
+-p 2379:2379 \
+--name etcd \
+gcr.io/google_containers/etcd-amd64:3.0.17 \
+etcd --name=etcd1 \
+--advertise-client-urls=http://192.168.60.72:2379,http://192.168.60.72:4001 \
+--listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
+--initial-advertise-peer-urls=http://192.168.60.72:2380 \
+--listen-peer-urls=http://0.0.0.0:2380 \
+--initial-cluster-token=9477af68bbee1b9ae037d6fd9e7efefd \
+--initial-cluster=etcd0=http://192.168.60.71:2380,etcd1=http://192.168.60.72:2380,etcd2=http://192.168.60.73:2380 \
+--initial-cluster-state=new \
+--auto-tls \
+--peer-auto-tls \
+--data-dir=/var/lib/etcd
+```
+
+* 在k8s-master3节点上以docker方式启动etcd集群
+```
+$ docker stop etcd && docker rm etcd
+$ rm -rf /var/lib/etcd-cluster
+$ mkdir -p /var/lib/etcd-cluster
+$ docker run -d \
+--restart always \
+-v /etc/ssl/certs:/etc/ssl/certs \
+-v /var/lib/etcd-cluster:/var/lib/etcd \
+-p 4001:4001 \
+-p 2380:2380 \
+-p 2379:2379 \
+--name etcd \
+gcr.io/google_containers/etcd-amd64:3.0.17 \
+etcd --name=etcd2 \
+--advertise-client-urls=http://192.168.60.73:2379,http://192.168.60.73:4001 \
+--listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
+--initial-advertise-peer-urls=http://192.168.60.73:2380 \
+--listen-peer-urls=http://0.0.0.0:2380 \
+--initial-cluster-token=9477af68bbee1b9ae037d6fd9e7efefd \
+--initial-cluster=etcd0=http://192.168.60.71:2380,etcd1=http://192.168.60.72:2380,etcd2=http://192.168.60.73:2380 \
+--initial-cluster-state=new \
+--auto-tls \
+--peer-auto-tls \
+--data-dir=/var/lib/etcd
+```
+
+* XXXXXXXXXXXXX 
+```
+$ YYYYYYYYYYYYYYYY
+```
 
 ---
 [返回目录](#目录)
