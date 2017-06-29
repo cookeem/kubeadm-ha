@@ -5,6 +5,6 @@ networking:
   podSubnet: 10.244.0.0/16
 etcd:
   endpoints:
-  - http://192.168.60.72:2379
-  - http://192.168.60.78:2379
-  - http://192.168.60.79:2379
+  - http://${HOST_IP}:2379
+  - http://${HOST_IP}:2379
+  - http://${HOST_IP}:2379

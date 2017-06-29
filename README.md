@@ -28,7 +28,6 @@
     1. [flannel网络组件安装](#flannel网络组件安装)
     1. [dashboard组件安装](#dashboard组件安装)
     1. [heapster组件安装](#heapster组件安装)
-    1. [验证第一台master安装](#验证第一台master安装)
 1. [master集群高可用设置](#master集群高可用设置)
     1. [复制配置](#复制配置)
     1. [创建证书](#创建证书)
@@ -409,9 +408,22 @@ etcd --name=etcd2 \
 --data-dir=/var/lib/etcd
 ```
 
-* XXXXXXXXXXXXX 
+* 在k8s-master1、k8s-master2、k8s-master3上检查etcd启动状态
 ```
-$ YYYYYYYYYYYYYYYY
+$ docker exec -ti etcd ash
+
+$ etcdctl member list
+1a32c2d3f1abcad0: name=etcd2 peerURLs=http://192.168.60.73:2380 clientURLs=http://192.168.60.73:2379,http://192.168.60.73:4001 isLeader=false
+1da4f4e8b839cb79: name=etcd1 peerURLs=http://192.168.60.72:2380 clientURLs=http://192.168.60.72:2379,http://192.168.60.72:4001 isLeader=false
+4238bcb92d7f2617: name=etcd0 peerURLs=http://192.168.60.71:2380 clientURLs=http://192.168.60.71:2379,http://192.168.60.71:4001 isLeader=true
+
+$ etcdctl cluster-health
+member 1a32c2d3f1abcad0 is healthy: got healthy result from http://192.168.60.73:2379
+member 1da4f4e8b839cb79 is healthy: got healthy result from http://192.168.60.72:2379
+member 4238bcb92d7f2617 is healthy: got healthy result from http://192.168.60.71:2379
+cluster is healthy
+
+$ exit
 ```
 
 ---
@@ -419,25 +431,128 @@ $ YYYYYYYYYYYYYYYY
 
 #### kubeadm初始化
 
+* 在k8s-master1上修改kubeadm-init.yaml文件，设置etcd.endpoints的${HOST_IP}为k8s-master1、k8s-master2、k8s-master3的IP地址
+```
+$ vi /root/kubeadm-ha/kubeadm-init.yaml 
+apiVersion: kubeadm.k8s.io/v1alpha1
+kind: MasterConfiguration
+kubernetesVersion: v1.6.4
+networking:
+  podSubnet: 10.244.0.0/16
+etcd:
+  endpoints:
+  - http://192.168.60.71:2379
+  - http://192.168.60.72:2379
+  - http://192.168.60.73:2379
+```
+
+* 在k8s-master1上使用kubeadm初始化kubernetes集群，连接外部etcd集群
+```
+$ kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
+```
+
+* 在k8s-master1上设置kubectl的环境变量KUBECONFIG，连接kubelet
+```
+$ vi ~/.bashrc
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+$ source ~/.bashrc
+```
+
 ---
 [返回目录](#目录)
 
 #### flannel网络组件安装
+
+* 在k8s-master1上安装flannel pod网络组件，必须安装网络组件，否则kube-dns pod会一直处于ContainerCreating
+```
+$ kubectl create -f /root/kubeadm-ha/kube-flannel
+clusterrole "flannel" created
+clusterrolebinding "flannel" created
+serviceaccount "flannel" created
+configmap "kube-flannel-cfg" created
+daemonset "kube-flannel-ds" created
+```
+
+* 在k8s-master1上验证kube-dns成功启动，大概等待3分钟，验证所有pods的状态为Running
+```
+$ kubectl get pods --all-namespaces -o wide
+NAMESPACE     NAME                                 READY     STATUS    RESTARTS   AGE       IP              NODE
+kube-system   kube-apiserver-k8s-master1           1/1       Running   0          3m        192.168.60.71   k8s-master1
+kube-system   kube-controller-manager-k8s-master1  1/1       Running   0          3m        192.168.60.71   k8s-master1
+kube-system   kube-dns-3913472980-k9mt6            3/3       Running   0          4m        10.244.0.104    k8s-master1
+kube-system   kube-flannel-ds-3hhjd                2/2       Running   0          1m        192.168.60.71   k8s-master1
+kube-system   kube-proxy-rzq3t                     1/1       Running   0          4m        192.168.60.71   k8s-master1
+kube-system   kube-scheduler-k8s-master1           1/1       Running   0          3m        192.168.60.71   k8s-master1
+```
 
 ---
 [返回目录](#目录)
 
 #### dashboard组件安装
 
+* 在k8s-master1上安装dashboard组件
+```
+$ kubectl create -f /root/kubeadm-ha/kube-dashboard/
+serviceaccount "kubernetes-dashboard" created
+clusterrolebinding "kubernetes-dashboard" created
+deployment "kubernetes-dashboard" created
+service "kubernetes-dashboard" created
+```
+
+* 在k8s-master1上启动proxy，映射地址到0.0.0.0
+```
+$ kubectl proxy --address='0.0.0.0' &
+```
+
+* 在本机MacOSX上访问dashboard地址，验证dashboard成功启动
+```
+http://k8s-master1:30000
+```
+
 ---
 [返回目录](#目录)
 
 #### heapster组件安装
 
----
-[返回目录](#目录)
+* 在k8s-master1上允许在master上部署pod，否则heapster会无法部署
+```
+$ kubectl taint nodes --all node-role.kubernetes.io/master-
+node "k8s-master1" tainted
+```
 
-#### 验证第一台master安装
+* 在k8s-master1上安装heapster组件，监控性能
+```
+$ kubectl create -f /root/kubeadm-ha/kube-heapster
+```
+
+* 在k8s-master1上重启docker以及kubelet服务，让heapster在dashboard上生效显示
+```
+$ systemctl restart docker kubelet
+```
+
+* 在k8s-master上检查pods状态
+```
+$ kubectl get all --all-namespaces -o wide
+NAMESPACE     NAME                                    READY     STATUS    RESTARTS   AGE       IP              NODE
+kube-system   heapster-783524908-kn6jd                1/1       Running   1          9m        10.244.0.111    k8s-master1
+kube-system   kube-apiserver-k8s-master1              1/1       Running   1          15m       192.168.60.71   k8s-master1
+kube-system   kube-controller-manager-k8s-master1     1/1       Running   1          15m       192.168.60.71   k8s-master1
+kube-system   kube-dns-3913472980-k9mt6               3/3       Running   3          16m       10.244.0.110    k8s-master1
+kube-system   kube-flannel-ds-3hhjd                   2/2       Running   3          13m       192.168.60.71   k8s-master1
+kube-system   kube-proxy-rzq3t                        1/1       Running   1          16m       192.168.60.71   k8s-master1
+kube-system   kube-scheduler-k8s-master1              1/1       Running   1          15m       192.168.60.71   k8s-master1
+kube-system   kubernetes-dashboard-2039414953-d46vw   1/1       Running   1          11m       10.244.0.109    k8s-master1
+kube-system   monitoring-grafana-3975459543-8l94z     1/1       Running   1          9m        10.244.0.112    k8s-master1
+kube-system   monitoring-influxdb-3480804314-72ltf    1/1       Running   1          9m        10.244.0.113    k8s-master1
+```
+
+* 在本机MacOSX上访问dashboard地址，验证heapster成功启动，查看Pods的CPU以及Memory信息是否正常呈现
+```
+http://k8s-master1:30000
+```
+
+* 至此，第一台master成功安装完成，并已经完成flannel、dashboard、heapster的部署
 
 ---
 [返回目录](#目录)
