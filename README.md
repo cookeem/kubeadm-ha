@@ -1123,7 +1123,7 @@ Commercial support is available at
 
 ```
 
-* congratulation! kubernetes high availiability deploy successfully😀
+* congratulation! kubernetes high availiability cluster deploy successfully 😀
 ---
 [category](#category)
 
