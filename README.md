@@ -510,6 +510,8 @@ $ kubectl proxy --address='0.0.0.0' &
 http://k8s-master1:30000
 ```
 
+![dashboard](images/dashboard.png)
+
 ---
 [返回目录](#目录)
 
@@ -551,6 +553,8 @@ kube-system   monitoring-influxdb-3480804314-72ltf    1/1       Running   1     
 ```
 http://k8s-master1:30000
 ```
+
+![heapster](images/heapster.png)
 
 * 至此，第一台master成功安装完成，并已经完成flannel、dashboard、heapster的部署
 
