@@ -1,4 +1,4 @@
-# kubeadm-highavailiability - kubernetes high availiability deployment based on kubeadm
+# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署
 
 ![k8s logo](images/Kubernetes.png)
 
@@ -7,56 +7,56 @@
 
 ---
 
-- [GitHub project URL](https://github.com/cookeem/kubeadm-ha/)
-- [OSChina project URL](https://git.oschina.net/cookeem/kubeadm-ha/)
+- [GitHub项目地址](https://github.com/cookeem/kubeadm-ha/)
+- [OSChina项目地址](https://git.oschina.net/cookeem/kubeadm-ha/)
 
 ---
 
-### category
+### 目录
 
-1. [deployment architecture](#deployment-architecture)
-    1. [deployment architecture summary](#deployment-architecture-summary)
-    1. [detail deployment architecture](#detail-deployment-architecture)
-    1. [host list](#host-list)
-1. [prerequisites](#prerequisites)
-    1. [version info](#version-info)
-    1. [required docker images](#required-docker-images)
-    1. [system configuration](#system-configuration)
-1. [kubernetes installation](#kubernetes-installation)
-    1. [kubernetes and related services installation](#kubernetes-and-related services-installation)
-    1. [load docker images](#load-docker-images)
-1. [use kubeadm to init first master](#use-kubeadm-to-init-first-master)
-    1. [deploy independent etcd tls cluster](#deploy-independent-etcd-tls-cluster)
-    1. [kubeadm init](#kubeadm-init)
-    1. [install flannel networks addon](#install-flannel-networks-addon)
-    1. [install dashboard addon](#install-dashboard-addon)
-    1. [install heapster addon](#install-heapster-addon)
-1. [kubernetes masters high avialiability configuration](#kubernetes-masters-high-avialiability-configuration)
-    1. [copy configuration files](#copy-configuration-files)
-    1. [create certificatie](#create-certificatie)
-    1. [edit configuration files](#edit-configuration-files)
-    1. [verify master high avialiability](#verify-master-high-avialiability)
-    1. [keepalived installation](#keepalived-installation)
-    1. [nginx load balancer configuration](#nginx-load-balancer-configuration)
-    1. [kube-proxy configuration](#kube-proxy-configuration)
-    1. [verfify master high avialiability with keepalived](#verfify-master-high-avialiability-with-keepalived)
-1. [k8s-nodes join the kubernetes cluster](#k8s-nodes-join-the-kubernetes-cluster)
-    1. [use kubeadm to join the cluster](#use-kubeadm-to-join-the-cluster)
-    1. [deploy nginx application to verify installation](#deploy-nginx-application-to-verify-installation)
+1. [部署架构](#部署架构)
+    1. [概要部署架构](#概要部署架构)
+    1. [详细部署架构](#详细部署架构)
+    1. [主机节点清单](#主机节点清单)
+1. [安装前准备](#安装前准备)
+    1. [版本信息](#版本信息)
+    1. [所需docker镜像](#所需docker镜像)
+    1. [系统设置](#系统设置)
+1. [kubernetes安装](#kubernetes安装)
+    1. [kubernetes相关服务安装](#kubernetes相关服务安装)
+    1. [docker镜像导入](#docker镜像导入)
+1. [第一台master初始化](#第一台master初始化)
+    1. [独立etcd集群部署](#独立etcd集群部署)
+    1. [kubeadm初始化](#kubeadm初始化)
+    1. [flannel网络组件安装](#flannel网络组件安装)
+    1. [dashboard组件安装](#dashboard组件安装)
+    1. [heapster组件安装](#heapster组件安装)
+1. [master集群高可用设置](#master集群高可用设置)
+    1. [复制配置](#复制配置)
+    1. [创建证书](#创建证书)
+    1. [修改配置](#修改配置)
+    1. [验证高可用安装](#验证高可用安装)
+    1. [keepalived安装配置](#keepalived安装配置)
+    1. [nginx负载均衡配置](#nginx负载均衡配置)
+    1. [kube-proxy配置](#kube-proxy配置)
+    1. [验证master集群高可用](#验证master集群高可用)
+1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
+    1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
+    1. [部署应用验证集群](#部署应用验证集群)
     
 
-### deployment architecture
+### 部署架构
 
-#### deployment architecture summary
+#### 概要部署架构
 
 ![ha logo](images/ha.png)
 
 * kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### detail deployment architecture
+#### 详细部署架构
 
 ![k8s ha](images/k8s-ha.png)
 
@@ -81,9 +81,9 @@
 > nginx用于k8s-master1、k8s-master2、k8s-master3的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.60.80)以及nginx端口(8443)访问master集群的apiserver。
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### host list
+#### 主机节点清单
 
  主机名 | IP地址 | 说明 | 组件 
  :--- | :--- | :--- | :---
@@ -94,11 +94,11 @@
  k8s-node1 ~ 8 | 192.168.60.81 ~ 88 | 8个node节点 | kubelet、kube-proxy
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-### prerequisites
+### 安装前准备
 
-#### version info
+#### 版本信息
 
 * Linux版本：CentOS 7.3.1611
 
@@ -144,9 +144,9 @@ Kubernetes v1.6.4
 
 ---
 
-[category](#category)
+[返回目录](#目录)
 
-#### required docker images
+#### 所需docker镜像
 
 * 国内可以使用daocloud加速器下载相关镜像，然后通过docker save、docker load把本地下载的镜像放到kubernetes集群的所在机器上，daocloud加速器链接如下：
 
@@ -215,9 +215,9 @@ $ scp -r * root@k8s-node8:/root/kubeadm-ha
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### system configuration
+#### 系统设置
 
 * 以下在kubernetes所有节点上都是使用root用户进行操作
 
@@ -264,11 +264,11 @@ $ reboot
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-### kubernetes installation
+### kubernetes安装
 
-#### kubernetes and related services installation
+#### kubernetes相关服务安装
 
 * 在kubernetes所有节点上验证SELINUX模式，必须保证SELINUX为permissive模式，否则kubernetes启动会出现各种异常
 ```
@@ -283,9 +283,9 @@ $ systemctl enable docker && systemctl start docker
 $ systemctl enable kubelet && systemctl start kubelet
 ```
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### load docker images
+#### docker镜像导入
 
 * 在kubernetes所有节点上导入docker镜像 
 ```
@@ -325,11 +325,11 @@ gcr.io/google_containers/pause-amd64                     3.0                 99e
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-### use kubeadm to init first master
+### 第一台master初始化
 
-#### deploy independent etcd tls cluster
+#### 独立etcd集群部署
 
 * 在k8s-master1节点上以docker方式启动etcd集群
 ```
@@ -431,9 +431,9 @@ $ exit
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### kubeadm init
+#### kubeadm初始化
 
 * 在k8s-master1上修改kubeadm-init.yaml文件，设置etcd.endpoints的${HOST_IP}为k8s-master1、k8s-master2、k8s-master3的IP地址
 ```
@@ -475,9 +475,9 @@ $ source ~/.bashrc
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### install flannel networks addon
+#### flannel网络组件安装
 
 * 在k8s-master1上安装flannel pod网络组件，必须安装网络组件，否则kube-dns pod会一直处于ContainerCreating
 ```
@@ -502,9 +502,9 @@ kube-system   kube-scheduler-k8s-master1           1/1       Running   0        
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### install dashboard addon
+#### dashboard组件安装
 
 * 在k8s-master1上安装dashboard组件
 ```
@@ -528,9 +528,9 @@ http://k8s-master1:30000
 ![dashboard](images/dashboard.png)
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### install heapster addon
+#### heapster组件安装
 
 * 在k8s-master1上允许在master上部署pod，否则heapster会无法部署
 ```
@@ -574,11 +574,11 @@ http://k8s-master1:30000
 * 至此，第一台master成功安装，并已经完成flannel、dashboard、heapster的部署
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-### kubernetes masters high avialiability configuration
+### master集群高可用设置
 
-#### copy configuration files
+#### 复制配置
 
 * 在k8s-master1上把/etc/kubernetes/复制到k8s-master2、k8s-master3
 ```
@@ -639,9 +639,9 @@ $ systemctl daemon-reload && systemctl restart docker kubelet
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### create certificatie
+#### 创建证书
 
 * 在k8s-master2和k8s-master3上修改kubelet.conf后，由于kubelet.conf配置的crt和key与本机IP地址不一致的情况，kubelet服务会异常退出，crt和key必须重新制作。查看apiserver.crt的签名信息，发现IP Address以及DNS绑定了k8s-master1，必须进行相应修改。
 ```
@@ -733,9 +733,9 @@ $ cp apiserver.crt apiserver.key /etc/kubernetes/pki/
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### edit configuration files
+#### 修改配置
 
 * 在k8s-master2和k8s-master3上修改admin.conf，${HOST_IP}修改为本机IP地址
 ```
@@ -761,9 +761,9 @@ $ systemctl daemon-reload && systemctl restart docker kubelet
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### verify master high avialiability
+#### 验证高可用安装
 
 * 在k8s-master1、k8s-master2、k8s-master3任意节点上检测服务启动情况，发现apiserver、controller-manager、kube-scheduler、proxy、flannel已经在k8s-master1、k8s-master2、k8s-master3成功启动
 ```
@@ -822,9 +822,9 @@ $ kubectl scale --replicas=3 -n kube-system deployment/monitoring-influxdb
 $ kubectl get pods --all-namespaces -o wide| grep monitoring-influxdb
 ```
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### keepalived installation
+#### keepalived安装配置
 
 * 在k8s-master、k8s-master2、k8s-master3上安装keepalived
 ```
@@ -917,9 +917,9 @@ $ ping 192.168.60.80
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### nginx load balancer configuration
+#### nginx负载均衡配置
 
 * 在k8s-master1、k8s-master2、k8s-master3上修改nginx-default.conf设置，${HOST_IP}对应k8s-master1、k8s-master2、k8s-master3的地址。通过nginx把访问apiserver的6443端口负载均衡到8433端口上
 ```
@@ -970,9 +970,9 @@ VRRP_Instance(VI_1) Sending gratuitous ARPs on ens160 for 192.168.60.80
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### kube-proxy configuration
+#### kube-proxy配置
 
 * 在k8s-master1上设置kube-proxy使用keepalived的虚拟IP地址，避免k8s-master1异常的时候所有节点的kube-proxy连接不上
 ```
@@ -1005,9 +1005,9 @@ $ systemctl restart docker kubelet keepalived
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### verfify master high avialiability with keepalived
+#### 验证master集群高可用
 
 * 在k8s-master1上检查各个节点pod的启动状态，每个上都成功启动heapster、kube-apiserver、kube-controller-manager、kube-dns、kube-flannel、kube-proxy、kube-scheduler、kubernetes-dashboard、monitoring-grafana、monitoring-influxdb。并且所有pod都处于Running状态表示正常
 ```
@@ -1019,11 +1019,11 @@ $ kubectl get pods --all-namespaces -o wide | grep k8s-master3
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-### k8s-nodes join the kubernetes cluster
+### node节点加入高可用集群设置
 
-#### use kubeadm to join the cluster
+#### kubeadm加入高可用集群
 * 在k8s-master1上禁止在所有master节点上发布应用
 ```
 $ kubectl patch node k8s-master1 -p '{"spec":{"unschedulable":true}}'
@@ -1046,9 +1046,9 @@ $ kubeadm join --token ${TOKEN} ${VIRTUAL_IP}:8443
 ```
 
 ---
-[category](#category)
+[返回目录](#目录)
 
-#### deploy nginx application to verify installation
+#### 部署应用验证集群
 
 * 在k8s-node1 ~ k8s-node8上查看kubelet状态，kubelet状态为active (running)表示kubelet服务正常启动
 ```
@@ -1135,5 +1135,5 @@ Commercial support is available at
 
 * 至此，kubernetes高可用集群成功部署
 ---
-[category](#category)
+[返回目录](#目录)
 
