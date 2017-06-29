@@ -214,8 +214,6 @@ $ scp -r * root@k8s-node8:/root/kubeadm-ha
 
 #### system configuration
 
-* 以下on all kubernetes nodes: all commands are operated by root user
-
 * on all kubernetes nodes: add kubernetes' repository 
 ```
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
