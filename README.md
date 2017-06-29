@@ -23,7 +23,7 @@
     1. [required docker images](#required-docker-images)
     1. [system configuration](#system-configuration)
 1. [kubernetes installation](#kubernetes-installation)
-    1. [kubernetes and related services installation](#kubernetes-and-related services-installation)
+    1. [kubernetes and related services installation](#kubernetes-and-related-services-installation)
     1. [load docker images](#load-docker-images)
 1. [use kubeadm to init first master](#use-kubeadm-to-init-first-master)
     1. [deploy independent etcd tls cluster](#deploy-independent-etcd-tls-cluster)
