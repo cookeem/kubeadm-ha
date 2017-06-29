@@ -317,7 +317,7 @@ gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64     1.14.1              109
 gcr.io/google_containers/etcd-amd64                      3.0.17              243830dae7dd        4 months ago        168.9 MB
 gcr.io/google_containers/heapster-grafana-amd64          v4.0.2              a1956d2a1a16        5 months ago        131.5 MB
 gcr.io/google_containers/heapster-influxdb-amd64         v1.1.1              d3fccbedd180        5 months ago        11.59 MB
-5000/nginx                                               latest              01f818af747d        6 months ago        181.6 MB
+nginx                                                    latest              01f818af747d        6 months ago        181.6 MB
 gcr.io/google_containers/pause-amd64                     3.0                 99e59f495ffa        14 months ago       746.9 kB
 ```
 
