@@ -17,7 +17,7 @@
 1. [deployment architecture](#deployment-architecture)
     1. [deployment architecture summary](#deployment-architecture-summary)
     1. [detail deployment architecture](#detail-deployment-architecture)
-    1. [host list](#host-list)
+    1. [hosts list](#hosts-list)
 1. [prerequisites](#prerequisites)
     1. [version info](#version-info)
     1. [required docker images](#required-docker-images)
@@ -84,7 +84,7 @@
 ---
 [category](#category)
 
-#### host list
+#### hosts list
 
  HostName | IPAddress | Notes | Components 
  :--- | :--- | :--- | :---
@@ -101,14 +101,14 @@
 
 #### version info
 
-* Linux版本：CentOS 7.3.1611
+* Linux version: CentOS 7.3.1611
 
 ```
 cat /etc/redhat-release 
 CentOS Linux release 7.3.1611 (Core) 
 ```
 
-* docker版本：1.12.6
+* docker version: 1.12.6
 
 ```
 $ docker version
@@ -129,14 +129,14 @@ Server:
  OS/Arch:      linux/amd64
 ```
 
-* kubeadm版本：v1.6.4
+* kubeadm version: v1.6.4
 
 ```
 $ kubeadm version
 kubeadm version: version.Info{Major:"1", Minor:"6", GitVersion:"v1.6.4", GitCommit:"d6f433224538d4f9ca2f7ae19b252e6fcb66a3ae", GitTreeState:"clean", BuildDate:"2017-05-19T18:33:17Z", GoVersion:"go1.7.5", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-* kubelet版本：v1.6.4
+* kubelet version: v1.6.4
 
 ```
 $ kubelet --version
