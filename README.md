@@ -35,6 +35,7 @@
     1. [验证高可用安装](#验证高可用安装)
     1. [keepalived安装配置](#keepalived安装配置)
     1. [nginx负载均衡配置](#nginx负载均衡配置)
+    1. [kube-proxy配置](#kube-proxy配置)
     1. [验证master集群高可用](#验证master集群高可用)
 1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
     1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
@@ -556,7 +557,7 @@ http://k8s-master1:30000
 
 ![heapster](images/heapster.png)
 
-* 至此，第一台master成功安装完成，并已经完成flannel、dashboard、heapster的部署
+* 至此，第一台master成功安装，并已经完成flannel、dashboard、heapster的部署
 
 ---
 [返回目录](#目录)
@@ -565,35 +566,443 @@ http://k8s-master1:30000
 
 #### 复制配置
 
+* 在k8s-master1上把/etc/kubernetes/复制到k8s-master2、k8s-master3
+```
+scp -r /etc/kubernetes/ k8s-master2:/etc/
+scp -r /etc/kubernetes/ k8s-master3:/etc/
+```
+
+* 在k8s-master2、k8s-master3上重启kubelet服务，并检查kubelet服务状态为active (running)
+```
+$ systemctl daemon-reload && systemctl restart kubelet
+
+$ systemctl status kubelet
+● kubelet.service - kubelet: The Kubernetes Node Agent
+   Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; vendor preset: disabled)
+  Drop-In: /etc/systemd/system/kubelet.service.d
+           └─10-kubeadm.conf
+   Active: active (running) since Tue 2017-06-27 16:24:22 CST; 1 day 17h ago
+     Docs: http://kubernetes.io/docs/
+ Main PID: 2780 (kubelet)
+   Memory: 92.9M
+   CGroup: /system.slice/kubelet.service
+           ├─2780 /usr/bin/kubelet --kubeconfig=/etc/kubernetes/kubelet.conf --require-...
+           └─2811 journalctl -k -f
+```
+
+* 在k8s-master2、k8s-master3上设置kubectl的环境变量KUBECONFIG，连接kubelet
+```
+$ vi ~/.bashrc
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+$ source ~/.bashrc
+```
+
+* 在k8s-master2、k8s-master3检测节点状态，发现节点已经加进来
+```
+$ kubectl get nodes -o wide
+NAME          STATUS    AGE       VERSION   EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION
+k8s-master1   Ready     26m       v1.6.4    <none>        CentOS Linux 7 (Core)   3.10.0-514.6.1.el7.x86_64
+k8s-master2   Ready     2m        v1.6.4    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
+k8s-master3   Ready     2m        v1.6.4    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
+```
+
+* 在k8s-master2、k8s-master3上修改kube-apiserver.yaml的配置，${HOST_IP}改为本机IP
+```
+$ vi /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --advertise-address=${HOST_IP}
+```
+
+* 在k8s-master2和k8s-master3上的修改kubelet.conf设置，${HOST_IP}改为本机IP
+```
+$ vi /etc/kubernetes/kubelet.conf
+server: https://${HOST_IP}:6443
+```
+
+* 在k8s-master2和k8s-master3上的重启服务
+```
+$ systemctl daemon-reload && systemctl restart docker kubelet
+```
+
 ---
 [返回目录](#目录)
 
 #### 创建证书
+
+* 在k8s-master2和k8s-master3上修改kubelet.conf后，由于kubelet.conf配置的crt和key与本机IP地址不一致的情况，kubelet服务会异常退出，crt和key必须重新制作。查看apiserver.crt的签名信息，发现IP Address以及DNS绑定了k8s-master1，必须进行相应修改。
+```
+openssl x509 -noout -text -in /etc/kubernetes/pki/apiserver.crt
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 9486057293403496063 (0x83a53ed95c519e7f)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: CN=kubernetes
+        Validity
+            Not Before: Jun 22 16:22:44 2017 GMT
+            Not After : Jun 22 16:22:44 2018 GMT
+        Subject: CN=kube-apiserver,
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    d0:10:4a:3b:c4:62:5d:ae:f8:f1:16:48:b3:77:6b:
+                    53:4b
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: 
+                DNS:k8s-master1, DNS:kubernetes, DNS:kubernetes.default, DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP Address:10.96.0.1, IP Address:192.168.60.71
+    Signature Algorithm: sha1WithRSAEncryption
+         dd:68:16:f9:11:be:c3:3c:be:89:9f:14:60:6b:e0:47:c7:91:
+         9e:78:ab:ce
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上使用ca.key和ca.crt制作apiserver.crt和apiserver.key
+```
+$ mkdir -p /etc/kubernetes/pki-local
+
+$ cd /etc/kubernetes/pki-local
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上生成2048位的密钥对
+```
+$ openssl genrsa -out apiserver.key 2048
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上生成证书签署请求文件
+```
+$ openssl req -new -key apiserver.key -subj "/CN=kube-apiserver," -out apiserver.csr
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上编辑apiserver.ext文件，${HOST_NAME}修改为本机主机名，${HOST_IP}修改为本机IP地址，${VIRTUAL_IP}修改为keepalived的虚拟IP（192.168.60.80）
+```
+$ vi apiserver.ext
+subjectAltName = DNS:${HOST_NAME},DNS:kubernetes,DNS:kubernetes.default,DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP:10.96.0.1, IP:${HOST_IP}, IP:${VIRTUAL_IP}
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上使用ca.key和ca.crt签署上述请求
+```
+$ openssl x509 -req -in apiserver.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out apiserver.crt -days 365 -extfile /etc/kubernetes/pki-local/apiserver.ext
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上查看新生成的证书：
+```
+$ openssl x509 -noout -text -in apiserver.crt
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 9486057293403496063 (0x83a53ed95c519e7f)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: CN=kubernetes
+        Validity
+            Not Before: Jun 22 16:22:44 2017 GMT
+            Not After : Jun 22 16:22:44 2018 GMT
+        Subject: CN=kube-apiserver,
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    d0:10:4a:3b:c4:62:5d:ae:f8:f1:16:48:b3:77:6b:
+                    53:4b
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: 
+                DNS:k8s-master3, DNS:kubernetes, DNS:kubernetes.default, DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP Address:10.96.0.1, IP Address:192.168.60.73, IP Address:192.168.60.80
+    Signature Algorithm: sha1WithRSAEncryption
+         dd:68:16:f9:11:be:c3:3c:be:89:9f:14:60:6b:e0:47:c7:91:
+         9e:78:ab:ce
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上把apiserver.crt和apiserver.key文件复制到/etc/kubernetes/pki目录
+```
+$ cp apiserver.crt apiserver.key /etc/kubernetes/pki/
+```
 
 ---
 [返回目录](#目录)
 
 #### 修改配置
 
+* 在k8s-master2和k8s-master3上修改admin.conf，${HOST_IP}修改为本机IP地址
+```
+$ vi /etc/kubernetes/admin.conf
+    server: https://${HOST_IP}:6443
+```
+
+* 在k8s-master2和k8s-master3上修改controller-manager.conf，${HOST_IP}修改为本机IP地址
+```
+$ vi /etc/kubernetes/controller-manager.conf
+    server: https://${HOST_IP}:6443
+```
+
+* 在k8s-master2和k8s-master3上修改scheduler.conf，${HOST_IP}修改为本机IP地址
+```
+$ vi /etc/kubernetes/scheduler.conf
+    server: https://${HOST_IP}:6443
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上重启所有服务
+```
+$ systemctl daemon-reload && systemctl restart docker kubelet
+```
+
 ---
 [返回目录](#目录)
 
 #### 验证高可用安装
 
+* 在k8s-master1、k8s-master2、k8s-master3任意节点上检测服务启动情况，发现apiserver、controller-manager、kube-scheduler、proxy、flannel已经在k8s-master1、k8s-master2、k8s-master3成功启动
+```
+$ kubectl get pod --all-namespaces -o wide | grep k8s-master2
+kube-system   kube-apiserver-k8s-master2              1/1       Running   1          55s       192.168.60.72   k8s-master2
+kube-system   kube-controller-manager-k8s-master2     1/1       Running   2          18m       192.168.60.72   k8s-master2
+kube-system   kube-flannel-ds-t8gkh                   2/2       Running   4          18m       192.168.60.72   k8s-master2
+kube-system   kube-proxy-bpgqw                        1/1       Running   1          18m       192.168.60.72   k8s-master2
+kube-system   kube-scheduler-k8s-master2              1/1       Running   2          18m       192.168.60.72   k8s-master2
+
+$ kubectl get pod --all-namespaces -o wide | grep k8s-master3
+kube-system   kube-apiserver-k8s-master3              1/1       Running   1          1m        192.168.60.73   k8s-master3
+kube-system   kube-controller-manager-k8s-master3     1/1       Running   2          18m       192.168.60.73   k8s-master3
+kube-system   kube-flannel-ds-tmqmx                   2/2       Running   4          18m       192.168.60.73   k8s-master3
+kube-system   kube-proxy-4stg3                        1/1       Running   1          18m       192.168.60.73   k8s-master3
+kube-system   kube-scheduler-k8s-master3              1/1       Running   2          18m       192.168.60.73   k8s-master3
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3任意节点上通过kubectl logs检查各个controller-manager和scheduler的leader election结果，可以发现只有一个节点有效表示选举正常
+```
+$ kubectl logs -n kube-system kube-controller-manager-k8s-master1
+$ kubectl logs -n kube-system kube-controller-manager-k8s-master2
+$ kubectl logs -n kube-system kube-controller-manager-k8s-master3
+
+$ kubectl logs -n kube-system kube-scheduler-k8s-master1
+$ kubectl logs -n kube-system kube-scheduler-k8s-master2
+$ kubectl logs -n kube-system kube-scheduler-k8s-master3
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3任意节点上查看deployment的情况
+```
+$ kubectl get deploy --all-namespaces
+NAMESPACE     NAME                   DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+kube-system   heapster               1         1         1            1           41m
+kube-system   kube-dns               1         1         1            1           48m
+kube-system   kubernetes-dashboard   1         1         1            1           43m
+kube-system   monitoring-grafana     1         1         1            1           41m
+kube-system   monitoring-influxdb    1         1         1            1           41m
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3任意节点上把kubernetes-dashboard、kube-dns、 scale up成replicas=3，保证各个master节点上都有运行
+```
+$ kubectl scale --replicas=3 -n kube-system deployment/kube-dns
+$ kubectl get pods --all-namespaces -o wide| grep kube-dns
+
+$ kubectl scale --replicas=3 -n kube-system deployment/kubernetes-dashboard
+$ kubectl get pods --all-namespaces -o wide| grep kubernetes-dashboard
+
+$ kubectl scale --replicas=3 -n kube-system deployment/heapster
+$ kubectl get pods --all-namespaces -o wide| grep heapster
+
+$ kubectl scale --replicas=3 -n kube-system deployment/monitoring-grafana
+$ kubectl get pods --all-namespaces -o wide| grep monitoring-grafana
+
+$ kubectl scale --replicas=3 -n kube-system deployment/monitoring-influxdb
+$ kubectl get pods --all-namespaces -o wide| grep monitoring-influxdb
+```
 ---
 [返回目录](#目录)
 
 #### keepalived安装配置
+
+* 在k8s-master、k8s-master2、k8s-master3上安装keepalived
+```
+$ yum install -y keepalived
+
+$ systemctl enable keepalived && systemctl restart keepalived
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上备份keepalived配置文件
+```
+$ mv /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.bak
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上设置apiserver监控脚本，当apiserver检测失败的时候关闭keepalived服务，转移虚拟IP地址
+```
+$ vi /etc/keepalived/check_apiserver.sh
+#!/bin/bash
+err=0
+for k in $( seq 1 10 )
+do
+    check_code=$(ps -ef|grep kube-apiserver | wc -l)
+    if [ "$check_code" = "1" ]; then
+        err=$(expr $err + 1)
+        sleep 5
+        continue
+    else
+        err=0
+        break
+    fi
+done
+if [ "$err" != "0" ]; then
+    echo "systemctl stop keepalived"
+    /usr/bin/systemctl stop keepalived
+    exit 1
+else
+    exit 0
+fi
+
+chmod a+x /etc/keepalived/check_apiserver.sh
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上查看接口名字
+```
+$ ip a | grep 192.168.60
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上设置keepalived，参数说明如下：
+* state ${STATE}：为MASTER或者BACKUP，只能有一个MASTER
+* interface ${INTERFACE_NAME}：为本机的需要绑定的接口名字（通过上边的```ip a```命令查看）
+* mcast_src_ip ${HOST_IP}：为本机的IP地址
+* priority ${PRIORITY}：为优先级，例如102、101、100，优先级越高越容易选择为MASTER，优先级不能一样
+* ${VIRTUAL_IP}：为虚拟的IP地址，这里设置为192.168.60.80
+```
+$ vi /etc/keepalived/keepalived.conf
+! Configuration File for keepalived
+global_defs {
+    router_id LVS_DEVEL
+}
+vrrp_script chk_apiserver {
+    script "/etc/keepalived/check_apiserver.sh"
+    interval 2
+    weight -5
+    fall 3  
+    rise 2
+}
+vrrp_instance VI_1 {
+    state ${STATE}
+    interface ${INTERFACE_NAME}
+    mcast_src_ip ${HOST_IP}
+    virtual_router_id 51
+    priority ${PRIORITY}
+    advert_int 2
+    authentication {
+        auth_type PASS
+        auth_pass 4be37dc3b4c90194d1600c483e10ad1d
+    }
+    virtual_ipaddress {
+        ${VIRTUAL_IP}
+    }
+    track_script {
+       chk_apiserver
+    }
+}
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上重启keepalived服务，检测虚拟IP地址是否生效
+```
+$ systemctl restart keepalived
+$ ping 192.168.60.80
+```
 
 ---
 [返回目录](#目录)
 
 #### nginx负载均衡配置
 
+* 在k8s-master1、k8s-master2、k8s-master3上修改nginx-default.conf设置，${HOST_IP}对应k8s-master1、k8s-master2、k8s-master3的地址。通过nginx把访问apiserver的6443端口负载均衡到8433端口上
+```
+$ vi /root/kubeadm-ha/nginx-default.conf
+stream {
+    upstream apiserver {
+        server ${HOST_IP}:6443 weight=5 max_fails=3 fail_timeout=30s;
+        server ${HOST_IP}:6443 weight=5 max_fails=3 fail_timeout=30s;
+        server ${HOST_IP}:6443 weight=5 max_fails=3 fail_timeout=30s;
+    }
+
+    server {
+        listen 8443;
+        proxy_connect_timeout 1s;
+        proxy_timeout 3s;
+        proxy_pass apiserver;
+    }
+}
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上启动nginx容器
+```
+$ docker run -d -p 8443:8443 \
+--name nginx-lb \
+--restart always \
+-v /root/kubeadm-ha/nginx-default.conf:/etc/nginx/nginx.conf \
+nginx
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上检测keepalived服务的虚拟IP地址指向
+```
+$ curl -L 192.168.60.80:8443 | wc -l
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    14    0    14    0     0  18324      0 --:--:-- --:--:-- --:--:-- 14000
+1
+```
+
+* 业务恢复后务必重启keepalived，否则keepalived会处于关闭状态
+```
+$ systemctl restart keepalived
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上查看keeplived日志，有以下输出表示当前虚拟IP地址绑定的主机
+```
+$ systemctl status keepalived -l
+VRRP_Instance(VI_1) Sending gratuitous ARPs on ens160 for 192.168.60.80
+```
+
+---
+[返回目录](#目录)
+
+#### kube-proxy配置
+
+* 在k8s-master1上设置kube-proxy使用keepalived的虚拟IP地址，避免k8s-master1异常的时候所有节点的kube-proxy连接不上
+```
+$ kubectl get -n kube-system configmap
+NAME                                 DATA      AGE
+extension-apiserver-authentication   6         4h
+kube-flannel-cfg                     2         4h
+kube-proxy                           1         4h
+```
+
+* 在k8s-master1上修改configmap/kube-proxy的server指向keepalived的虚拟IP地址
+```
+$ kubectl edit -n kube-system configmap/kube-proxy
+        server: https://192.168.60.80:8443
+```
+
+* 在k8s-master1上查看configmap/kube-proxy设置情况
+```
+$ kubectl get -n kube-system configmap/kube-proxy -o yaml
+```
+
+* 在k8s-master1上删除所有kube-proxy的pod，让proxy重建
+```
+kubectl get pods --all-namespaces -o wide | grep proxy
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上重启docker kubelet keepalived服务
+```
+$ systemctl restart docker kubelet keepalived
+```
+
 ---
 [返回目录](#目录)
 
 #### 验证master集群高可用
+
+* 在k8s-master1上检查各个节点pod的启动状态，每个上都成功启动heapster、kube-apiserver、kube-controller-manager、kube-dns、kube-flannel、kube-proxy、kube-scheduler、kubernetes-dashboard、monitoring-grafana、monitoring-influxdb。并且所有pod都处于Running状态表示正常
+```
+$ kubectl get pods --all-namespaces -o wide | grep k8s-master1
+
+$ kubectl get pods --all-namespaces -o wide | grep k8s-master2
+
+$ kubectl get pods --all-namespaces -o wide | grep k8s-master3
+```
 
 ---
 [返回目录](#目录)
