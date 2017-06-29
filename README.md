@@ -178,22 +178,22 @@ $ cd kubeadm-ha
 * 在本机MacOSX上把相关docker镜像保存成文件
 
 ```
-$ mkdir -p images
-$ docker save -o images/kube-apiserver-amd64 gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
-$ docker save -o images/kube-proxy-amd64 gcr.io/google_containers/kube-proxy-amd64:v1.6.4
-$ docker save -o images/kube-controller-manager-amd64 gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
-$ docker save -o images/kube-scheduler-amd64 gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
-$ docker save -o images/kubernetes-dashboard-amd64 gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
-$ docker save -o images/flannel quay.io/coreos/flannel:v0.7.1-amd64
-$ docker save -o images/heapster-amd64 gcr.io/google_containers/heapster-amd64:v1.3.0
-$ docker save -o images/k8s-dns-sidecar-amd64 gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
-$ docker save -o images/k8s-dns-kube-dns-amd64 gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
-$ docker save -o images/k8s-dns-dnsmasq-nanny-amd64 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
-$ docker save -o images/etcd-amd64 gcr.io/google_containers/etcd-amd64:3.0.17
-$ docker save -o images/heapster-grafana-amd64 gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
-$ docker save -o images/heapster-influxdb-amd64 gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
-$ docker save -o images/pause-amd64 gcr.io/google_containers/pause-amd64:3.0
-$ docker save -o images/nginx nginx:latest
+$ mkdir -p docker-images
+$ docker save -o docker-images/kube-apiserver-amd64 gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
+$ docker save -o docker-images/kube-proxy-amd64 gcr.io/google_containers/kube-proxy-amd64:v1.6.4
+$ docker save -o docker-images/kube-controller-manager-amd64 gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
+$ docker save -o docker-images/kube-scheduler-amd64 gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
+$ docker save -o docker-images/kubernetes-dashboard-amd64 gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
+$ docker save -o docker-images/flannel quay.io/coreos/flannel:v0.7.1-amd64
+$ docker save -o docker-images/heapster-amd64 gcr.io/google_containers/heapster-amd64:v1.3.0
+$ docker save -o docker-images/k8s-dns-sidecar-amd64 gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
+$ docker save -o docker-images/k8s-dns-kube-dns-amd64 gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
+$ docker save -o docker-images/k8s-dns-dnsmasq-nanny-amd64 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
+$ docker save -o docker-images/etcd-amd64 gcr.io/google_containers/etcd-amd64:3.0.17
+$ docker save -o docker-images/heapster-grafana-amd64 gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
+$ docker save -o docker-images/heapster-influxdb-amd64 gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
+$ docker save -o docker-images/pause-amd64 gcr.io/google_containers/pause-amd64:3.0
+$ docker save -o docker-images/nginx nginx:latest
 ```
 
 * 在本机MacOSX上把代码以及docker镜像复制到所有节点上
@@ -286,21 +286,21 @@ $ systemctl enable kubelet && systemctl start kubelet
 
 * 在kubernetes所有节点上导入docker镜像 
 ```
-$ docker load -i /root/kubeadm-ha/images/etcd-amd64
-$ docker load -i /root/kubeadm-ha/images/flannel
-$ docker load -i /root/kubeadm-ha/images/heapster-amd64
-$ docker load -i /root/kubeadm-ha/images/heapster-grafana-amd64
-$ docker load -i /root/kubeadm-ha/images/heapster-influxdb-amd64
-$ docker load -i /root/kubeadm-ha/images/k8s-dns-dnsmasq-nanny-amd64
-$ docker load -i /root/kubeadm-ha/images/k8s-dns-kube-dns-amd64
-$ docker load -i /root/kubeadm-ha/images/k8s-dns-sidecar-amd64
-$ docker load -i /root/kubeadm-ha/images/kube-apiserver-amd64
-$ docker load -i /root/kubeadm-ha/images/kube-controller-manager-amd64
-$ docker load -i /root/kubeadm-ha/images/kube-proxy-amd64
-$ docker load -i /root/kubeadm-ha/images/kubernetes-dashboard-amd64
-$ docker load -i /root/kubeadm-ha/images/kube-scheduler-amd64
-$ docker load -i /root/kubeadm-ha/images/pause-amd64
-$ docker load -i /root/kubeadm-ha/images/nginx
+$ docker load -i /root/kubeadm-ha/docker-images/etcd-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/flannel
+$ docker load -i /root/kubeadm-ha/docker-images/heapster-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/heapster-grafana-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/heapster-influxdb-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/k8s-dns-dnsmasq-nanny-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/k8s-dns-kube-dns-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/k8s-dns-sidecar-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/kube-apiserver-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/kube-controller-manager-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/kube-proxy-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/kubernetes-dashboard-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/kube-scheduler-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/pause-amd64
+$ docker load -i /root/kubeadm-ha/docker-images/nginx
 
 $ docker images
 REPOSITORY                                               TAG                 IMAGE ID            CREATED             SIZE
