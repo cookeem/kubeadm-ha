@@ -1,4 +1,4 @@
-# kubeadm-highavailiability - 基于kubeadmin的kubernetes高可用集群部署
+# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署
 
 ![k8s logo](images/Kubernetes.png)
 
