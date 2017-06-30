@@ -150,6 +150,7 @@ Kubernetes v1.6.4
 #### required docker images
 
 * on your local laptop MacOSX: pull related docker images
+
 ```
 $ docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
 $ docker pull gcr.io/google_containers/kube-proxy-amd64:v1.6.4
@@ -169,12 +170,14 @@ $ docker pull gcr.io/google_containers/pause-amd64:3.0
 ```
 
 * on your local laptop MacOSX: clone codes from git and change working directory in codes
+
 ```
 $ git clone https://github.com/cookeem/kubeadm-ha
 $ cd kubeadm-ha
 ```
 
 * on your local laptop MacOSX: save related docker images in docker-images directory
+
 ```
 $ mkdir -p docker-images
 $ docker save -o docker-images/kube-apiserver-amd64 gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
@@ -195,6 +198,7 @@ $ docker save -o docker-images/nginx nginx:latest
 ```
 
 * on your local laptop MacOSX: copy all codes and docker images directory to all kubernetes nodes
+
 ```
 $ scp -r * root@k8s-master1:/root/kubeadm-ha
 $ scp -r * root@k8s-master2:/root/kubeadm-ha
@@ -215,6 +219,7 @@ $ scp -r * root@k8s-node8:/root/kubeadm-ha
 #### system configuration
 
 * on all kubernetes nodes: add kubernetes' repository 
+
 ```
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -229,22 +234,26 @@ EOF
 ```
 
 * on all kubernetes nodes: use yum to update system
+
 ```
 $ yum update -y
 ```
 
 * on all kubernetes nodes: turn off firewalld service
+
 ```
 $ systemctl disable firewalld && systemctl stop firewalld && systemctl status firewalld
 ```
 
 * on all kubernetes nodes: set SELINUX to permissive mode
+
 ```
 $ vi /etc/selinux/config
 SELINUX=permissive
 ```
 
 * on all kubernetes nodes: set iptables parameters
+
 ```
 $ vi /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables = 1
@@ -252,6 +261,7 @@ net.bridge.bridge-nf-call-ip6tables = 1
 ```
 
 * on all kubernetes nodes: reboot host
+
 ```
 $ reboot
 ```
@@ -264,23 +274,27 @@ $ reboot
 #### kubernetes and related services installation
 
 * on all kubernetes nodes: check SELINUX mode must set as permissive mode
+
 ```
 $ getenforce
 Permissive
 ```
 
 * on all kubernetes nodes: install kubernetes and related services, then start up kubelet and docker daemon
+
 ```
 $ yum install -y docker kubelet kubeadm kubernetes-cni
 $ systemctl enable docker && systemctl start docker
 $ systemctl enable kubelet && systemctl start kubelet
 ```
+
 ---
 [category](#category)
 
 #### load docker images
 
 * on all kubernetes nodes: load docker images
+
 ```
 $ docker load -i /root/kubeadm-ha/docker-images/etcd-amd64
 $ docker load -i /root/kubeadm-ha/docker-images/flannel
@@ -325,6 +339,7 @@ gcr.io/google_containers/pause-amd64                     3.0                 99e
 #### deploy independent etcd tls cluster
 
 * on k8s-master1: use docker to start independent etcd tls cluster
+
 ```
 $ docker stop etcd && docker rm etcd
 $ rm -rf /var/lib/etcd-cluster
@@ -352,6 +367,7 @@ etcd --name=etcd0 \
 ```
 
 * on k8s-master2: use docker to start independent etcd tls cluster
+
 ```
 $ docker stop etcd && docker rm etcd
 $ rm -rf /var/lib/etcd-cluster
@@ -379,6 +395,7 @@ etcd --name=etcd1 \
 ```
 
 * on k8s-master3: use docker to start independent etcd tls cluster
+
 ```
 $ docker stop etcd && docker rm etcd
 $ rm -rf /var/lib/etcd-cluster
@@ -406,6 +423,7 @@ etcd --name=etcd2 \
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: check etcd cluster health
+
 ```
 $ docker exec -ti etcd ash
 
@@ -429,6 +447,7 @@ $ exit
 #### kubeadm init
 
 * on k8s-master1: edit kubeadm-init.yaml file, set etcd.endpoints.${HOST_IP} to k8s-master1, k8s-master2, k8s-master3's IP address
+
 ```
 $ vi /root/kubeadm-ha/kubeadm-init.yaml 
 apiVersion: kubeadm.k8s.io/v1alpha1
@@ -448,6 +467,7 @@ etcd:
 * use "journalctl -t kubelet -S '2017-06-08'" to check logs, and you will find error below:
 * error: failed to run Kubelet: failed to create kubelet: misconfiguration: kubelet cgroup driver: "systemd"
 * you must change "KUBELET_CGROUP_ARGS=--cgroup-driver=systemd" to "KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
+
 ```
 $ vi /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 #Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=systemd"
@@ -455,11 +475,13 @@ Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
 ```
 
 * on k8s-master1: use kubeadm to init kubernetes cluster and connect external etcd cluster
+
 ```
 $ kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
 ```
 
 * on k8s-master1: set environment variables $KUBECONFIG, make kubectl connect kubelet
+
 ```
 $ vi ~/.bashrc
 export KUBECONFIG=/etc/kubernetes/admin.conf
@@ -473,6 +495,7 @@ $ source ~/.bashrc
 #### install flannel networks addon
 
 * on k8s-master1: install flannel networks addon, otherwise kube-dns pod will keep status at ContainerCreating
+
 ```
 $ kubectl create -f /root/kubeadm-ha/kube-flannel
 clusterrole "flannel" created
@@ -483,6 +506,7 @@ daemonset "kube-flannel-ds" created
 ```
 
 * on k8s-master1: after flannel networks addon installed, wait about 3 minutes, then all pods status are Running
+
 ```
 $ kubectl get pods --all-namespaces -o wide
 NAMESPACE     NAME                                 READY     STATUS    RESTARTS   AGE       IP              NODE
@@ -500,6 +524,7 @@ kube-system   kube-scheduler-k8s-master1           1/1       Running   0        
 #### install dashboard addon
 
 * on k8s-master1: install dashboard webUI addon
+
 ```
 $ kubectl create -f /root/kubeadm-ha/kube-dashboard/
 serviceaccount "kubernetes-dashboard" created
@@ -509,11 +534,13 @@ service "kubernetes-dashboard" created
 ```
 
 * on k8s-master1: start up proxy
+
 ```
 $ kubectl proxy --address='0.0.0.0' &
 ```
 
 * on your local laptop MacOSX: use browser to check dashboard work correctly
+
 ```
 http://k8s-master1:30000
 ```
@@ -526,22 +553,26 @@ http://k8s-master1:30000
 #### install heapster addon
 
 * on k8s-master1: make master be able to schedule pods
+
 ```
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
 node "k8s-master1" tainted
 ```
 
 * on k8s-master1: install heapster addon, the performance monitor addon
+
 ```
 $ kubectl create -f /root/kubeadm-ha/kube-heapster
 ```
 
 * on k8s-master1: restart docker and kubelet service, to make heapster work immediately
+
 ```
 $ systemctl restart docker kubelet
 ```
 
 * on k8s-master1: check pods status
+
 ```
 $ kubectl get all --all-namespaces -o wide
 NAMESPACE     NAME                                    READY     STATUS    RESTARTS   AGE       IP              NODE
@@ -558,6 +589,7 @@ kube-system   monitoring-influxdb-3480804314-72ltf    1/1       Running   1     
 ```
 
 * on your local laptop MacOSX: use browser to check dashboard, if it show CPU and Memory Usage info, then heapster work!
+
 ```
 http://k8s-master1:30000
 ```
@@ -574,12 +606,14 @@ http://k8s-master1:30000
 #### copy configuration files
 
 * on k8s-master1: copy /etc/kubernetes/ directory to k8s-master2 and k8s-master3
+
 ```
 scp -r /etc/kubernetes/ k8s-master2:/etc/
 scp -r /etc/kubernetes/ k8s-master3:/etc/
 ```
 
 * on k8s-master2, k8s-master3: restart kubelet service, and make sure kubelet status is active (running)
+
 ```
 $ systemctl daemon-reload && systemctl restart kubelet
 
@@ -598,6 +632,7 @@ $ systemctl status kubelet
 ```
 
 * on k8s-master2, k8s-master3: set environment variables $KUBECONFIG, make kubectl connect kubelet
+
 ```
 $ vi ~/.bashrc
 export KUBECONFIG=/etc/kubernetes/admin.conf
@@ -606,6 +641,7 @@ $ source ~/.bashrc
 ```
 
 * on k8s-master2, k8s-master3: check nodes status, you will found that k8s-master2 and k8s-master3 are joined
+
 ```
 $ kubectl get nodes -o wide
 NAME          STATUS    AGE       VERSION   EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION
@@ -615,18 +651,21 @@ k8s-master3   Ready     2m        v1.6.4    <none>        CentOS Linux 7 (Core) 
 ```
 
 * on k8s-master2, k8s-master3: edit kube-apiserver.yaml file, replace ${HOST_IP} to current host's IP address
+
 ```
 $ vi /etc/kubernetes/manifests/kube-apiserver.yaml
     - --advertise-address=${HOST_IP}
 ```
 
 * on k8s-master2, k8s-master3: edit kubelet.conf file, replace ${HOST_IP} to current host's IP address
+
 ```
 $ vi /etc/kubernetes/kubelet.conf
 server: https://${HOST_IP}:6443
 ```
 
 * on k8s-master2, k8s-master3: restart docker and kubelet services
+
 ```
 $ systemctl daemon-reload && systemctl restart docker kubelet
 ```
@@ -637,6 +676,7 @@ $ systemctl daemon-reload && systemctl restart docker kubelet
 #### create certificatie
 
 * on k8s-master2, k8s-master3: after kubelet.conf modified, because IP address in apiserver.crt and apiserver.key file are different from kubelet.conf, kubelet service will stop, you must use ca.crt and ca.key to re-sign your certificates, check apiserver.crt cerfificate info: 
+
 ```
 openssl x509 -noout -text -in /etc/kubernetes/pki/apiserver.crt
 Certificate:
@@ -665,6 +705,7 @@ Certificate:
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: use ca.key and ca.crt to create apiserver.crt and apiserver.key
+
 ```
 $ mkdir -p /etc/kubernetes/pki-local
 
@@ -672,27 +713,32 @@ $ cd /etc/kubernetes/pki-local
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: create a new apiserver.key
+
 ```
 $ openssl genrsa -out apiserver.key 2048
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: create a new apiserver.csr file
+
 ```
 $ openssl req -new -key apiserver.key -subj "/CN=kube-apiserver," -out apiserver.csr
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: edit apiserver.ext file, replace ${HOST_IP} to current host's IP address, replace ${VIRTUAL_IP} to keepalived virtual IP(192.168.60.80)
+
 ```
 $ vi apiserver.ext
 subjectAltName = DNS:${HOST_NAME},DNS:kubernetes,DNS:kubernetes.default,DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP:10.96.0.1, IP:${HOST_IP}, IP:${VIRTUAL_IP}
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: use ca.key and ca.crt to create apiserver.crt file
+
 ```
 $ openssl x509 -req -in apiserver.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out apiserver.crt -days 365 -extfile /etc/kubernetes/pki-local/apiserver.ext
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: check the new certificate:
+
 ```
 $ openssl x509 -noout -text -in apiserver.crt
 Certificate:
@@ -721,6 +767,7 @@ Certificate:
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: copy apiserver.crt and apiserver.key to /etc/kubernetes/pki directory
+
 ```
 $ cp apiserver.crt apiserver.key /etc/kubernetes/pki/
 ```
@@ -731,24 +778,28 @@ $ cp apiserver.crt apiserver.key /etc/kubernetes/pki/
 #### edit configuration files
 
 * on k8s-master2, k8s-master3: edit admin.conf file, replace ${HOST_IP} to current host's IP address
+
 ```
 $ vi /etc/kubernetes/admin.conf
     server: https://${HOST_IP}:6443
 ```
 
 * on k8s-master2, k8s-master3: edit controller-manager.conf file, replace ${HOST_IP} to current host's IP address
+
 ```
 $ vi /etc/kubernetes/controller-manager.conf
     server: https://${HOST_IP}:6443
 ```
 
 * on k8s-master2, k8s-master3: edit scheduler.conf file, replace ${HOST_IP} to current host's IP address
+
 ```
 $ vi /etc/kubernetes/scheduler.conf
     server: https://${HOST_IP}:6443
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: restart docker and kubelet services
+
 ```
 $ systemctl daemon-reload && systemctl restart docker kubelet
 ```
@@ -759,6 +810,7 @@ $ systemctl daemon-reload && systemctl restart docker kubelet
 #### verify master high avialiability
 
 * on k8s-master1 or k8s-master2 or k8s-master3: check all master nodes pods startup status. apiserver controller-manager kube-scheduler proxy flannel running at k8s-master1, k8s-master2, k8s-master3 successfully.
+
 ```
 $ kubectl get pod --all-namespaces -o wide | grep k8s-master2
 kube-system   kube-apiserver-k8s-master2              1/1       Running   1          55s       192.168.60.72   k8s-master2
@@ -776,6 +828,7 @@ kube-system   kube-scheduler-k8s-master3              1/1       Running   2     
 ```
 
 * on k8s-master1 or k8s-master2 or k8s-master3: use kubectl logs to check controller-manager and scheduler's leader election result, only one is working
+
 ```
 $ kubectl logs -n kube-system kube-controller-manager-k8s-master1
 $ kubectl logs -n kube-system kube-controller-manager-k8s-master2
@@ -787,6 +840,7 @@ $ kubectl logs -n kube-system kube-scheduler-k8s-master3
 ```
 
 * on k8s-master1 or k8s-master2 or k8s-master3: check deployment
+
 ```
 $ kubectl get deploy --all-namespaces
 NAMESPACE     NAME                   DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
@@ -798,6 +852,7 @@ kube-system   monitoring-influxdb    1         1         1            1         
 ```
 
 * on k8s-master1 or k8s-master2 or k8s-master3: scale up kubernetes-dashboard and kube-dns replicas to 3, make all master running kubernetes-dashboard and kube-dns
+
 ```
 $ kubectl scale --replicas=3 -n kube-system deployment/kube-dns
 $ kubectl get pods --all-namespaces -o wide| grep kube-dns
@@ -820,6 +875,7 @@ $ kubectl get pods --all-namespaces -o wide| grep monitoring-influxdb
 #### keepalived installation
 
 * on k8s-master1, k8s-master2, k8s-master3: install keepalived service
+
 ```
 $ yum install -y keepalived
 
@@ -827,11 +883,13 @@ $ systemctl enable keepalived && systemctl restart keepalived
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: backup keepalived config file
+
 ```
 $ mv /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.bak
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: create apiserver monitoring script, when apiserver failed keepalived will stop and virtual IP address will transfer to the other node
+
 ```
 $ vi /etc/keepalived/check_apiserver.sh
 #!/bin/bash
@@ -860,6 +918,7 @@ chmod a+x /etc/keepalived/check_apiserver.sh
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: check the network interface name
+
 ```
 $ ip a | grep 192.168.60
 ```
@@ -870,6 +929,7 @@ $ ip a | grep 192.168.60
 * mcast_src_ip ${HOST_IP}: current host IP address
 * priority ${PRIORITY}: for example (102 or 101 or 100)
 * ${VIRTUAL_IP}: the virtual IP address, here we set to 192.168.60.80
+
 ```
 $ vi /etc/keepalived/keepalived.conf
 ! Configuration File for keepalived
@@ -904,6 +964,7 @@ vrrp_instance VI_1 {
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: reboot keepalived service, and check virtual IP address work or not
+
 ```
 $ systemctl restart keepalived
 $ ping 192.168.60.80
@@ -915,6 +976,7 @@ $ ping 192.168.60.80
 #### nginx load balancer configuration
 
 * on k8s-master1, k8s-master2, k8s-master3: edit nginx-default.conf settings, replace ${HOST_IP} with k8s-master1, k8s-master2, k8s-master3's IP address. 
+
 ```
 $ vi /root/kubeadm-ha/nginx-default.conf
 stream {
@@ -934,6 +996,7 @@ stream {
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: use docker to start up nginx
+
 ```
 $ docker run -d -p 8443:8443 \
 --name nginx-lb \
@@ -943,6 +1006,7 @@ nginx
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: check keepalived and nginx
+
 ```
 $ curl -L 192.168.60.80:8443 | wc -l
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
@@ -952,6 +1016,7 @@ $ curl -L 192.168.60.80:8443 | wc -l
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: check keeplived logs, if it show logs below it means that virtual IP address bind on this host
+
 ```
 $ systemctl status keepalived -l
 VRRP_Instance(VI_1) Sending gratuitous ARPs on ens160 for 192.168.60.80
@@ -963,6 +1028,7 @@ VRRP_Instance(VI_1) Sending gratuitous ARPs on ens160 for 192.168.60.80
 #### kube-proxy configuration
 
 * on k8s-master1: edit kube-proxy settings to use keepalived virtual IP address
+
 ```
 $ kubectl get -n kube-system configmap
 NAME                                 DATA      AGE
@@ -972,22 +1038,26 @@ kube-proxy                           1         4h
 ```
 
 * on k8s-master1: edit configmap/kube-proxy settings, replaces the IP address to keepalived's virtual IP address
+
 ```
 $ kubectl edit -n kube-system configmap/kube-proxy
         server: https://192.168.60.80:8443
 ```
 
 * on k8s-master1: check configmap/kube-proxy settings
+
 ```
 $ kubectl get -n kube-system configmap/kube-proxy -o yaml
 ```
 
 * on k8s-master1: delete all kube-proxy pods, kube-proxy pods will re-create automatically
+
 ```
 kubectl get pods --all-namespaces -o wide | grep proxy
 ```
 
 * on k8s-master1, k8s-master2, k8s-master3: restart docker kubelet keepalived services
+
 ```
 $ systemctl restart docker kubelet keepalived
 ```
@@ -998,6 +1068,7 @@ $ systemctl restart docker kubelet keepalived
 #### verfify master high avialiability with keepalived
 
 * on k8s-master1: check each master nodes pods status
+
 ```
 $ kubectl get pods --all-namespaces -o wide | grep k8s-master1
 
@@ -1013,6 +1084,7 @@ $ kubectl get pods --all-namespaces -o wide | grep k8s-master3
 
 #### use kubeadm to join the cluster
 * on k8s-master1: make master nodes scheduling pods disabled
+
 ```
 $ kubectl patch node k8s-master1 -p '{"spec":{"unschedulable":true}}'
 
@@ -1022,6 +1094,7 @@ $ kubectl patch node k8s-master3 -p '{"spec":{"unschedulable":true}}'
 ```
 
 * on k8s-master1: list kubeadm token
+
 ```
 $ kubeadm token list
 TOKEN           TTL         EXPIRES   USAGES                   DESCRIPTION
@@ -1029,6 +1102,7 @@ xxxxxx.yyyyyy   <forever>   <never>   authentication,signing   The default boots
 ```
 
 * on k8s-node1 ~ k8s-node8: use kubeadm to join the kubernetes cluster,  replace ${TOKEN} with token show ahead, replace ${VIRTUAL_IP} with keepalived's virtual IP address (192.168.60.80)
+
 ```
 $ kubeadm join --token ${TOKEN} ${VIRTUAL_IP}:8443
 ```
@@ -1039,6 +1113,7 @@ $ kubeadm join --token ${TOKEN} ${VIRTUAL_IP}:8443
 #### deploy nginx application to verify installation
 
 * on k8s-node1 ~ k8s-node8: check kubelet status
+
 ```
 $ systemctl status kubelet
 ● kubelet.service - kubelet: The Kubernetes Node Agent
@@ -1057,6 +1132,7 @@ $ systemctl status kubelet
 ```
 
 * on k8s-master1: list nodes status
+
 ```
 $ kubectl get nodes -o wide
 NAME          STATUS                     AGE       VERSION
@@ -1074,6 +1150,7 @@ k8s-node8     Ready                      3m        v1.6.4
 ```
 
 * on k8s-master1: deploy nginx service on kubernetes, it show that nginx service deploy on k8s-node5
+
 ```
 $ kubectl run nginx --image=nginx --port=80
 deployment "nginx" created
@@ -1084,6 +1161,7 @@ nginx-2662403697-pbmwt   1/1       Running   0          5m        10.244.7.6   k
 ```
 
 * on k8s-master1: expose nginx services port
+
 ```
 $ kubectl expose deployment nginx --port=80 --target-port=80 --type=NodePort
 service "nginx" exposed
