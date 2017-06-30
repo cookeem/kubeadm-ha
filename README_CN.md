@@ -87,9 +87,9 @@
 
  主机名 | IP地址 | 说明 | 组件 
  :--- | :--- | :--- | :---
- k8s-master1 | 192.168.60.71 | master节点1 | etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy
- k8s-master2 | 192.168.60.72 | master节点2 | etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy
- k8s-master3 | 192.168.60.73 | master节点3 | etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy
+ k8s-master1 | 192.168.60.71 | master节点1 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster
+ k8s-master2 | 192.168.60.72 | master节点2 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster
+ k8s-master3 | 192.168.60.73 | master节点3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster
  无 | 192.168.60.80 | keepalived虚拟IP | 无
  k8s-node1 ~ 8 | 192.168.60.81 ~ 88 | 8个node节点 | kubelet、kube-proxy
 
