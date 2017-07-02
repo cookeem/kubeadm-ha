@@ -283,7 +283,18 @@ Permissive
 * on all kubernetes nodes: install kubernetes and related services, then start up kubelet and docker daemon
 
 ```
-$ yum install -y docker kubelet kubeadm kubernetes-cni
+$ yum search docker --showduplicates
+$ yum install docker-1.12.6-16.el7.centos.x86_64
+
+$ yum search kubelet --showduplicates
+$ yum install kubelet-1.6.4-0.x86_64
+
+$ yum search kubeadm --showduplicates
+$ yum install kubeadm-1.6.4-0.x86_64 
+
+$ yum search kubernetes-cni --showduplicates
+$ yum install kubernetes-cni-0.5.1-0.x86_64
+
 $ systemctl enable docker && systemctl start docker
 $ systemctl enable kubelet && systemctl start kubelet
 ```
