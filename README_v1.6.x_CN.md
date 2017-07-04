@@ -14,7 +14,7 @@
 
 ---
 
-- 该指引适用于v1.7.x版本的kubernetes集群
+- 该指引适用于v1.6.x版本的kubernetes集群
 
 ### 目录
 
@@ -37,6 +37,7 @@
     1. [heapster组件安装](#heapster组件安装)
 1. [master集群高可用设置](#master集群高可用设置)
     1. [复制配置](#复制配置)
+    1. [创建证书](#创建证书)
     1. [修改配置](#修改配置)
     1. [验证高可用安装](#验证高可用安装)
     1. [keepalived安装配置](#keepalived安装配置)
@@ -131,18 +132,18 @@ Server:
  OS/Arch:      linux/amd64
 ```
 
-* kubeadm版本：v1.7.0
+* kubeadm版本：v1.6.4
 
 ```
 $ kubeadm version
-kubeadm version: &version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.0", GitCommit:"d3ada0119e776222f11ec7945e6d860061339aad", GitTreeState:"clean", BuildDate:"2017-06-29T22:55:19Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"linux/amd64"}
+kubeadm version: version.Info{Major:"1", Minor:"6", GitVersion:"v1.6.4", GitCommit:"d6f433224538d4f9ca2f7ae19b252e6fcb66a3ae", GitTreeState:"clean", BuildDate:"2017-05-19T18:33:17Z", GoVersion:"go1.7.5", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-* kubelet版本：v1.7.0
+* kubelet版本：v1.6.4
 
 ```
 $ kubelet --version
-Kubernetes v1.7.0
+Kubernetes v1.6.4
 ```
 
 ---
@@ -158,20 +159,20 @@ Kubernetes v1.7.0
 * 在本机MacOSX上pull相关docker镜像
 
 ```
-$ docker pull gcr.io/google_containers/kube-proxy-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.4
-$ docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.4
-$ docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.4
-$ docker pull nginx:latest
+$ docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
+$ docker pull gcr.io/google_containers/kube-proxy-amd64:v1.6.4
+$ docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
+$ docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
 $ docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
 $ docker pull quay.io/coreos/flannel:v0.7.1-amd64
 $ docker pull gcr.io/google_containers/heapster-amd64:v1.3.0
+$ docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
+$ docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
+$ docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
 $ docker pull gcr.io/google_containers/etcd-amd64:3.0.17
 $ docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
 $ docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
+$ docker pull nginx:latest
 $ docker pull gcr.io/google_containers/pause-amd64:3.0
 ```
 
@@ -186,22 +187,21 @@ $ cd kubeadm-ha
 
 ```
 $ mkdir -p docker-images
-$ docker save -o docker-images/kube-proxy-amd64  gcr.io/google_containers/kube-proxy-amd64:v1.7.0
-$ docker save -o docker-images/kube-apiserver-amd64  gcr.io/google_containers/kube-apiserver-amd64:v1.7.0
-$ docker save -o docker-images/kube-controller-manager-amd64  gcr.io/google_containers/kube-controller-manager-amd64:v1.7.0
-$ docker save -o docker-images/kube-scheduler-amd64  gcr.io/google_containers/kube-scheduler-amd64:v1.7.0
-$ docker save -o docker-images/k8s-dns-sidecar-amd64  gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.4
-$ docker save -o docker-images/k8s-dns-kube-dns-amd64  gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.4
-$ docker save -o docker-images/k8s-dns-dnsmasq-nanny-amd64  gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.4
-$ docker save -o docker-images/heapster-grafana-amd64  gcr.io/google_containers/heapster-grafana-amd64:v4.2.0
-$ docker save -o docker-images/nginx  nginx:latest
-$ docker save -o docker-images/kubernetes-dashboard-amd64  gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
-$ docker save -o docker-images/flannel  quay.io/coreos/flannel:v0.7.1-amd64
-$ docker save -o docker-images/heapster-amd64  gcr.io/google_containers/heapster-amd64:v1.3.0
-$ docker save -o docker-images/etcd-amd64  gcr.io/google_containers/etcd-amd64:3.0.17
-$ docker save -o docker-images/heapster-grafana-amd64  gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
-$ docker save -o docker-images/heapster-influxdb-amd64  gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
-$ docker save -o docker-images/pause-amd64  gcr.io/google_containers/pause-amd64:3.0
+$ docker save -o docker-images/kube-apiserver-amd64 gcr.io/google_containers/kube-apiserver-amd64:v1.6.4
+$ docker save -o docker-images/kube-proxy-amd64 gcr.io/google_containers/kube-proxy-amd64:v1.6.4
+$ docker save -o docker-images/kube-controller-manager-amd64 gcr.io/google_containers/kube-controller-manager-amd64:v1.6.4
+$ docker save -o docker-images/kube-scheduler-amd64 gcr.io/google_containers/kube-scheduler-amd64:v1.6.4
+$ docker save -o docker-images/kubernetes-dashboard-amd64 gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
+$ docker save -o docker-images/flannel quay.io/coreos/flannel:v0.7.1-amd64
+$ docker save -o docker-images/heapster-amd64 gcr.io/google_containers/heapster-amd64:v1.3.0
+$ docker save -o docker-images/k8s-dns-sidecar-amd64 gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1
+$ docker save -o docker-images/k8s-dns-kube-dns-amd64 gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1
+$ docker save -o docker-images/k8s-dns-dnsmasq-nanny-amd64 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1
+$ docker save -o docker-images/etcd-amd64 gcr.io/google_containers/etcd-amd64:3.0.17
+$ docker save -o docker-images/heapster-grafana-amd64 gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
+$ docker save -o docker-images/heapster-influxdb-amd64 gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
+$ docker save -o docker-images/pause-amd64 gcr.io/google_containers/pause-amd64:3.0
+$ docker save -o docker-images/nginx nginx:latest
 ```
 
 * 在本机MacOSX上把代码以及docker镜像复制到所有节点上
@@ -296,10 +296,10 @@ $ yum search docker --showduplicates
 $ yum install docker-1.12.6-16.el7.centos.x86_64
 
 $ yum search kubelet --showduplicates
-$ yum install kubelet-1.7.0-0.x86_64
+$ yum install kubelet-1.6.4-0.x86_64
 
 $ yum search kubeadm --showduplicates
-$ yum install kubeadm-1.7.0-0.x86_64
+$ yum install kubeadm-1.6.4-0.x86_64 
 
 $ yum search kubernetes-cni --showduplicates
 $ yum install kubernetes-cni-0.5.1-0.x86_64
@@ -334,20 +334,20 @@ $ docker load -i /root/kubeadm-ha/docker-images/nginx
 
 $ docker images
 REPOSITORY                                               TAG                 IMAGE ID            CREATED             SIZE
-gcr.io/google_containers/kube-proxy-amd64                v1.7.0              d2d44013d0f8        4 days ago          114.7 MB
-gcr.io/google_containers/kube-apiserver-amd64            v1.7.0              f0d4b746fb2b        4 days ago          185.2 MB
-gcr.io/google_containers/kube-controller-manager-amd64   v1.7.0              36bf73ed0632        4 days ago          137 MB
-gcr.io/google_containers/kube-scheduler-amd64            v1.7.0              5c9a7f60a95c        4 days ago          77.16 MB
-gcr.io/google_containers/k8s-dns-sidecar-amd64           1.14.4              38bac66034a6        7 days ago          41.81 MB
-gcr.io/google_containers/k8s-dns-kube-dns-amd64          1.14.4              a8e00546bcf3        7 days ago          49.38 MB
-gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64     1.14.4              f7f45b9cb733        7 days ago          41.41 MB
-nginx                                                    latest              958a7ae9e569        4 weeks ago         109.4 MB
+gcr.io/google_containers/kube-apiserver-amd64            v1.6.4              4e3810a19a64        5 weeks ago         150.6 MB
+gcr.io/google_containers/kube-proxy-amd64                v1.6.4              e073a55c288b        5 weeks ago         109.2 MB
+gcr.io/google_containers/kube-controller-manager-amd64   v1.6.4              0ea16a85ac34        5 weeks ago         132.8 MB
+gcr.io/google_containers/kube-scheduler-amd64            v1.6.4              1fab9be555e1        5 weeks ago         76.75 MB
 gcr.io/google_containers/kubernetes-dashboard-amd64      v1.6.1              71dfe833ce74        6 weeks ago         134.4 MB
 quay.io/coreos/flannel                                   v0.7.1-amd64        cd4ae0be5e1b        10 weeks ago        77.76 MB
 gcr.io/google_containers/heapster-amd64                  v1.3.0              f9d33bedfed3        3 months ago        68.11 MB
+gcr.io/google_containers/k8s-dns-sidecar-amd64           1.14.1              fc5e302d8309        4 months ago        44.52 MB
+gcr.io/google_containers/k8s-dns-kube-dns-amd64          1.14.1              f8363dbf447b        4 months ago        52.36 MB
+gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64     1.14.1              1091847716ec        4 months ago        44.84 MB
 gcr.io/google_containers/etcd-amd64                      3.0.17              243830dae7dd        4 months ago        168.9 MB
 gcr.io/google_containers/heapster-grafana-amd64          v4.0.2              a1956d2a1a16        5 months ago        131.5 MB
 gcr.io/google_containers/heapster-influxdb-amd64         v1.1.1              d3fccbedd180        5 months ago        11.59 MB
+nginx                                                    latest              01f818af747d        6 months ago        181.6 MB
 gcr.io/google_containers/pause-amd64                     3.0                 99e59f495ffa        14 months ago       746.9 kB
 ```
 
@@ -466,23 +466,15 @@ $ exit
 
 #### kubeadm初始化
 
-* 在k8s-master1上修改kubeadm-init-v1.7.x.yaml文件，设置etcd.endpoints的${HOST_IP}为k8s-master1、k8s-master2、k8s-master3的IP地址。设置apiServerCertSANs的${HOST_IP}为k8s-master1、k8s-master2、k8s-master3的IP地址，${HOST_NAME}为k8s-master1、k8s-master2、k8s-master3，${VIRTUAL_IP}为keepalived的虚拟IP地址
+* 在k8s-master1上修改kubeadm-init-v1.6.x.yaml文件，设置etcd.endpoints的${HOST_IP}为k8s-master1、k8s-master2、k8s-master3的IP地址
 
 ```
-$ vi /root/kubeadm-ha/kubeadm-init-v1.7.x.yaml 
+$ vi /root/kubeadm-ha/kubeadm-init-v1.6.x.yaml 
 apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
-kubernetesVersion: v1.7.0
+kubernetesVersion: v1.6.4
 networking:
   podSubnet: 10.244.0.0/16
-apiServerCertSANs:
-- k8s-master1
-- k8s-master2
-- k8s-master3
-- 192.168.60.71
-- 192.168.60.72
-- 192.168.60.73
-- 192.168.60.80
 etcd:
   endpoints:
   - http://192.168.60.71:2379
@@ -505,21 +497,7 @@ Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
 * 在k8s-master1上使用kubeadm初始化kubernetes集群，连接外部etcd集群
 
 ```
-$ kubeadm init --config=/root/kubeadm-ha/kubeadm-init-v1.7.x.yaml
-```
-
-* 在k8s-master1上修改kube-apiserver.yaml的admission-control，v1.7.0使用了NodeRestriction等安全检查控制，务必设置成v1.6.x推荐的admission-control配置
-
-```
-$ vi /etc/kubernetes/manifests/kube-apiserver.yaml
-#    - --admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota
-    - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds
-```
-
-* 在k8s-master1上重启docker kubelet服务
-
-```
-$ systemctl restart docker kubelet
+$ kubeadm init --config=/root/kubeadm-ha/kubeadm-init-v1.6.x.yaml
 ```
 
 * 在k8s-master1上设置kubectl的环境变量KUBECONFIG，连接kubelet
@@ -687,15 +665,10 @@ $ source ~/.bashrc
 ```
 $ kubectl get nodes -o wide
 NAME          STATUS    AGE       VERSION   EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION
-k8s-master1   Ready     26m       v1.7.0    <none>        CentOS Linux 7 (Core)   3.10.0-514.6.1.el7.x86_64
-k8s-master2   Ready     2m        v1.7.0    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
-k8s-master3   Ready     2m        v1.7.0    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
+k8s-master1   Ready     26m       v1.6.4    <none>        CentOS Linux 7 (Core)   3.10.0-514.6.1.el7.x86_64
+k8s-master2   Ready     2m        v1.6.4    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
+k8s-master3   Ready     2m        v1.6.4    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
 ```
-
----
-[返回目录](#目录)
-
-#### 修改配置
 
 * 在k8s-master2、k8s-master3上修改kube-apiserver.yaml的配置，${HOST_IP}改为本机IP
 
@@ -710,6 +683,119 @@ $ vi /etc/kubernetes/manifests/kube-apiserver.yaml
 $ vi /etc/kubernetes/kubelet.conf
 server: https://${HOST_IP}:6443
 ```
+
+* 在k8s-master2和k8s-master3上的重启服务
+
+```
+$ systemctl daemon-reload && systemctl restart docker kubelet
+```
+
+---
+[返回目录](#目录)
+
+#### 创建证书
+
+* 在k8s-master2和k8s-master3上修改kubelet.conf后，由于kubelet.conf配置的crt和key与本机IP地址不一致的情况，kubelet服务会异常退出，crt和key必须重新制作。查看apiserver.crt的签名信息，发现IP Address以及DNS绑定了k8s-master1，必须进行相应修改。
+
+```
+openssl x509 -noout -text -in /etc/kubernetes/pki/apiserver.crt
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 9486057293403496063 (0x83a53ed95c519e7f)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: CN=kubernetes
+        Validity
+            Not Before: Jun 22 16:22:44 2017 GMT
+            Not After : Jun 22 16:22:44 2018 GMT
+        Subject: CN=kube-apiserver,
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    d0:10:4a:3b:c4:62:5d:ae:f8:f1:16:48:b3:77:6b:
+                    53:4b
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: 
+                DNS:k8s-master1, DNS:kubernetes, DNS:kubernetes.default, DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP Address:10.96.0.1, IP Address:192.168.60.71
+    Signature Algorithm: sha1WithRSAEncryption
+         dd:68:16:f9:11:be:c3:3c:be:89:9f:14:60:6b:e0:47:c7:91:
+         9e:78:ab:ce
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上使用ca.key和ca.crt制作apiserver.crt和apiserver.key
+
+```
+$ mkdir -p /etc/kubernetes/pki-local
+
+$ cd /etc/kubernetes/pki-local
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上生成2048位的密钥对
+
+```
+$ openssl genrsa -out apiserver.key 2048
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上生成证书签署请求文件
+
+```
+$ openssl req -new -key apiserver.key -subj "/CN=kube-apiserver," -out apiserver.csr
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上编辑apiserver.ext文件，${HOST_NAME}修改为本机主机名，${HOST_IP}修改为本机IP地址，${VIRTUAL_IP}修改为keepalived的虚拟IP（192.168.60.80）
+
+```
+$ vi apiserver.ext
+subjectAltName = DNS:${HOST_NAME},DNS:kubernetes,DNS:kubernetes.default,DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP:10.96.0.1, IP:${HOST_IP}, IP:${VIRTUAL_IP}
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上使用ca.key和ca.crt签署上述请求
+
+```
+$ openssl x509 -req -in apiserver.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out apiserver.crt -days 365 -extfile /etc/kubernetes/pki-local/apiserver.ext
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上查看新生成的证书：
+
+```
+$ openssl x509 -noout -text -in apiserver.crt
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 9486057293403496063 (0x83a53ed95c519e7f)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: CN=kubernetes
+        Validity
+            Not Before: Jun 22 16:22:44 2017 GMT
+            Not After : Jun 22 16:22:44 2018 GMT
+        Subject: CN=kube-apiserver,
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    d0:10:4a:3b:c4:62:5d:ae:f8:f1:16:48:b3:77:6b:
+                    53:4b
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: 
+                DNS:k8s-master3, DNS:kubernetes, DNS:kubernetes.default, DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP Address:10.96.0.1, IP Address:192.168.60.73, IP Address:192.168.60.80
+    Signature Algorithm: sha1WithRSAEncryption
+         dd:68:16:f9:11:be:c3:3c:be:89:9f:14:60:6b:e0:47:c7:91:
+         9e:78:ab:ce
+```
+
+* 在k8s-master1、k8s-master2、k8s-master3上把apiserver.crt和apiserver.key文件复制到/etc/kubernetes/pki目录
+
+```
+$ cp apiserver.crt apiserver.key /etc/kubernetes/pki/
+```
+
+---
+[返回目录](#目录)
+
+#### 修改配置
 
 * 在k8s-master2和k8s-master3上修改admin.conf，${HOST_IP}修改为本机IP地址
 
@@ -803,7 +889,6 @@ $ kubectl get pods --all-namespaces -o wide| grep monitoring-grafana
 $ kubectl scale --replicas=3 -n kube-system deployment/monitoring-influxdb
 $ kubectl get pods --all-namespaces -o wide| grep monitoring-influxdb
 ```
-
 ---
 [返回目录](#目录)
 
@@ -1077,17 +1162,17 @@ $ systemctl status kubelet
 ```
 $ kubectl get nodes -o wide
 NAME          STATUS                     AGE       VERSION
-k8s-master1   Ready,SchedulingDisabled   5h        v1.7.0
-k8s-master2   Ready,SchedulingDisabled   4h        v1.7.0
-k8s-master3   Ready,SchedulingDisabled   4h        v1.7.0
-k8s-node1     Ready                      6m        v1.7.0
-k8s-node2     Ready                      4m        v1.7.0
-k8s-node3     Ready                      4m        v1.7.0
-k8s-node4     Ready                      3m        v1.7.0
-k8s-node5     Ready                      3m        v1.7.0
-k8s-node6     Ready                      3m        v1.7.0
-k8s-node7     Ready                      3m        v1.7.0
-k8s-node8     Ready                      3m        v1.7.0
+k8s-master1   Ready,SchedulingDisabled   5h        v1.6.4
+k8s-master2   Ready,SchedulingDisabled   4h        v1.6.4
+k8s-master3   Ready,SchedulingDisabled   4h        v1.6.4
+k8s-node1     Ready                      6m        v1.6.4
+k8s-node2     Ready                      4m        v1.6.4
+k8s-node3     Ready                      4m        v1.6.4
+k8s-node4     Ready                      3m        v1.6.4
+k8s-node5     Ready                      3m        v1.6.4
+k8s-node6     Ready                      3m        v1.6.4
+k8s-node7     Ready                      3m        v1.6.4
+k8s-node8     Ready                      3m        v1.6.4
 ```
 
 * 在k8s-master1上测试部署nginx服务，nginx服务成功部署到k8s-node5上
@@ -1140,7 +1225,7 @@ Commercial support is available at
 
 ```
 
-* 至此，kubernetes高可用集群成功部署 😀
+* 至此，kubernetes高可用集群成功部署
 ---
 [返回目录](#目录)
 

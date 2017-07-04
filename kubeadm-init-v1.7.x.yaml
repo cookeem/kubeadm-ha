@@ -1,0 +1,18 @@
+apiVersion: kubeadm.k8s.io/v1alpha1
+kind: MasterConfiguration
+kubernetesVersion: v1.7.0
+networking:
+  podSubnet: 10.244.0.0/16
+apiServerCertSANs:
+- ${HOST_NAME}
+- ${HOST_NAME}
+- ${HOST_NAME}
+- ${HOST_IP}
+- ${HOST_IP}
+- ${HOST_IP}
+- ${VIRTUAL_IP}
+etcd:
+  endpoints:
+  - http://${HOST_IP}:2379
+  - http://${HOST_IP}:2379
+  - http://${HOST_IP}:2379
