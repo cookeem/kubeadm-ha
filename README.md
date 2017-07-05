@@ -495,6 +495,8 @@ etcd:
 $ vi /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 #Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=systemd"
 Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
+
+$ systemctl daemon-reload && systemctl restart kubelet
 ```
 
 * on k8s-master1: use kubeadm to init kubernetes cluster and connect external etcd cluster

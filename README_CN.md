@@ -500,6 +500,8 @@ etcd:
 $ vi /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 #Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=systemd"
 Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
+
+$ systemctl daemon-reload && systemctl restart kubelet
 ```
 
 * 在k8s-master1上使用kubeadm初始化kubernetes集群，连接外部etcd集群
