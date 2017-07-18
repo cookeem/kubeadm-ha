@@ -14,7 +14,7 @@
 
 ---
 
-- This operation instruction is for version v1.6.x kubernetes cluster
+- This operation instruction is for version v1.7.x kubernetes cluster
 
 ### category
 
