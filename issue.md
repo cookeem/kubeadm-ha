@@ -1,3 +1,4 @@
+
 > /kind feature
 
 kubeadm now is not support HA, so we can not use kubeadm to setup a production kubernetes cluster. But create a HA cluster from scratch is too complicated, and when I google keyword "kubeadm HA", only few article or mind draft related tell me how to.
