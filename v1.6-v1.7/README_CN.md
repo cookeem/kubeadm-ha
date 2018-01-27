@@ -2,6 +2,8 @@
 
 ![k8s logo](../images/v1.6-v1.7/Kubernetes.png)
 
+- [中文文档(for v1.9.x版本)](../README_CN.md)
+- [English document(for v1.9.x version)](../README.md)
 - [中文文档(for v1.7.x版本)](README_CN.md)
 - [English document(for v1.7.x version)](README.md)
 - [中文文档(for v1.6.x版本)](README_v1.6.x_CN.md)
