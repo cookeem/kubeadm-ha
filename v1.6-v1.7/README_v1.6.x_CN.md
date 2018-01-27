@@ -1,6 +1,6 @@
 # kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.7.x版本以及v1.6.x版本
 
-![k8s logo](images/Kubernetes.png)
+![k8s logo](../images/Kubernetes.png)
 
 - [中文文档(for v1.7.x版本)](README_CN.md)
 - [English document(for v1.7.x version)](README.md)
@@ -53,7 +53,7 @@
 
 #### 概要部署架构
 
-![ha logo](images/ha.png)
+![ha logo](../images/ha.png)
 
 * kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
 
@@ -62,7 +62,7 @@
 
 #### 详细部署架构
 
-![k8s ha](images/k8s-ha.png)
+![k8s ha](../images/k8s-ha.png)
 
 * kubernetes组件说明
 
@@ -567,7 +567,7 @@ $ kubectl proxy --address='0.0.0.0' &
 http://k8s-master1:30000
 ```
 
-![dashboard](images/dashboard.png)
+![dashboard](../images/dashboard.png)
 
 ---
 [返回目录](#目录)
@@ -616,7 +616,7 @@ kube-system   monitoring-influxdb-3480804314-72ltf    1/1       Running   1     
 http://k8s-master1:30000
 ```
 
-![heapster](images/heapster.png)
+![heapster](../images/heapster.png)
 
 * 至此，第一台master成功安装，并已经完成flannel、dashboard、heapster的部署
 
