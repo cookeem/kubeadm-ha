@@ -2,12 +2,12 @@
 
 ![k8s logo](images/v1.6-v1.7/Kubernetes.png)
 
-- [中文文档(for v1.9.x版本)](../README_CN.md)
-- [English document(for v1.9.x version)](../README.md)
-- [中文文档(for v1.7.x版本)](README_CN.md)
-- [English document(for v1.7.x version)](README.md)
-- [中文文档(for v1.6.x版本)](README_v1.6.x_CN.md)
-- [English document(for v1.6.x version)](README_v1.6.x.md)
+- [中文文档(for v1.9.x版本)](README_CN.md)
+- [English document(for v1.9.x version)](README.md)
+- [中文文档(for v1.7.x版本)](v1.6-v1.7/README_CN.md)
+- [English document(for v1.7.x version)](v1.6-v1.7/README.md)
+- [中文文档(for v1.6.x版本)](v1.6-v1.7/README_v1.6.x_CN.md)
+- [English document(for v1.6.x version)](v1.6-v1.7/README_v1.6.x.md)
 
 ---
 
@@ -16,7 +16,9 @@
 
 ---
 
-- 该指引适用于v1.7.x版本的kubernetes集群
+- 该指引适用于v1.9.x版本的kubernetes集群
+
+> v1.9.0以前的版本kubeadm还不支持高可用部署，因此不推荐作为生产环境的部署方式。从v1.9.x版本开始，kubeadm官方正式支持高可用集群的部署，安装kubeadm务必保证版本最低版本为1.9.0。
 
 ### 目录
 
