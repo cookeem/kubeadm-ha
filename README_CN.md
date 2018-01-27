@@ -1,500 +1,186 @@
-# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.7.x版本以及v1.6.x版本
+# kubernetes 高可用 master 安装
 
-![k8s logo](images/Kubernetes.png)
+- k8s master firewall需要开放相关端口（master）
 
-- [中文文档(for v1.7.x版本)](README_CN.md)
-- [English document(for v1.7.x version)](README.md)
-- [中文文档(for v1.6.x版本)](README_v1.6.x_CN.md)
-- [English document(for v1.6.x version)](README_v1.6.x.md)
-
----
-
-- [GitHub项目地址](https://github.com/cookeem/kubeadm-ha/)
-- [OSChina项目地址](https://git.oschina.net/cookeem/kubeadm-ha/)
-
----
-
-- 该指引适用于v1.7.x版本的kubernetes集群
-
-### 目录
-
-1. [部署架构](#部署架构)
-    1. [概要部署架构](#概要部署架构)
-    1. [详细部署架构](#详细部署架构)
-    1. [主机节点清单](#主机节点清单)
-1. [安装前准备](#安装前准备)
-    1. [版本信息](#版本信息)
-    1. [所需docker镜像](#所需docker镜像)
-    1. [系统设置](#系统设置)
-1. [kubernetes安装](#kubernetes安装)
-    1. [kubernetes相关服务安装](#kubernetes相关服务安装)
-    1. [docker镜像导入](#docker镜像导入)
-1. [第一台master初始化](#第一台master初始化)
-    1. [独立etcd集群部署](#独立etcd集群部署)
-    1. [kubeadm初始化](#kubeadm初始化)
-    1. [flannel网络组件安装](#flannel网络组件安装)
-    1. [dashboard组件安装](#dashboard组件安装)
-    1. [heapster组件安装](#heapster组件安装)
-1. [master集群高可用设置](#master集群高可用设置)
-    1. [复制配置](#复制配置)
-    1. [修改配置](#修改配置)
-    1. [验证高可用安装](#验证高可用安装)
-    1. [keepalived安装配置](#keepalived安装配置)
-    1. [nginx负载均衡配置](#nginx负载均衡配置)
-    1. [kube-proxy配置](#kube-proxy配置)
-    1. [验证master集群高可用](#验证master集群高可用)
-1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
-    1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
-    1. [部署应用验证集群](#部署应用验证集群)
-    
-
-### 部署架构
-
-#### 概要部署架构
-
-![ha logo](images/ha.png)
-
-* kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
-
----
-[返回目录](#目录)
-
-#### 详细部署架构
-
-![k8s ha](images/k8s-ha.png)
-
-* kubernetes组件说明
-
-> kube-apiserver：集群核心，集群API接口、集群各个组件通信的中枢；集群安全控制；
-
-> etcd：集群的数据中心，用于存放集群的配置以及状态信息，非常重要，如果数据丢失那么集群将无法恢复；因此高可用集群部署首先就是etcd是高可用集群；
-
-> kube-scheduler：集群Pod的调度中心；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-scheduler处于活跃状态；
-
-> kube-controller-manager：集群状态管理器，当集群状态与期望不同时，kcm会努力让集群恢复期望状态，比如：当一个pod死掉，kcm会努力新建一个pod来恢复对应replicas set期望的状态；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-controller-manager处于活跃状态；
-
-> kubelet: kubernetes node agent，负责与node上的docker engine打交道；
-
-> kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
-
-* 负载均衡
-
-> keepalived集群设置一个虚拟ip地址，虚拟ip地址指向k8s-master1、k8s-master2、k8s-master3。
-
-> nginx用于k8s-master1、k8s-master2、k8s-master3的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.60.80)以及nginx端口(8443)访问master集群的apiserver。
-
----
-[返回目录](#目录)
-
-#### 主机节点清单
-
- 主机名 | IP地址 | 说明 | 组件 
- :--- | :--- | :--- | :---
- k8s-master1 | 192.168.60.71 | master节点1 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster
- k8s-master2 | 192.168.60.72 | master节点2 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster
- k8s-master3 | 192.168.60.73 | master节点3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster
- 无 | 192.168.60.80 | keepalived虚拟IP | 无
- k8s-node1 ~ 8 | 192.168.60.81 ~ 88 | 8个node节点 | kubelet、kube-proxy
-
----
-[返回目录](#目录)
-
-### 安装前准备
-
-#### 版本信息
-
-* Linux版本：CentOS 7.3.1611
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 2379-2380 | etcd server client API
+TCP | Inbound | 10250     | Kubelet API
+TCP | Inbound | 10251     | kube-scheduler
+TCP | Inbound | 10252     | kube-controller-manager
+TCP | Inbound | 10255     | Read-only Kubelet API
 
 ```
-cat /etc/redhat-release 
-CentOS Linux release 7.3.1611 (Core) 
+systemctl status firewalld
+
+firewall-cmd --zone=public --add-port=4001/tcp --permanent
+firewall-cmd --zone=public --add-port=6443/tcp --permanent
+firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
+firewall-cmd --zone=public --add-port=10250/tcp --permanent
+firewall-cmd --zone=public --add-port=10251/tcp --permanent
+firewall-cmd --zone=public --add-port=10252/tcp --permanent
+firewall-cmd --zone=public --add-port=10255/tcp --permanent
+firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+
+firewall-cmd --reload
+firewall-cmd --list-all --zone=public
 ```
 
-* docker版本：1.12.6
+- k8s worker firewall需要开放相关端口（worker）
+
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 10250       | Kubelet API
+TCP | Inbound | 10255       | Read-only Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services**
 
 ```
-$ docker version
-Client:
- Version:      1.12.6
- API version:  1.24
- Go version:   go1.6.4
- Git commit:   78d1802
- Built:        Tue Jan 10 20:20:01 2017
- OS/Arch:      linux/amd64
+systemctl status firewalld
 
-Server:
- Version:      1.12.6
- API version:  1.24
- Go version:   go1.6.4
- Git commit:   78d1802
- Built:        Tue Jan 10 20:20:01 2017
- OS/Arch:      linux/amd64
+firewall-cmd --zone=public --add-port=10250/tcp --permanent
+firewall-cmd --zone=public --add-port=10255/tcp --permanent
+firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+
+firewall-cmd --reload
+firewall-cmd --list-all --zone=public
 ```
 
-* kubeadm版本：v1.7.0
+- 所有k8s节点允许kube-proxy的forward
 
 ```
-$ kubeadm version
-kubeadm version: &version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.0", GitCommit:"d3ada0119e776222f11ec7945e6d860061339aad", GitTreeState:"clean", BuildDate:"2017-06-29T22:55:19Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"linux/amd64"}
+firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
+firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment "docker subnet"
+
+firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -i flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
+firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
+
+firewall-cmd --reload
+firewall-cmd --list-all --zone=public
+
+firewall-cmd --direct --get-all-rules
+
+systemctl restart firewalld
 ```
 
-* kubelet版本：v1.7.0
+- 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令
 
 ```
-$ kubelet --version
-Kubernetes v1.7.0
+iptables -S
+iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
+iptables -L -n --line-numbers | grep -E "DROP|REJECT"
 ```
 
----
-
-[返回目录](#目录)
-
-#### 所需docker镜像
-
-* 国内可以使用daocloud加速器下载相关镜像，然后通过docker save、docker load把本地下载的镜像放到kubernetes集群的所在机器上，daocloud加速器链接如下：
-
-[https://www.daocloud.io/mirror#accelerator-doc](https://www.daocloud.io/mirror#accelerator-doc)
-
-* 在本机MacOSX上pull相关docker镜像
-
-```
-$ docker pull gcr.io/google_containers/kube-proxy-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.7.0
-$ docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.4
-$ docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.4
-$ docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.4
-$ docker pull nginx:latest
-$ docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
-$ docker pull quay.io/coreos/flannel:v0.7.1-amd64
-$ docker pull gcr.io/google_containers/heapster-amd64:v1.3.0
-$ docker pull gcr.io/google_containers/etcd-amd64:3.0.17
-$ docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
-$ docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
-$ docker pull gcr.io/google_containers/pause-amd64:3.0
-```
-
-* 在本机MacOSX上获取代码，并进入代码目录
-
-```
-$ git clone https://github.com/cookeem/kubeadm-ha
-$ cd kubeadm-ha
-```
-
-* 在本机MacOSX上把相关docker镜像保存成文件
-
-```
-$ mkdir -p docker-images
-$ docker save -o docker-images/kube-proxy-amd64  gcr.io/google_containers/kube-proxy-amd64:v1.7.0
-$ docker save -o docker-images/kube-apiserver-amd64  gcr.io/google_containers/kube-apiserver-amd64:v1.7.0
-$ docker save -o docker-images/kube-controller-manager-amd64  gcr.io/google_containers/kube-controller-manager-amd64:v1.7.0
-$ docker save -o docker-images/kube-scheduler-amd64  gcr.io/google_containers/kube-scheduler-amd64:v1.7.0
-$ docker save -o docker-images/k8s-dns-sidecar-amd64  gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.4
-$ docker save -o docker-images/k8s-dns-kube-dns-amd64  gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.4
-$ docker save -o docker-images/k8s-dns-dnsmasq-nanny-amd64  gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.4
-$ docker save -o docker-images/heapster-grafana-amd64  gcr.io/google_containers/heapster-grafana-amd64:v4.2.0
-$ docker save -o docker-images/nginx  nginx:latest
-$ docker save -o docker-images/kubernetes-dashboard-amd64  gcr.io/google_containers/kubernetes-dashboard-amd64:v1.6.1
-$ docker save -o docker-images/flannel  quay.io/coreos/flannel:v0.7.1-amd64
-$ docker save -o docker-images/heapster-amd64  gcr.io/google_containers/heapster-amd64:v1.3.0
-$ docker save -o docker-images/etcd-amd64  gcr.io/google_containers/etcd-amd64:3.0.17
-$ docker save -o docker-images/heapster-grafana-amd64  gcr.io/google_containers/heapster-grafana-amd64:v4.0.2
-$ docker save -o docker-images/heapster-influxdb-amd64  gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1
-$ docker save -o docker-images/pause-amd64  gcr.io/google_containers/pause-amd64:3.0
-```
-
-* 在本机MacOSX上把代码以及docker镜像复制到所有节点上
-
-```
-$ scp -r * root@k8s-master1:/root/kubeadm-ha
-$ scp -r * root@k8s-master2:/root/kubeadm-ha
-$ scp -r * root@k8s-master3:/root/kubeadm-ha
-$ scp -r * root@k8s-node1:/root/kubeadm-ha
-$ scp -r * root@k8s-node2:/root/kubeadm-ha
-$ scp -r * root@k8s-node3:/root/kubeadm-ha
-$ scp -r * root@k8s-node4:/root/kubeadm-ha
-$ scp -r * root@k8s-node5:/root/kubeadm-ha
-$ scp -r * root@k8s-node6:/root/kubeadm-ha
-$ scp -r * root@k8s-node7:/root/kubeadm-ha
-$ scp -r * root@k8s-node8:/root/kubeadm-ha
-```
-
----
-[返回目录](#目录)
-
-#### 系统设置
-
-* 以下在kubernetes所有节点上都是使用root用户进行操作
-
-* 在kubernetes所有节点上增加kubernetes仓库 
-
-```
-$ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-EOF
-```
-
-* 在kubernetes所有节点上进行系统更新
-
-```
-$ yum update -y
-```
-
-* 在kubernetes所有节点上关闭防火墙
-
-```
-$ systemctl disable firewalld && systemctl stop firewalld && systemctl status firewalld
-```
-
-* 在kubernetes所有节点上设置SELINUX为permissive模式
+- 所有节点设置enforce
 
 ```
 $ vi /etc/selinux/config
 SELINUX=permissive
-```
 
-* 在kubernetes所有节点上设置iptables参数，否则kubeadm init会提示错误
+$ setenforce 0
 
-```
-$ vi /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-iptables = 1
-net.bridge.bridge-nf-call-ip6tables = 1
-```
-
-* 在kubernetes所有节点上重启主机
-
-```
-$ reboot
-```
-
----
-[返回目录](#目录)
-
-### kubernetes安装
-
-#### kubernetes相关服务安装
-
-* 在kubernetes所有节点上验证SELINUX模式，必须保证SELINUX为permissive模式，否则kubernetes启动会出现各种异常
-
-```
 $ getenforce
 Permissive
 ```
 
-* 在kubernetes所有节点上安装并启动kubernetes 
+- 所有节点设置sysctl
 
 ```
-$ yum search docker --showduplicates
-$ yum install docker-1.12.6-16.el7.centos.x86_64
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
 
-$ yum search kubelet --showduplicates
-$ yum install kubelet-1.7.0-0.x86_64
-
-$ yum search kubeadm --showduplicates
-$ yum install kubeadm-1.7.0-0.x86_64
-
-$ yum search kubernetes-cni --showduplicates
-$ yum install kubernetes-cni-0.5.1-0.x86_64
-
-$ systemctl enable docker && systemctl start docker
-$ systemctl enable kubelet && systemctl start kubelet
+sysctl --system
 ```
 
----
-[返回目录](#目录)
-
-#### docker镜像导入
-
-* 在kubernetes所有节点上导入docker镜像 
+- 所有节点安装并启动组件
 
 ```
-$ docker load -i /root/kubeadm-ha/docker-images/etcd-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/flannel
-$ docker load -i /root/kubeadm-ha/docker-images/heapster-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/heapster-grafana-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/heapster-influxdb-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/k8s-dns-dnsmasq-nanny-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/k8s-dns-kube-dns-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/k8s-dns-sidecar-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/kube-apiserver-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/kube-controller-manager-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/kube-proxy-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/kubernetes-dashboard-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/kube-scheduler-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/pause-amd64
-$ docker load -i /root/kubeadm-ha/docker-images/nginx
+yum install -y docker-ce
+yum install -y docker-compose
+systemctl enable docker && systemctl start docker
 
-$ docker images
-REPOSITORY                                               TAG                 IMAGE ID            CREATED             SIZE
-gcr.io/google_containers/kube-proxy-amd64                v1.7.0              d2d44013d0f8        4 days ago          114.7 MB
-gcr.io/google_containers/kube-apiserver-amd64            v1.7.0              f0d4b746fb2b        4 days ago          185.2 MB
-gcr.io/google_containers/kube-controller-manager-amd64   v1.7.0              36bf73ed0632        4 days ago          137 MB
-gcr.io/google_containers/kube-scheduler-amd64            v1.7.0              5c9a7f60a95c        4 days ago          77.16 MB
-gcr.io/google_containers/k8s-dns-sidecar-amd64           1.14.4              38bac66034a6        7 days ago          41.81 MB
-gcr.io/google_containers/k8s-dns-kube-dns-amd64          1.14.4              a8e00546bcf3        7 days ago          49.38 MB
-gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64     1.14.4              f7f45b9cb733        7 days ago          41.41 MB
-nginx                                                    latest              958a7ae9e569        4 weeks ago         109.4 MB
-gcr.io/google_containers/kubernetes-dashboard-amd64      v1.6.1              71dfe833ce74        6 weeks ago         134.4 MB
-quay.io/coreos/flannel                                   v0.7.1-amd64        cd4ae0be5e1b        10 weeks ago        77.76 MB
-gcr.io/google_containers/heapster-amd64                  v1.3.0              f9d33bedfed3        3 months ago        68.11 MB
-gcr.io/google_containers/etcd-amd64                      3.0.17              243830dae7dd        4 months ago        168.9 MB
-gcr.io/google_containers/heapster-grafana-amd64          v4.0.2              a1956d2a1a16        5 months ago        131.5 MB
-gcr.io/google_containers/heapster-influxdb-amd64         v1.1.1              d3fccbedd180        5 months ago        11.59 MB
-gcr.io/google_containers/pause-amd64                     3.0                 99e59f495ffa        14 months ago       746.9 kB
+yum install -y kubelet kubeadm kubectl
+systemctl enable kubelet && systemctl start kubelet
 ```
 
----
-[返回目录](#目录)
-
-### 第一台master初始化
-
-#### 独立etcd集群部署
-
-* 在k8s-master1节点上以docker方式启动etcd集群
+- 所有节点安装ceph组件，用于连接cephfs
 
 ```
-$ docker stop etcd && docker rm etcd
-$ rm -rf /var/lib/etcd-cluster
-$ mkdir -p /var/lib/etcd-cluster
-$ docker run -d \
---restart always \
--v /etc/ssl/certs:/etc/ssl/certs \
--v /var/lib/etcd-cluster:/var/lib/etcd \
--p 4001:4001 \
--p 2380:2380 \
--p 2379:2379 \
---name etcd \
-gcr.io/google_containers/etcd-amd64:3.0.17 \
-etcd --name=etcd0 \
---advertise-client-urls=http://192.168.60.71:2379,http://192.168.60.71:4001 \
---listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
---initial-advertise-peer-urls=http://192.168.60.71:2380 \
---listen-peer-urls=http://0.0.0.0:2380 \
---initial-cluster-token=9477af68bbee1b9ae037d6fd9e7efefd \
---initial-cluster=etcd0=http://192.168.60.71:2380,etcd1=http://192.168.60.72:2380,etcd2=http://192.168.60.73:2380 \
---initial-cluster-state=new \
---auto-tls \
---peer-auto-tls \
---data-dir=/var/lib/etcd
+yum -y install ceph-common
 ```
 
-* 在k8s-master2节点上以docker方式启动etcd集群
+- 在master节点安装并启动keepalived
 
 ```
-$ docker stop etcd && docker rm etcd
-$ rm -rf /var/lib/etcd-cluster
-$ mkdir -p /var/lib/etcd-cluster
-$ docker run -d \
---restart always \
--v /etc/ssl/certs:/etc/ssl/certs \
--v /var/lib/etcd-cluster:/var/lib/etcd \
--p 4001:4001 \
--p 2380:2380 \
--p 2379:2379 \
---name etcd \
-gcr.io/google_containers/etcd-amd64:3.0.17 \
-etcd --name=etcd1 \
---advertise-client-urls=http://192.168.60.72:2379,http://192.168.60.72:4001 \
---listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
---initial-advertise-peer-urls=http://192.168.60.72:2380 \
---listen-peer-urls=http://0.0.0.0:2380 \
---initial-cluster-token=9477af68bbee1b9ae037d6fd9e7efefd \
---initial-cluster=etcd0=http://192.168.60.71:2380,etcd1=http://192.168.60.72:2380,etcd2=http://192.168.60.73:2380 \
---initial-cluster-state=new \
---auto-tls \
---peer-auto-tls \
---data-dir=/var/lib/etcd
+yum install -y keepalived
+systemctl enable keepalived && systemctl restart keepalived
 ```
 
-* 在k8s-master3节点上以docker方式启动etcd集群
+- 所有节点加载相关docker images
 
 ```
-$ docker stop etcd && docker rm etcd
-$ rm -rf /var/lib/etcd-cluster
-$ mkdir -p /var/lib/etcd-cluster
-$ docker run -d \
---restart always \
--v /etc/ssl/certs:/etc/ssl/certs \
--v /var/lib/etcd-cluster:/var/lib/etcd \
--p 4001:4001 \
--p 2380:2380 \
--p 2379:2379 \
---name etcd \
-gcr.io/google_containers/etcd-amd64:3.0.17 \
-etcd --name=etcd2 \
---advertise-client-urls=http://192.168.60.73:2379,http://192.168.60.73:4001 \
---listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
---initial-advertise-peer-urls=http://192.168.60.73:2380 \
---listen-peer-urls=http://0.0.0.0:2380 \
---initial-cluster-token=9477af68bbee1b9ae037d6fd9e7efefd \
---initial-cluster=etcd0=http://192.168.60.71:2380,etcd1=http://192.168.60.72:2380,etcd2=http://192.168.60.73:2380 \
---initial-cluster-state=new \
---auto-tls \
---peer-auto-tls \
---data-dir=/var/lib/etcd
+docker load -i /root/kube-images/etcd-amd64-3.1.10
+docker load -i /root/kube-images/flannel-v0.9.1-amd64
+docker load -i /root/kube-images/heapster-amd64-v1.4.2
+docker load -i /root/kube-images/heapster-grafana-amd64-v4.4.3
+docker load -i /root/kube-images/heapster-influxdb-amd64-v1.3.3
+docker load -i /root/kube-images/k8s-dns-dnsmasq-nanny-amd64-1.14.7
+docker load -i /root/kube-images/k8s-dns-kube-dns-amd64-1.14.7
+docker load -i /root/kube-images/k8s-dns-sidecar-amd64-1.14.7
+docker load -i /root/kube-images/kube-apiserver-amd64-v1.9.1
+docker load -i /root/kube-images/kube-controller-manager-amd64-v1.9.1
+docker load -i /root/kube-images/kube-proxy-amd64-v1.9.1
+docker load -i /root/kube-images/kubernetes-dashboard-amd64-v1.8.1
+docker load -i /root/kube-images/kube-scheduler-amd64-v1.9.1
+docker load -i /root/kube-images/pause-amd64-3.0
+docker load -i /root/kube-images/nginx
+
+docker tag k8s.gcr.io/kube-apiserver-amd64:v1.9.1 gcr.io/google_containers/kube-apiserver-amd64:v1.9.1
+docker tag k8s.gcr.io/kube-scheduler-amd64:v1.9.1 gcr.io/google_containers/kube-scheduler-amd64:v1.9.1
+docker tag k8s.gcr.io/kube-proxy-amd64:v1.9.1 gcr.io/google_containers/kube-proxy-amd64:v1.9.1
+docker tag k8s.gcr.io/kube-controller-manager-amd64:v1.9.1 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.1
+docker tag k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.1 gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.1
+docker tag k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.7 gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.7
+docker tag k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.7 gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
+docker tag k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.7 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
+docker tag k8s.gcr.io/etcd-amd64:3.1.10 gcr.io/google_containers/etcd-amd64:3.1.10
+docker tag k8s.gcr.io/heapster-influxdb-amd64:v1.3.3 gcr.io/google_containers/heapster-influxdb-amd64:v1.3.3
+docker tag k8s.gcr.io/heapster-grafana-amd64:v4.4.3 gcr.io/google_containers/heapster-grafana-amd64:v4.4.3
+docker tag k8s.gcr.io/heapster-amd64:v1.4.2 gcr.io/google_containers/heapster-amd64:v1.4.2
+docker tag k8s.gcr.io/pause-amd64:3.0 gcr.io/google_containers/pause-amd64:3.0
+
+docker rmi k8s.gcr.io/kube-apiserver-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kube-scheduler-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kube-proxy-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kube-controller-manager-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.1 
+docker rmi k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.7 
+docker rmi k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.7 
+docker rmi k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.7 
+docker rmi k8s.gcr.io/etcd-amd64:3.1.10 
+docker rmi k8s.gcr.io/heapster-influxdb-amd64:v1.3.3 
+docker rmi k8s.gcr.io/heapster-grafana-amd64:v4.4.3 
+docker rmi k8s.gcr.io/heapster-amd64:v1.4.2 
+docker rmi k8s.gcr.io/pause-amd64:3.0 
+
+docker images
 ```
 
-* 在k8s-master1、k8s-master2、k8s-master3上检查etcd启动状态
+- 所有节点禁用swap
 
 ```
-$ docker exec -ti etcd ash
+swapoff -a
 
-$ etcdctl member list
-1a32c2d3f1abcad0: name=etcd2 peerURLs=http://192.168.60.73:2380 clientURLs=http://192.168.60.73:2379,http://192.168.60.73:4001 isLeader=false
-1da4f4e8b839cb79: name=etcd1 peerURLs=http://192.168.60.72:2380 clientURLs=http://192.168.60.72:2379,http://192.168.60.72:4001 isLeader=false
-4238bcb92d7f2617: name=etcd0 peerURLs=http://192.168.60.71:2380 clientURLs=http://192.168.60.71:2379,http://192.168.60.71:4001 isLeader=true
+vi /etc/fstab
+#/dev/mapper/centos-swap swap                    swap    defaults        0 0
 
-$ etcdctl cluster-health
-member 1a32c2d3f1abcad0 is healthy: got healthy result from http://192.168.60.73:2379
-member 1da4f4e8b839cb79 is healthy: got healthy result from http://192.168.60.72:2379
-member 4238bcb92d7f2617 is healthy: got healthy result from http://192.168.60.71:2379
-cluster is healthy
-
-$ exit
+cat /proc/swaps
 ```
 
----
-[返回目录](#目录)
-
-#### kubeadm初始化
-
-* 在k8s-master1上修改kubeadm-init-v1.7.x.yaml文件，设置etcd.endpoints的${HOST_IP}为k8s-master1、k8s-master2、k8s-master3的IP地址。设置apiServerCertSANs的${HOST_IP}为k8s-master1、k8s-master2、k8s-master3的IP地址，${HOST_NAME}为k8s-master1、k8s-master2、k8s-master3，${VIRTUAL_IP}为keepalived的虚拟IP地址
-
-```
-$ vi /root/kubeadm-ha/kubeadm-init-v1.7.x.yaml 
-apiVersion: kubeadm.k8s.io/v1alpha1
-kind: MasterConfiguration
-kubernetesVersion: v1.7.0
-networking:
-  podSubnet: 10.244.0.0/16
-apiServerCertSANs:
-- k8s-master1
-- k8s-master2
-- k8s-master3
-- 192.168.60.71
-- 192.168.60.72
-- 192.168.60.73
-- 192.168.60.80
-etcd:
-  endpoints:
-  - http://192.168.60.71:2379
-  - http://192.168.60.72:2379
-  - http://192.168.60.73:2379
-```
-
-* 如果使用kubeadm初始化集群，启动过程可能会卡在以下位置，那么可能是因为cgroup-driver参数与docker的不一致引起
-* [apiclient] Created API client, waiting for the control plane to become ready
-* journalctl -t kubelet -S '2017-06-08'查看日志，发现如下错误
-* error: failed to run Kubelet: failed to create kubelet: misconfiguration: kubelet cgroup driver: "systemd"
-* 需要修改KUBELET_CGROUP_ARGS=--cgroup-driver=systemd为KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs
+- 所有节点设置kubeadm使用cgroupfs
 
 ```
 $ vi /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
@@ -504,27 +190,119 @@ Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
 $ systemctl daemon-reload && systemctl restart kubelet
 ```
 
-* 在k8s-master1上使用kubeadm初始化kubernetes集群，连接外部etcd集群
+- 在master节点设置/root/kube-yaml/create-config.sh文件，用于初始化配置文件
 
 ```
-$ kubeadm init --config=/root/kubeadm-ha/kubeadm-init-v1.7.x.yaml
+vi /root/kube-yaml/create-config.sh
+
+# local ip address
+export K8SHA_IPLOCAL=192.168.20.27
+
+# etcd name, options: etcd1, etcd2, etcd3
+export K8SHA_ETCDNAME=etcd1
+
+# keepalived state config, options: MASTER, BACKUP, only one MASTER
+export K8SHA_KA_STATE=MASTER
+
+# keepalived priority config, options: 102, 101, 100, MASTER must 102
+export K8SHA_KA_PRIO=102
+
+# keepalived interface config, for example: eth0
+export K8SHA_KA_INTF=nm-bond
+
+#######################################
+# all masters settings must use the same below 
+# master virtual ip address
+export K8SHA_IPVIRTUAL=192.168.20.10
+
+# master01 ip address
+export K8SHA_IP1=192.168.20.27
+
+# master02 ip address
+export K8SHA_IP2=192.168.20.28
+
+# master03 ip address
+export K8SHA_IP3=192.168.20.29
+
+# master01 hostname
+export K8SHA_HOSTNAME1=devops-master01
+
+# master02 hostname
+export K8SHA_HOSTNAME2=devops-master02
+
+# master03 hostname
+export K8SHA_HOSTNAME3=devops-master03
+
+# keepalived auth_pass config, all masters must be same
+export K8SHA_KA_AUTH=4cdf7dc3b4c90194d1600c483e10ad1d
+
+# kubernetes cluster token, use 'kubeadm token generate' to generate
+export K8SHA_TOKEN=7f276c.0741d82a5337f526
+
+# kubernetes CIDR pod subnet, if CIDR pod subnet is "10.244.0.0/16" please set to "10.244.0.0\\/16"
+export K8SHA_CIDR=10.244.0.0\\/16
+
+# calico settings, set a reachable ip address for the cluster network interface
+export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 ```
 
-* 在k8s-master1上修改kube-apiserver.yaml的admission-control，v1.7.0使用了NodeRestriction等安全检查控制，务必设置成v1.6.x推荐的admission-control配置
-
 ```
-$ vi /etc/kubernetes/manifests/kube-apiserver.yaml
-#    - --admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota
-    - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds
-```
+cd /root/kube-yaml/
 
-* 在k8s-master1上重启docker kubelet服务
-
-```
-$ systemctl restart docker kubelet
+./create-config.sh
+etcd config success: etcd/docker-compose.yaml
+keepalived config success: /etc/keepalived/keepalived.conf
+nginx load balance config success: nginx-lb/nginx-lb.conf
+kubeadm init config success: kubeadm-init.yaml
+calico config success: kube-calico/calico.yaml
 ```
 
-* 在k8s-master1上设置kubectl的环境变量KUBECONFIG，连接kubelet
+- 在devops-master01、devops-master02、devops-master03上启动etcd
+
+```
+kubeadm reset
+cd /root/kube-yaml/etcd
+rm -rf /var/lib/etcd-cluster
+docker-compose stop && docker-compose rm -f
+docker-compose up -d
+```
+
+- 在devops-master01、devops-master02、devops-master03上检查etcd集群状态
+
+```
+docker exec -ti etcd etcdctl cluster-health
+
+docker exec -ti etcd etcdctl member list
+```
+
+- 在devops-master01、devops-master02、devops-master03上重置网络
+
+```
+systemctl stop kubelet
+systemctl stop docker
+rm -rf /var/lib/cni/
+rm -rf /var/lib/kubelet/*
+rm -rf /etc/cni/
+
+ip a | grep -E 'docker|flannel|cni'
+ip link del docker0
+ip link del flannel.1
+ip link del cni0
+
+systemctl restart docker kubelet
+ip a | grep -E 'docker|flannel|cni'
+```
+
+- 在devops-master01进行初始化
+
+```
+cd /root/kube-yaml/
+kubeadm init --config=/root/kube-yaml/kubeadm-init.yaml
+...
+  kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.27:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
+```
+
+- 在devops-master01上设置kubectl客户端连接
 
 ```
 $ vi ~/.bashrc
@@ -533,616 +311,453 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 $ source ~/.bashrc
 ```
 
----
-[返回目录](#目录)
-
-#### flannel网络组件安装
-
-* 在k8s-master1上安装flannel pod网络组件，必须安装网络组件，否则kube-dns pod会一直处于ContainerCreating
+- 在devops-master01上启动flannel网络、dashboard以及heapster
 
 ```
-$ kubectl create -f /root/kubeadm-ha/kube-flannel
-clusterrole "flannel" created
-clusterrolebinding "flannel" created
-serviceaccount "flannel" created
-configmap "kube-flannel-cfg" created
-daemonset "kube-flannel-ds" created
-```
+kubectl apply -f /root/kube-yaml/kube-flannel/
 
-* 在k8s-master1上验证kube-dns成功启动，大概等待3分钟，验证所有pods的状态为Running
+# 等待所有pods正常
+kubectl get pods --all-namespaces -w
 
-```
-$ kubectl get pods --all-namespaces -o wide
-NAMESPACE     NAME                                 READY     STATUS    RESTARTS   AGE       IP              NODE
-kube-system   kube-apiserver-k8s-master1           1/1       Running   0          3m        192.168.60.71   k8s-master1
-kube-system   kube-controller-manager-k8s-master1  1/1       Running   0          3m        192.168.60.71   k8s-master1
-kube-system   kube-dns-3913472980-k9mt6            3/3       Running   0          4m        10.244.0.104    k8s-master1
-kube-system   kube-flannel-ds-3hhjd                2/2       Running   0          1m        192.168.60.71   k8s-master1
-kube-system   kube-proxy-rzq3t                     1/1       Running   0          4m        192.168.60.71   k8s-master1
-kube-system   kube-scheduler-k8s-master1           1/1       Running   0          3m        192.168.60.71   k8s-master1
-```
+# 等待master为Ready状态
+kubectl get nodes
 
----
-[返回目录](#目录)
+kubectl taint nodes --all node-role.kubernetes.io/master-
 
-#### dashboard组件安装
+kubectl apply -f /root/kube-yaml/kube-calico/
+configmap "calico-config" created
+secret "calico-etcd-secrets" created
+daemonset "calico-node" created
+deployment "calico-kube-controllers" created
+serviceaccount "calico-kube-controllers" created
+serviceaccount "calico-node" created
+clusterrole "calico-kube-controllers" created
+clusterrolebinding "calico-kube-controllers" created
+clusterrole "calico-node" created
+clusterrolebinding "calico-node" created
 
-* 在k8s-master1上安装dashboard组件
+kubectl get pods --all-namespaces -w
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-d987c6db5-vzfvr   1/1       Running   0          4m
+kube-system   calico-node-rwt78                         2/2       Running   0          1m
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          6m
+kube-system   kube-controller-manager-devops-master01   1/1       Running   0          6m
+kube-system   kube-dns-6f4fd4bdf-x9pvq                  3/3       Running   0          7m
+kube-system   kube-flannel-ds-g4qcj                     1/1       Running   0          3m
+kube-system   kube-proxy-tn9nq                          1/1       Running   0          7m
+kube-system   kube-scheduler-devops-master01            1/1       Running   0          6m
 
-```
-$ kubectl create -f /root/kubeadm-ha/kube-dashboard/
+kubectl apply -f /root/kube-yaml/kube-dashboard/
+serviceaccount "admin-user" created
+clusterrolebinding "admin-user" created
+secret "kubernetes-dashboard-certs" created
 serviceaccount "kubernetes-dashboard" created
-clusterrolebinding "kubernetes-dashboard" created
+role "kubernetes-dashboard-minimal" created
+rolebinding "kubernetes-dashboard-minimal" created
 deployment "kubernetes-dashboard" created
 service "kubernetes-dashboard" created
+
+kubectl get pods --all-namespaces
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-d987c6db5-tncpw   1/1       Running   0          2m
+kube-system   calico-node-tfxkx                         2/2       Running   0          2m
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          4m
+kube-system   kube-controller-manager-devops-master01   1/1       Running   0          4m
+kube-system   kube-dns-6f4fd4bdf-wtr46                  3/3       Running   0          5m
+kube-system   kube-flannel-ds-rx4tp                     1/1       Running   0          4m
+kube-system   kube-proxy-cgdsn                          1/1       Running   0          5m
+kube-system   kube-scheduler-devops-master01            1/1       Running   0          4m
+kube-system   kubernetes-dashboard-7b7b5cd79b-lktn5     1/1       Running   0          2m
 ```
 
-* 在k8s-master1上启动proxy，映射地址到0.0.0.0
+- 访问dashboard地址
+https://devops-master01:30000/#!/login
+
+- 获取token，把token粘贴到login页面的token中，即可进入dashboard
 
 ```
-$ kubectl proxy --address='0.0.0.0' &
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
 ```
 
-* 在本机MacOSX上访问dashboard地址，验证dashboard成功启动
+- 创建heapster
 
 ```
-http://k8s-master1:30000
+kubectl apply -f /root/kube-yaml/kube-heapster/influxdb/
+
+kubectl apply -f /root/kube-yaml/kube-heapster/rbac/
+
+kubectl get pods --all-namespaces 
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
+kube-system   calico-etcd-87fbn                         1/1       Running   1          8m
+kube-system   calico-kube-controllers-d669cc78f-4fvkh   1/1       Running   1          8m
+kube-system   calico-node-dd67w                         2/2       Running   2          8m
+kube-system   heapster-dfd674df9-brt5x                  1/1       Running   1          3m
+kube-system   kube-apiserver-devops-master01            1/1       Running   1          8m
+kube-system   kube-controller-manager-devops-master01   1/1       Running   1          8m
+kube-system   kube-dns-6f4fd4bdf-j47pk                  3/3       Running   3          9m
+kube-system   kube-proxy-8wl95                          1/1       Running   1          9m
+kube-system   kube-scheduler-devops-master01            1/1       Running   1          8m
+kube-system   kubernetes-dashboard-7b7b5cd79b-qnwrr     1/1       Running   1          6m
+kube-system   monitoring-grafana-76848b566c-zdmm7       1/1       Running   1          3m
+kube-system   monitoring-influxdb-6c4b84d695-5zrmf      1/1       Running   1          3m
+
+systemctl restart docker kubelet
+
+# 等待5分钟
+
+kubectl top pod --all-namespaces
+NAMESPACE     NAME                                      CPU(cores)   MEMORY(bytes)   
+kube-system   calico-kube-controllers-d987c6db5-zjxnv   0m           20Mi            
+kube-system   calico-node-hmdlg                         16m          83Mi            
+kube-system   heapster-dfd674df9-hct67                  1m           24Mi            
+kube-system   kube-apiserver-devops-master01            24m          240Mi           
+kube-system   kube-controller-manager-devops-master01   14m          50Mi            
+kube-system   kube-dns-6f4fd4bdf-zg66x                  1m           49Mi            
+kube-system   kube-flannel-ds-h7ng4                     6m           33Mi            
+kube-system   kube-proxy-mxcwz                          2m           29Mi            
+kube-system   kube-scheduler-devops-master01            5m           22Mi            
+kube-system   kubernetes-dashboard-7b7b5cd79b-6ldfn     0m           20Mi            
+kube-system   monitoring-grafana-76848b566c-h5998       0m           28Mi            
+kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi            
 ```
 
-![dashboard](images/dashboard.png)
+- 访问dashboard地址，等10分钟，就会显示性能数据
+https://devops-master01:30000/#!/login
 
----
-[返回目录](#目录)
-
-#### heapster组件安装
-
-* 在k8s-master1上允许在master上部署pod，否则heapster会无法部署
+- 在devops-master01上复制/etc/kubernetes/pki到devops-master02、devops-master03
 
 ```
-$ kubectl taint nodes --all node-role.kubernetes.io/master-
-node "k8s-master1" tainted
+scp -r /etc/kubernetes/pki devops-master02:/etc/kubernetes/
+
+scp -r /etc/kubernetes/pki devops-master03:/etc/kubernetes/
 ```
 
-* 在k8s-master1上安装heapster组件，监控性能
+- 在devops-master02进行初始化，等待所有pods正常启动后再进行下一个master初始化，特别要保证calico-node正常
 
 ```
-$ kubectl create -f /root/kubeadm-ha/kube-heapster
+cd /root/kube-yaml/
+kubeadm init --config=/root/kube-yaml/kubeadm-init.yaml
+...
+  kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.28:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
+
+kubectl get pods --all-namespaces -o wide | grep master02
 ```
 
-* 在k8s-master1上重启docker以及kubelet服务，让heapster在dashboard上生效显示
+- 在devops-master03进行初始化
 
 ```
-$ systemctl restart docker kubelet
+cd /root/kube-yaml/
+kubeadm init --config=/root/kube-yaml/kubeadm-init.yaml
+...
+  kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.29:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
+
+kubectl get pods --all-namespaces -o wide | grep master03
 ```
 
-* 在k8s-master上检查pods状态
+- 在devops-master01上检查nodes加入情况
 
 ```
-$ kubectl get all --all-namespaces -o wide
-NAMESPACE     NAME                                    READY     STATUS    RESTARTS   AGE       IP              NODE
-kube-system   heapster-783524908-kn6jd                1/1       Running   1          9m        10.244.0.111    k8s-master1
-kube-system   kube-apiserver-k8s-master1              1/1       Running   1          15m       192.168.60.71   k8s-master1
-kube-system   kube-controller-manager-k8s-master1     1/1       Running   1          15m       192.168.60.71   k8s-master1
-kube-system   kube-dns-3913472980-k9mt6               3/3       Running   3          16m       10.244.0.110    k8s-master1
-kube-system   kube-flannel-ds-3hhjd                   2/2       Running   3          13m       192.168.60.71   k8s-master1
-kube-system   kube-proxy-rzq3t                        1/1       Running   1          16m       192.168.60.71   k8s-master1
-kube-system   kube-scheduler-k8s-master1              1/1       Running   1          15m       192.168.60.71   k8s-master1
-kube-system   kubernetes-dashboard-2039414953-d46vw   1/1       Running   1          11m       10.244.0.109    k8s-master1
-kube-system   monitoring-grafana-3975459543-8l94z     1/1       Running   1          9m        10.244.0.112    k8s-master1
-kube-system   monitoring-influxdb-3480804314-72ltf    1/1       Running   1          9m        10.244.0.113    k8s-master1
+kubectl get nodes
+NAME              STATUS    ROLES     AGE       VERSION
+devops-master01   Ready     master    19m       v1.9.1
+devops-master02   Ready     master    4m        v1.9.1
+devops-master03   Ready     master    4m        v1.9.1
 ```
 
-* 在本机MacOSX上访问dashboard地址，验证heapster成功启动，查看Pods的CPU以及Memory信息是否正常呈现
+- 在所有master上增加apiserver的apiserver-count设置
 
 ```
-http://k8s-master1:30000
+vi /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --apiserver-count=3
+
+systemctl restart docker kubelet
 ```
 
-![heapster](images/heapster.png)
-
-* 至此，第一台master成功安装，并已经完成flannel、dashboard、heapster的部署
-
----
-[返回目录](#目录)
-
-### master集群高可用设置
-
-#### 复制配置
-
-* 在k8s-master1上把/etc/kubernetes/复制到k8s-master2、k8s-master3
+- 在devops-master01上检查高可用状态
 
 ```
-scp -r /etc/kubernetes/ k8s-master2:/etc/
-scp -r /etc/kubernetes/ k8s-master3:/etc/
+kubectl get pods --all-namespaces -o wide
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE       IP              NODE
+kube-system   calico-kube-controllers-d987c6db5-zjxnv   1/1       Running   2          14m       192.168.20.27   devops-master01
+kube-system   calico-node-dldxz                         2/2       Running   2          3m        192.168.20.29   devops-master03
+kube-system   calico-node-hmdlg                         2/2       Running   4          14m       192.168.20.27   devops-master01
+kube-system   calico-node-tkbbx                         2/2       Running   2          3m        192.168.20.28   devops-master02
+kube-system   heapster-dfd674df9-hct67                  1/1       Running   2          11m       10.244.172.11   devops-master01
+kube-system   kube-apiserver-devops-master01            1/1       Running   1          2m        192.168.20.27   devops-master01
+kube-system   kube-apiserver-devops-master02            1/1       Running   1          2m        192.168.20.28   devops-master02
+kube-system   kube-apiserver-devops-master03            1/1       Running   0          24s       192.168.20.29   devops-master03
+kube-system   kube-controller-manager-devops-master01   1/1       Running   2          15m       192.168.20.27   devops-master01
+kube-system   kube-controller-manager-devops-master02   1/1       Running   1          2m        192.168.20.28   devops-master02
+kube-system   kube-controller-manager-devops-master03   1/1       Running   1          2m        192.168.20.29   devops-master03
+kube-system   kube-dns-6f4fd4bdf-zg66x                  3/3       Running   6          16m       10.244.172.13   devops-master01
+kube-system   kube-flannel-ds-6njgf                     1/1       Running   1          3m        192.168.20.29   devops-master03
+kube-system   kube-flannel-ds-g24ww                     1/1       Running   1          3m        192.168.20.28   devops-master02
+kube-system   kube-flannel-ds-h7ng4                     1/1       Running   2          16m       192.168.20.27   devops-master01
+kube-system   kube-proxy-2kk8s                          1/1       Running   1          3m        192.168.20.28   devops-master02
+kube-system   kube-proxy-mxcwz                          1/1       Running   2          16m       192.168.20.27   devops-master01
+kube-system   kube-proxy-vz7nf                          1/1       Running   1          3m        192.168.20.29   devops-master03
+kube-system   kube-scheduler-devops-master01            1/1       Running   2          16m       192.168.20.27   devops-master01
+kube-system   kube-scheduler-devops-master02            1/1       Running   1          2m        192.168.20.28   devops-master02
+kube-system   kube-scheduler-devops-master03            1/1       Running   1          2m        192.168.20.29   devops-master03
+kube-system   kubernetes-dashboard-7b7b5cd79b-6ldfn     1/1       Running   3          12m       10.244.172.12   devops-master01
+kube-system   monitoring-grafana-76848b566c-h5998       1/1       Running   2          11m       10.244.172.14   devops-master01
+kube-system   monitoring-influxdb-6c4b84d695-whzmp      1/1       Running   2          11m       10.244.172.10   devops-master01
 ```
 
-* 在k8s-master2、k8s-master3上重启kubelet服务，并检查kubelet服务状态为active (running)
-
 ```
-$ systemctl daemon-reload && systemctl restart kubelet
-
-$ systemctl status kubelet
-● kubelet.service - kubelet: The Kubernetes Node Agent
-   Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; vendor preset: disabled)
-  Drop-In: /etc/systemd/system/kubelet.service.d
-           └─10-kubeadm.conf
-   Active: active (running) since Tue 2017-06-27 16:24:22 CST; 1 day 17h ago
-     Docs: http://kubernetes.io/docs/
- Main PID: 2780 (kubelet)
-   Memory: 92.9M
-   CGroup: /system.slice/kubelet.service
-           ├─2780 /usr/bin/kubelet --kubeconfig=/etc/kubernetes/kubelet.conf --require-...
-           └─2811 journalctl -k -f
+kubectl taint nodes --all node-role.kubernetes.io/master-
+node "devops-master02" untainted
+node "devops-master03" untainted
 ```
 
-* 在k8s-master2、k8s-master3上设置kubectl的环境变量KUBECONFIG，连接kubelet
-
+- 注意，kubernetes-dashboard在scale的过程中经常会出现Error或者CrashLoopBackOff，需要耐心等待
 ```
-$ vi ~/.bashrc
-export KUBECONFIG=/etc/kubernetes/admin.conf
+kubectl get deploy -n kube-system
 
-$ source ~/.bashrc
-```
+kubectl scale --replicas=3 -n kube-system deployment/calico-kube-controllers
+kubectl get pods --all-namespaces -o wide| grep calico-kube-controllers
 
-* 在k8s-master2、k8s-master3检测节点状态，发现节点已经加进来
+kubectl scale --replicas=3 -n kube-system deployment/kube-dns
+kubectl get pods --all-namespaces -o wide| grep kube-dns
 
-```
-$ kubectl get nodes -o wide
-NAME          STATUS    AGE       VERSION   EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION
-k8s-master1   Ready     26m       v1.7.0    <none>        CentOS Linux 7 (Core)   3.10.0-514.6.1.el7.x86_64
-k8s-master2   Ready     2m        v1.7.0    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
-k8s-master3   Ready     2m        v1.7.0    <none>        CentOS Linux 7 (Core)   3.10.0-514.21.1.el7.x86_64
-```
+kubectl scale --replicas=3 -n kube-system deployment/kubernetes-dashboard
+kubectl get pods --all-namespaces -o wide| grep kubernetes-dashboard
 
----
-[返回目录](#目录)
-
-#### 修改配置
-
-* 在k8s-master2、k8s-master3上修改kube-apiserver.yaml的配置，${HOST_IP}改为本机IP
-
-```
-$ vi /etc/kubernetes/manifests/kube-apiserver.yaml
-    - --advertise-address=${HOST_IP}
+# heapster启动多个就会出现问题，请不要启动多个
+# kubectl scale --replicas=1 -n kube-system deployment/heapster
+# kubectl get pods --all-namespaces -o wide| grep heapster
+# 
+# kubectl scale --replicas=1 -n kube-system deployment/monitoring-grafana
+# kubectl get pods --all-namespaces -o wide| grep monitoring-grafana
+# 
+# kubectl scale --replicas=1 -n kube-system deployment/monitoring-influxdb
+# kubectl get pods --all-namespaces -o wide| grep monitoring-influxdb
 ```
 
-* 在k8s-master2和k8s-master3上的修改kubelet.conf设置，${HOST_IP}改为本机IP
-
+- 检查所有pods的运行状态，所有节点都有运行以下pods，其中heapster相关的pod整个集群只能够启动一个，总共30个pods:
 ```
-$ vi /etc/kubernetes/kubelet.conf
-server: https://${HOST_IP}:6443
-```
+kube-apiserver
+kube-controller-manager
+kube-proxy
+kube-scheduler
+kube-dns
 
-* 在k8s-master2和k8s-master3上修改admin.conf，${HOST_IP}修改为本机IP地址
+kube-flannel-ds
 
-```
-$ vi /etc/kubernetes/admin.conf
-    server: https://${HOST_IP}:6443
-```
+calico-kube-controllers
+calico-node
 
-* 在k8s-master2和k8s-master3上修改controller-manager.conf，${HOST_IP}修改为本机IP地址
-
-```
-$ vi /etc/kubernetes/controller-manager.conf
-    server: https://${HOST_IP}:6443
+kubernetes-dashboard
 ```
 
-* 在k8s-master2和k8s-master3上修改scheduler.conf，${HOST_IP}修改为本机IP地址
-
 ```
-$ vi /etc/kubernetes/scheduler.conf
-    server: https://${HOST_IP}:6443
-```
-
-* 在k8s-master1、k8s-master2、k8s-master3上重启所有服务
-
-```
-$ systemctl daemon-reload && systemctl restart docker kubelet
-```
-
----
-[返回目录](#目录)
-
-#### 验证高可用安装
-
-* 在k8s-master1、k8s-master2、k8s-master3任意节点上检测服务启动情况，发现apiserver、controller-manager、kube-scheduler、proxy、flannel已经在k8s-master1、k8s-master2、k8s-master3成功启动
-
-```
-$ kubectl get pod --all-namespaces -o wide | grep k8s-master2
-kube-system   kube-apiserver-k8s-master2              1/1       Running   1          55s       192.168.60.72   k8s-master2
-kube-system   kube-controller-manager-k8s-master2     1/1       Running   2          18m       192.168.60.72   k8s-master2
-kube-system   kube-flannel-ds-t8gkh                   2/2       Running   4          18m       192.168.60.72   k8s-master2
-kube-system   kube-proxy-bpgqw                        1/1       Running   1          18m       192.168.60.72   k8s-master2
-kube-system   kube-scheduler-k8s-master2              1/1       Running   2          18m       192.168.60.72   k8s-master2
-
-$ kubectl get pod --all-namespaces -o wide | grep k8s-master3
-kube-system   kube-apiserver-k8s-master3              1/1       Running   1          1m        192.168.60.73   k8s-master3
-kube-system   kube-controller-manager-k8s-master3     1/1       Running   2          18m       192.168.60.73   k8s-master3
-kube-system   kube-flannel-ds-tmqmx                   2/2       Running   4          18m       192.168.60.73   k8s-master3
-kube-system   kube-proxy-4stg3                        1/1       Running   1          18m       192.168.60.73   k8s-master3
-kube-system   kube-scheduler-k8s-master3              1/1       Running   2          18m       192.168.60.73   k8s-master3
-```
-
-* 在k8s-master1、k8s-master2、k8s-master3任意节点上通过kubectl logs检查各个controller-manager和scheduler的leader election结果，可以发现只有一个节点有效表示选举正常
-
-```
-$ kubectl logs -n kube-system kube-controller-manager-k8s-master1
-$ kubectl logs -n kube-system kube-controller-manager-k8s-master2
-$ kubectl logs -n kube-system kube-controller-manager-k8s-master3
-
-$ kubectl logs -n kube-system kube-scheduler-k8s-master1
-$ kubectl logs -n kube-system kube-scheduler-k8s-master2
-$ kubectl logs -n kube-system kube-scheduler-k8s-master3
+kubectl get pods --all-namespaces -o wide
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE       IP               NODE
+kube-system   calico-kube-controllers-d987c6db5-5mdp9   1/1       Running   0          1m        192.168.20.28    devops-master02
+kube-system   calico-kube-controllers-d987c6db5-pbgg5   1/1       Running   0          1m        192.168.20.29    devops-master03
+kube-system   calico-kube-controllers-d987c6db5-v9k5x   1/1       Running   2          14m       192.168.20.27    devops-master01
+kube-system   calico-node-59kcc                         2/2       Running   2          6m        192.168.20.29    devops-master03
+kube-system   calico-node-6gc8k                         2/2       Running   2          9m        192.168.20.28    devops-master02
+kube-system   calico-node-7qc5h                         2/2       Running   4          14m       192.168.20.27    devops-master01
+kube-system   heapster-dfd674df9-2qhlf                  1/1       Running   2          12m       10.244.172.10    devops-master01
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          1m        192.168.20.27    devops-master01
+kube-system   kube-apiserver-devops-master02            1/1       Running   1          3m        192.168.20.28    devops-master02
+kube-system   kube-apiserver-devops-master03            1/1       Running   0          1m        192.168.20.29    devops-master03
+kube-system   kube-controller-manager-devops-master01   1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-controller-manager-devops-master02   1/1       Running   1          8m        192.168.20.28    devops-master02
+kube-system   kube-controller-manager-devops-master03   1/1       Running   1          4m        192.168.20.29    devops-master03
+kube-system   kube-dns-6f4fd4bdf-7vb8x                  3/3       Running   6          15m       10.244.172.11    devops-master01
+kube-system   kube-dns-6f4fd4bdf-nqg8s                  3/3       Running   0          1m        10.244.250.129   devops-master02
+kube-system   kube-dns-6f4fd4bdf-vftk9                  3/3       Running   0          1m        10.244.211.129   devops-master03
+kube-system   kube-flannel-ds-jhdhw                     1/1       Running   1          9m        192.168.20.28    devops-master02
+kube-system   kube-flannel-ds-mkcn4                     1/1       Running   1          6m        192.168.20.29    devops-master03
+kube-system   kube-flannel-ds-qs9ht                     1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-proxy-44npj                          1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-proxy-6lgws                          1/1       Running   1          6m        192.168.20.29    devops-master03
+kube-system   kube-proxy-gn6hk                          1/1       Running   1          9m        192.168.20.28    devops-master02
+kube-system   kube-scheduler-devops-master01            1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-scheduler-devops-master02            1/1       Running   1          8m        192.168.20.28    devops-master02
+kube-system   kube-scheduler-devops-master03            1/1       Running   1          5m        192.168.20.29    devops-master03
+kube-system   kubernetes-dashboard-7b7b5cd79b-8gw4f     1/1       Running   4          14m       10.244.172.13    devops-master01
+kube-system   kubernetes-dashboard-7b7b5cd79b-fhtvl     1/1       Running   0          55s       10.244.211.130   devops-master03
+kube-system   kubernetes-dashboard-7b7b5cd79b-vwkxs     1/1       Running   0          55s       10.244.250.130   devops-master02
+kube-system   monitoring-grafana-76848b566c-hzwwk       1/1       Running   2          12m       10.244.172.14    devops-master01
+kube-system   monitoring-influxdb-6c4b84d695-hmktb      1/1       Running   2          12m       10.244.172.12    devops-master01
 ```
 
-* 在k8s-master1、k8s-master2、k8s-master3任意节点上查看deployment的情况
-
 ```
-$ kubectl get deploy --all-namespaces
-NAMESPACE     NAME                   DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-kube-system   heapster               1         1         1            1           41m
-kube-system   kube-dns               1         1         1            1           48m
-kube-system   kubernetes-dashboard   1         1         1            1           43m
-kube-system   monitoring-grafana     1         1         1            1           41m
-kube-system   monitoring-influxdb    1         1         1            1           41m
-```
+kubectl get nodes
+NAME              STATUS    ROLES     AGE       VERSION
+devops-master01   Ready     master    38m       v1.9.1
+devops-master02   Ready     master    25m       v1.9.1
+devops-master03   Ready     master    25m       v1.9.1
 
-* 在k8s-master1、k8s-master2、k8s-master3任意节点上把kubernetes-dashboard、kube-dns、 scale up成replicas=3，保证各个master节点上都有运行
-
-```
-$ kubectl scale --replicas=3 -n kube-system deployment/kube-dns
-$ kubectl get pods --all-namespaces -o wide| grep kube-dns
-
-$ kubectl scale --replicas=3 -n kube-system deployment/kubernetes-dashboard
-$ kubectl get pods --all-namespaces -o wide| grep kubernetes-dashboard
-
-$ kubectl scale --replicas=3 -n kube-system deployment/heapster
-$ kubectl get pods --all-namespaces -o wide| grep heapster
-
-$ kubectl scale --replicas=3 -n kube-system deployment/monitoring-grafana
-$ kubectl get pods --all-namespaces -o wide| grep monitoring-grafana
-
-$ kubectl scale --replicas=3 -n kube-system deployment/monitoring-influxdb
-$ kubectl get pods --all-namespaces -o wide| grep monitoring-influxdb
+kubeadm token list
+TOKEN                     TTL         EXPIRES   USAGES                   DESCRIPTION                                                EXTRA GROUPS
+7f276c.0741d82a5337f526   <forever>   <never>   authentication,signing   The default bootstrap token generated by 'kubeadm init'.   system:bootstrappers:kubeadm:default-node-token
 ```
 
----
-[返回目录](#目录)
-
-#### keepalived安装配置
-
-* 在k8s-master、k8s-master2、k8s-master3上安装keepalived
+- 在master上安装keepalived
 
 ```
-$ yum install -y keepalived
+cp /root/kube-yaml/keepalived/check_apiserver.sh /etc/keepalived/
 
-$ systemctl enable keepalived && systemctl restart keepalived
+ll /etc/keepalived/
+
+systemctl restart keepalived
+
+ping 192.168.20.10
 ```
 
-* 在k8s-master1、k8s-master2、k8s-master3上备份keepalived配置文件
+- 在master上安装并启动nginx作为负载均衡
 
 ```
-$ mv /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.bak
+cd /root/kube-yaml/nginx-lb
+
+docker-compose up -d
 ```
 
-* 在k8s-master1、k8s-master2、k8s-master3上设置apiserver监控脚本，当apiserver检测失败的时候关闭keepalived服务，转移虚拟IP地址
+- 在master上验证负载均衡和keepalived是否成功
 
 ```
-$ vi /etc/keepalived/check_apiserver.sh
-#!/bin/bash
-err=0
-for k in $( seq 1 10 )
-do
-    check_code=$(ps -ef|grep kube-apiserver | wc -l)
-    if [ "$check_code" = "1" ]; then
-        err=$(expr $err + 1)
-        sleep 5
-        continue
-    else
-        err=0
-        break
-    fi
-done
-if [ "$err" != "0" ]; then
-    echo "systemctl stop keepalived"
-    /usr/bin/systemctl stop keepalived
-    exit 1
-else
-    exit 0
-fi
-
-chmod a+x /etc/keepalived/check_apiserver.sh
-```
-
-* 在k8s-master1、k8s-master2、k8s-master3上查看接口名字
-
-```
-$ ip a | grep 192.168.60
-```
-
-* 在k8s-master1、k8s-master2、k8s-master3上设置keepalived，参数说明如下：
-* state ${STATE}：为MASTER或者BACKUP，只能有一个MASTER
-* interface ${INTERFACE_NAME}：为本机的需要绑定的接口名字（通过上边的```ip a```命令查看）
-* mcast_src_ip ${HOST_IP}：为本机的IP地址
-* priority ${PRIORITY}：为优先级，例如102、101、100，优先级越高越容易选择为MASTER，优先级不能一样
-* ${VIRTUAL_IP}：为虚拟的IP地址，这里设置为192.168.60.80
-
-```
-$ vi /etc/keepalived/keepalived.conf
-! Configuration File for keepalived
-global_defs {
-    router_id LVS_DEVEL
-}
-vrrp_script chk_apiserver {
-    script "/etc/keepalived/check_apiserver.sh"
-    interval 2
-    weight -5
-    fall 3  
-    rise 2
-}
-vrrp_instance VI_1 {
-    state ${STATE}
-    interface ${INTERFACE_NAME}
-    mcast_src_ip ${HOST_IP}
-    virtual_router_id 51
-    priority ${PRIORITY}
-    advert_int 2
-    authentication {
-        auth_type PASS
-        auth_pass 4be37dc3b4c90194d1600c483e10ad1d
-    }
-    virtual_ipaddress {
-        ${VIRTUAL_IP}
-    }
-    track_script {
-       chk_apiserver
-    }
-}
-```
-
-* 在k8s-master1、k8s-master2、k8s-master3上重启keepalived服务，检测虚拟IP地址是否生效
-
-```
-$ systemctl restart keepalived
-$ ping 192.168.60.80
-```
-
----
-[返回目录](#目录)
-
-#### nginx负载均衡配置
-
-* 在k8s-master1、k8s-master2、k8s-master3上修改nginx-default.conf设置，${HOST_IP}对应k8s-master1、k8s-master2、k8s-master3的地址。通过nginx把访问apiserver的6443端口负载均衡到8433端口上
-
-```
-$ vi /root/kubeadm-ha/nginx-default.conf
-stream {
-    upstream apiserver {
-        server ${HOST_IP}:6443 weight=5 max_fails=3 fail_timeout=30s;
-        server ${HOST_IP}:6443 weight=5 max_fails=3 fail_timeout=30s;
-        server ${HOST_IP}:6443 weight=5 max_fails=3 fail_timeout=30s;
-    }
-
-    server {
-        listen 8443;
-        proxy_connect_timeout 1s;
-        proxy_timeout 3s;
-        proxy_pass apiserver;
-    }
-}
-```
-
-* 在k8s-master1、k8s-master2、k8s-master3上启动nginx容器
-
-```
-$ docker run -d -p 8443:8443 \
---name nginx-lb \
---restart always \
--v /root/kubeadm-ha/nginx-default.conf:/etc/nginx/nginx.conf \
-nginx
-```
-
-* 在k8s-master1、k8s-master2、k8s-master3上检测keepalived服务的虚拟IP地址指向
-
-```
-$ curl -L 192.168.60.80:8443 | wc -l
+curl -k 192.168.20.10:16443 | wc -l
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
-100    14    0    14    0     0  18324      0 --:--:-- --:--:-- --:--:-- 14000
+100    14    0    14    0     0   3958      0 --:--:-- --:--:-- --:--:-- 14000
 1
 ```
 
-* 业务恢复后务必重启keepalived，否则keepalived会处于关闭状态
+- 在devops-master01上设置proxy高可用
 
 ```
-$ systemctl restart keepalived
+kubectl edit -n kube-system configmap/kube-proxy
+        server: https://192.168.20.10:16443
 ```
 
-* 在k8s-master1、k8s-master2、k8s-master3上查看keeplived日志，有以下输出表示当前虚拟IP地址绑定的主机
-
-```
-$ systemctl status keepalived -l
-VRRP_Instance(VI_1) Sending gratuitous ARPs on ens160 for 192.168.60.80
-```
-
----
-[返回目录](#目录)
-
-#### kube-proxy配置
-
-* 在k8s-master1上设置kube-proxy使用keepalived的虚拟IP地址，避免k8s-master1异常的时候所有节点的kube-proxy连接不上
-
-```
-$ kubectl get -n kube-system configmap
-NAME                                 DATA      AGE
-extension-apiserver-authentication   6         4h
-kube-flannel-cfg                     2         4h
-kube-proxy                           1         4h
-```
-
-* 在k8s-master1上修改configmap/kube-proxy的server指向keepalived的虚拟IP地址
-
-```
-$ kubectl edit -n kube-system configmap/kube-proxy
-        server: https://192.168.60.80:8443
-```
-
-* 在k8s-master1上查看configmap/kube-proxy设置情况
-
-```
-$ kubectl get -n kube-system configmap/kube-proxy -o yaml
-```
-
-* 在k8s-master1上删除所有kube-proxy的pod，让proxy重建
+- 在master上重启proxy
 
 ```
 kubectl get pods --all-namespaces -o wide | grep proxy
+
+kubectl delete pod -n kube-system kube-proxy-XXX
 ```
 
-* 在k8s-master1、k8s-master2、k8s-master3上重启docker kubelet keepalived服务
+- 在workers上重置kubernetes以及网络端口
 
 ```
-$ systemctl restart docker kubelet keepalived
+# 解决 Error adding network: "cni0" already has an IP address different from 10.2.44.1/24
+
+kubeadm reset
+systemctl stop kubelet
+systemctl stop docker
+rm -rf /var/lib/cni/
+rm -rf /var/lib/kubelet/*
+rm -rf /etc/cni/
+
+ip a | grep -E 'docker|flannel|cni'
+ip link del docker0
+ip link del flannel.1
+ip link del cni0
+
+systemctl restart docker kubelet
+
+# 等待
+ip a | grep -E 'docker|flannel|cni'
 ```
 
----
-[返回目录](#目录)
-
-#### 验证master集群高可用
-
-* 在k8s-master1上检查各个节点pod的启动状态，每个上都成功启动heapster、kube-apiserver、kube-controller-manager、kube-dns、kube-flannel、kube-proxy、kube-scheduler、kubernetes-dashboard、monitoring-grafana、monitoring-influxdb。并且所有pod都处于Running状态表示正常
+- 在workers上加入kubernetes集群
 
 ```
-$ kubectl get pods --all-namespaces -o wide | grep k8s-master1
-
-$ kubectl get pods --all-namespaces -o wide | grep k8s-master2
-
-$ kubectl get pods --all-namespaces -o wide | grep k8s-master3
+kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.10:16443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
----
-[返回目录](#目录)
-
-### node节点加入高可用集群设置
-
-#### kubeadm加入高可用集群
-* 在k8s-master1上禁止在所有master节点上发布应用
-
 ```
-$ kubectl patch node k8s-master1 -p '{"spec":{"unschedulable":true}}'
-
-$ kubectl patch node k8s-master2 -p '{"spec":{"unschedulable":true}}'
-
-$ kubectl patch node k8s-master3 -p '{"spec":{"unschedulable":true}}'
+kubectl get nodes
+NAME              STATUS    ROLES     AGE       VERSION
+devops-master01   Ready     master    46m       v1.9.1
+devops-master02   Ready     master    44m       v1.9.1
+devops-master03   Ready     master    44m       v1.9.1
+devops-node01     Ready     <none>    50s       v1.9.1
+devops-node02     Ready     <none>    26s       v1.9.1
+devops-node03     Ready     <none>    22s       v1.9.1
+devops-node04     Ready     <none>    17s       v1.9.1
 ```
 
-* 在k8s-master1上查看集群的token
+- 设置workers的节点标签
 
 ```
-$ kubeadm token list
-TOKEN           TTL         EXPIRES   USAGES                   DESCRIPTION
-xxxxxx.yyyyyy   <forever>   <never>   authentication,signing   The default bootstrap token generated by 'kubeadm init'
+kubectl label nodes devops-node01 role=worker
+kubectl label nodes devops-node02 role=worker
+kubectl label nodes devops-node03 role=worker
+kubectl label nodes devops-node04 role=worker
 ```
 
-* 在k8s-node1 ~ k8s-node8上，${TOKEN}为k8s-master1上显示的token，${VIRTUAL_IP}为keepalived的虚拟IP地址192.168.60.80
+- 使用calicoctl查看node的情况
 
 ```
-$ kubeadm join --token ${TOKEN} ${VIRTUAL_IP}:8443
+kubectl apply -f /root/kube-yaml/kube-calico/calicoctl/
+
+kubectl get pods --all-namespaces -o wide | grep ctl
+kube-system   calicoctl                                 1/1       Running            0          33s       192.168.20.27    devops-master01
+
+kubectl exec -ti -n kube-system calicoctl -- calicoctl get nodes -o wide
+NAME              ASN         IPV4               IPV6   
+devops-master01   (unknown)   192.168.20.27/24          
+devops-master02   (unknown)   192.168.20.28/24          
+devops-master03   (unknown)   192.168.20.29/24          
+devops-node01     (unknown)   192.168.20.17/24          
+devops-node02     (unknown)   192.168.20.18/24          
+devops-node03     (unknown)   192.168.20.19/24          
+devops-node04     (unknown)   192.168.20.20/24          
 ```
 
----
-[返回目录](#目录)
-
-#### 部署应用验证集群
-
-* 在k8s-node1 ~ k8s-node8上查看kubelet状态，kubelet状态为active (running)表示kubelet服务正常启动
+- 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令
 
 ```
-$ systemctl status kubelet
-● kubelet.service - kubelet: The Kubernetes Node Agent
-   Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; vendor preset: disabled)
-  Drop-In: /etc/systemd/system/kubelet.service.d
-           └─10-kubeadm.conf
-   Active: active (running) since Tue 2017-06-27 16:23:43 CST; 1 day 18h ago
-     Docs: http://kubernetes.io/docs/
- Main PID: 1146 (kubelet)
-   Memory: 204.9M
-   CGroup: /system.slice/kubelet.service
-           ├─ 1146 /usr/bin/kubelet --kubeconfig=/etc/kubernetes/kubelet.conf --require...
-           ├─ 2553 journalctl -k -f
-           ├─ 4988 /usr/sbin/glusterfs --log-level=ERROR --log-file=/var/lib/kubelet/pl...
-           └─14720 /usr/sbin/glusterfs --log-level=ERROR --log-file=/var/lib/kubelet/pl...
+iptables -S
+iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
+iptables -L -n --line-numbers | grep -E "DROP|REJECT"
 ```
 
-* 在k8s-master1上检查各个节点状态，发现所有k8s-nodes节点成功加入
+- 所有节点设置harbor的registry
 
 ```
-$ kubectl get nodes -o wide
-NAME          STATUS                     AGE       VERSION
-k8s-master1   Ready,SchedulingDisabled   5h        v1.7.0
-k8s-master2   Ready,SchedulingDisabled   4h        v1.7.0
-k8s-master3   Ready,SchedulingDisabled   4h        v1.7.0
-k8s-node1     Ready                      6m        v1.7.0
-k8s-node2     Ready                      4m        v1.7.0
-k8s-node3     Ready                      4m        v1.7.0
-k8s-node4     Ready                      3m        v1.7.0
-k8s-node5     Ready                      3m        v1.7.0
-k8s-node6     Ready                      3m        v1.7.0
-k8s-node7     Ready                      3m        v1.7.0
-k8s-node8     Ready                      3m        v1.7.0
+mkdir -p /etc/docker/certs.d/devops-reg.io
+
+echo '-----BEGIN CERTIFICATE-----
+MIIFvzCCA6egAwIBAgIJAN9MRxf7YGQeMA0GCSqGSIb3DQEBCwUAMIGJMQswCQYD
+VQQGEwJDTjESMBAGA1UECAwJZ3Vhbmdkb25nMRIwEAYDVQQHDAlndWFuZ3pob3Ux
+DTALBgNVBAoMBGdtY2MxDDAKBgNVBAsMA3N3ZzEWMBQGA1UEAwwNZGV2b3BzLXJl
+Zy5pbzEdMBsGCSqGSIb3DQEJARYOY29va2VlbUBxcS5jb20wHhcNMTgwMTE3MDIy
+NDUxWhcNMTkwMTE3MDIyNDUxWjCBiTELMAkGA1UEBhMCQ04xEjAQBgNVBAgMCWd1
+YW5nZG9uZzESMBAGA1UEBwwJZ3Vhbmd6aG91MQ0wCwYDVQQKDARnbWNjMQwwCgYD
+VQQLDANzd2cxFjAUBgNVBAMMDWRldm9wcy1yZWcuaW8xHTAbBgkqhkiG9w0BCQEW
+DmNvb2tlZW1AcXEuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA
+wCYBO6sdvHLqa2aFmb308QBRlekVrADhBkRB/TlPYoO8CTGnNDBzJPrOo7a+VyiZ
+0BGVzaCbm5uoUc55vfvAm36/EsisiHMGBW+Z/OcMxWXs+WNv6ziRloh8pzNHUkC6
+kyhqoqqOA8INv18UBcmmA9d3lyyMcz0ybPj8s+PpTFlwDK/7KBgtf0/lD2JRQW2B
+b9EKsC/wHGYM3GDhX/fvSogbOMq/D1kZExRHsOH4VJuYmY9rGh0eGHAGymGUL5hA
+SftKK9N0guLqtAHxC3yzTTkzQ4YL6ps1mQRg2D2FlkSjpCYiT1ey31P1wIDlGRYY
+AgDfKxqjGTy0GuWCt9mi2sC0hs0pyI1NRLIyf0OOuaBMkgwg+arxQ/yu2ipqzmVD
+CjTsYnfZoGl5tY+syJjMc+kFEk/OJMbqajEEVnetkDnaHyL9uj4sAiy+ZUhFpjex
+ivtO7V9MqrR6XAJln9YZkR1TFyWKG9wzw6FCXqzHO7Tn53nWvPWe/+JFfN/2KajC
+sJ5GBzWdVDow19MAu2adlkDAfXdkkKDNTuj8/Sf3+imhcFLJlmmuK1mP1OwTxFwZ
+86OFfT6/hAQJPwTSz1XMuqKudo7ekJNzOXFVVE7ppHdr8BKT9Shl97VIvh8DidTy
+CiA53RTR1XjLYUXIjkuJ4xopP0Y+HlHkKpeZIAo4PlkCAwEAAaMoMCYwJAYDVR0R
+BB0wG4INZGV2b3BzLXJlZy5pb4cEwKgUH4cEvABgTzANBgkqhkiG9w0BAQsFAAOC
+AgEAXbNxTcqHBgS32j3NeInftDhT/H+PU69MyDv+Wjyrya/oy5w9EdmlDixOx3un
+94vj1uqUp/YWmlrq5cMDsdWcW+Q+mWza5/x0egUOHpe1iWAvczC2+8Wf1eXwYIJZ
+bAdm271XyWWglTGonFvdw9pE6r0i9jn2evRbxqEYd1YLdmJCmUAE9DoUnLxGHEah
+QWwd/WscFyP9QrojmXRTwCr/h12zLoArQldEbCTHpWvKOes+cCII0VX9tX0c2ucL
+TJWuGXXIwGY2r8UEv7ISf7OXMh8XAeix7nml4yulBFxBjq+NtpUk0wyCSCC1cyHE
+csjvzXiVCK9FYcNyI3gm7pzAu5va35G60yb0wETirXrc7No/HsIH490frDHpsFa5
+3sc9ia6LuM5gxieCkwiwG8rb//wE7y7FU+tGTdyogIFqZOA3JxpuKcrXsgBg4D1f
+DkVfARasycxFa2SnR+YOV7IBI4jMICi7AN+z3TF8YiDQSVYGl05TzIKLj+tjHxrD
+A+fMhYL5q1JfiupMSxWhs+/pdcPwYOAgZnyqrGtLYKG7QwM8+FznCRCrypwHerTE
+T1N5oF6HrxAINjTAm4bcRQwLcvvuekcBIHUSPvQqF0Omfn4Y6W9N8RgLh61V3hq5
+et2CIhi2ykpxNqOEWmH1isv7SvCZymslzhqjdpuWOFF/7xE=
+-----END CERTIFICATE-----' > /etc/docker/certs.d/devops-reg.io/devops-reg.io.crt
+
+docker login devops-reg.io
 ```
-
-* 在k8s-master1上测试部署nginx服务，nginx服务成功部署到k8s-node5上
-
-```
-$ kubectl run nginx --image=nginx --port=80
-deployment "nginx" created
-
-$ kubectl get pod -o wide -l=run=nginx
-NAME                     READY     STATUS    RESTARTS   AGE       IP           NODE
-nginx-2662403697-pbmwt   1/1       Running   0          5m        10.244.7.6   k8s-node5
-```
-
-* 在k8s-master1让nginx服务外部可见
-
-```
-$ kubectl expose deployment nginx --port=80 --target-port=80 --type=NodePort
-service "nginx" exposed
-
-$ kubectl get svc -l=run=nginx
-NAME      CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
-nginx     10.105.151.69   <nodes>       80:31639/TCP   43s
-
-$ curl k8s-master2:31639
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>Welcome to nginx!</h1>
-<p>If you see this page, the nginx web server is successfully installed and
-working. Further configuration is required.</p>
-
-<p>For online documentation and support please refer to
-<a href="http://nginx.org/">nginx.org</a>.<br/>
-Commercial support is available at
-<a href="http://nginx.com/">nginx.com</a>.</p>
-
-<p><em>Thank you for using nginx.</em></p>
-</body>
-</html>
-
-```
-
-* 至此，kubernetes高可用集群成功部署 😀
----
-[返回目录](#目录)
 
