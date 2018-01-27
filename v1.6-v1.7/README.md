@@ -1,4 +1,4 @@
-# kubeadm-highavailiability - kubernetes high availiability deployment based on kubeadm, for Kubernetes version 1.7.x/1.6.x
+# kubeadm-highavailiability - kubernetes high availiability deployment based on kubeadm, for Kubernetes version 1.9.x/1.7.x/1.6.x
 
 ![k8s logo](../images/v1.6-v1.7/Kubernetes.png)
 
