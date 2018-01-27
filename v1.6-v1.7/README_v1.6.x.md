@@ -1,6 +1,6 @@
 # kubeadm-highavailiability - kubernetes high availiability deployment based on kubeadm, for Kubernetes version 1.7.x/1.6.x
 
-![k8s logo](../images/Kubernetes.png)
+![k8s logo](../images/v1.6-v1.7/Kubernetes.png)
 
 - [中文文档(for v1.7.x版本)](README_CN.md)
 - [English document(for v1.7.x version)](README.md)
@@ -53,14 +53,14 @@
 
 #### deployment architecture summary
 
-![ha logo](../images/ha.png)
+![ha logo](../images/v1.6-v1.7/ha.png)
 
 ---
 [category](#category)
 
 #### detail deployment architecture
 
-![k8s ha](../images/k8s-ha.png)
+![k8s ha](../images/v1.6-v1.7/k8s-ha.png)
 
 * kubernetes components:
 
@@ -562,7 +562,7 @@ $ kubectl proxy --address='0.0.0.0' &
 http://k8s-master1:30000
 ```
 
-![dashboard](../images/dashboard.png)
+![dashboard](../images/v1.6-v1.7/dashboard.png)
 
 ---
 [category](#category)
@@ -611,7 +611,7 @@ kube-system   monitoring-influxdb-3480804314-72ltf    1/1       Running   1     
 http://k8s-master1:30000
 ```
 
-![heapster](../images/heapster.png)
+![heapster](../images/v1.6-v1.7/heapster.png)
 
 * now we finish the first kubernetes master installation, and flannel dashboard heapster work on master correctly
 
