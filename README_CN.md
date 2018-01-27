@@ -26,6 +26,7 @@
     1. [概要部署架构](#概要部署架构)
     1. [详细部署架构](#详细部署架构)
     1. [主机节点清单](#主机节点清单)
+    1. [部署步骤概要](#部署步骤概要)
 1. [安装前准备](#安装前准备)
     1. [版本信息](#版本信息)
     1. [所需docker镜像](#所需docker镜像)
@@ -90,21 +91,11 @@
 ---
 [返回目录](#目录)
 
-# kubernetes 高可用 master 安装
 
-- k8s master firewall需要开放相关端口（master）
-
-协议 | 方向 | 端口 | 说明
-:--- | :--- | :--- | :---
-TCP | Inbound | 6443*     | Kubernetes API server
-TCP | Inbound | 2379-2380 | etcd server client API
-TCP | Inbound | 10250     | Kubelet API
-TCP | Inbound | 10251     | kube-scheduler
-TCP | Inbound | 10252     | kube-controller-manager
-TCP | Inbound | 10255     | Read-only Kubelet API
 
 ```
-systemctl status firewalld
+systemctl disable firewalld
+systemctl stop firewalld
 
 firewall-cmd --zone=public --add-port=4001/tcp --permanent
 firewall-cmd --zone=public --add-port=6443/tcp --permanent
