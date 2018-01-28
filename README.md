@@ -1,77 +1,104 @@
-# kubernetes 高可用 master 安装
+# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.9.x和v1.7.x版本以及v1.6.x版本
 
-- k8s master firewall需要开放相关端口（master）
+![k8s logo](images/v1.6-v1.7/Kubernetes.png)
 
-协议 | 方向 | 端口 | 说明
-:--- | :--- | :--- | :---
-TCP | Inbound | 6443*     | Kubernetes API server
-TCP | Inbound | 2379-2380 | etcd server client API
-TCP | Inbound | 10250     | Kubelet API
-TCP | Inbound | 10251     | kube-scheduler
-TCP | Inbound | 10252     | kube-controller-manager
-TCP | Inbound | 10255     | Read-only Kubelet API
+- [中文文档(for v1.9.x版本)](README_CN.md)
+- [English document(for v1.9.x version)](README.md)
+- [中文文档(for v1.7.x版本)](v1.6-v1.7/README_CN.md)
+- [English document(for v1.7.x version)](v1.6-v1.7/README.md)
+- [中文文档(for v1.6.x版本)](v1.6-v1.7/README_v1.6.x_CN.md)
+- [English document(for v1.6.x version)](v1.6-v1.7/README_v1.6.x.md)
+
+---
+
+- [GitHub项目地址](https://github.com/cookeem/kubeadm-ha/)
+- [OSChina项目地址](https://git.oschina.net/cookeem/kubeadm-ha/)
+
+---
+
+- 该指引适用于v1.9.x版本的kubernetes集群
+
+> v1.9.0以前的版本kubeadm还不支持高可用部署，因此不推荐作为生产环境的部署方式。从v1.9.x版本开始，kubeadm官方正式支持高可用集群的部署，安装kubeadm务必保证版本最低版本为1.9.0。
+
+### 目录
+
+1. [部署架构](#部署架构)
+    1. [概要部署架构](#概要部署架构)
+    1. [详细部署架构](#详细部署架构)
+    1. [主机节点清单](#主机节点清单)
+    1. [部署步骤概要](#部署步骤概要)
+1. [安装前准备](#安装前准备)
+    1. [版本信息](#版本信息)
+    1. [所需docker镜像](#所需docker镜像)
+    1. [系统设置](#系统设置)
+1. [kubernetes安装](#kubernetes安装)
+    1. [kubernetes相关服务安装](#kubernetes相关服务安装)
+    1. [docker镜像导入](#docker镜像导入)
+1. [第一台master初始化](#第一台master初始化)
+    1. [独立etcd集群部署](#独立etcd集群部署)
+    1. [kubeadm初始化](#kubeadm初始化)
+    1. [flannel网络组件安装](#flannel网络组件安装)
+    1. [dashboard组件安装](#dashboard组件安装)
+    1. [heapster组件安装](#heapster组件安装)
+1. [master集群高可用设置](#master集群高可用设置)
+    1. [复制配置](#复制配置)
+    1. [修改配置](#修改配置)
+    1. [验证高可用安装](#验证高可用安装)
+    1. [keepalived安装配置](#keepalived安装配置)
+    1. [nginx负载均衡配置](#nginx负载均衡配置)
+    1. [kube-proxy配置](#kube-proxy配置)
+    1. [验证master集群高可用](#验证master集群高可用)
+1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
+    1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
+    1. [部署应用验证集群](#部署应用验证集群)
+    
+
+### 部署架构
+
+#### 概要部署架构
+
+![ha logo](images/v1.6-v1.7/ha.png)
+
+* kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
+
+---
+[返回目录](#目录)
+
+#### 详细部署架构
+
+![k8s ha](images/v1.6-v1.7/k8s-ha.png)
+
+* kubernetes组件说明
+
+> kube-apiserver：集群核心，集群API接口、集群各个组件通信的中枢；集群安全控制；
+
+> etcd：集群的数据中心，用于存放集群的配置以及状态信息，非常重要，如果数据丢失那么集群将无法恢复；因此高可用集群部署首先就是etcd是高可用集群；
+
+> kube-scheduler：集群Pod的调度中心；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-scheduler处于活跃状态；
+
+> kube-controller-manager：集群状态管理器，当集群状态与期望不同时，kcm会努力让集群恢复期望状态，比如：当一个pod死掉，kcm会努力新建一个pod来恢复对应replicas set期望的状态；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-controller-manager处于活跃状态；
+
+> kubelet: kubernetes node agent，负责与node上的docker engine打交道；
+
+> kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
+
+* 负载均衡
+
+> keepalived集群设置一个虚拟ip地址，虚拟ip地址指向k8s-master1、k8s-master2、k8s-master3。
+
+> nginx用于k8s-master1、k8s-master2、k8s-master3的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.60.80)以及nginx端口(8443)访问master集群的apiserver。
+
+---
+[返回目录](#目录)
+
+
+- 所有节点禁用并且关闭firewalld，由于kubernetes的网络组件会使用iptables进行网络策略设置，为了避免firewalld干扰该项设置
 
 ```
-systemctl status firewalld
-
-firewall-cmd --zone=public --add-port=4001/tcp --permanent
-firewall-cmd --zone=public --add-port=6443/tcp --permanent
-firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
-firewall-cmd --zone=public --add-port=10250/tcp --permanent
-firewall-cmd --zone=public --add-port=10251/tcp --permanent
-firewall-cmd --zone=public --add-port=10252/tcp --permanent
-firewall-cmd --zone=public --add-port=10255/tcp --permanent
-firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
-
-firewall-cmd --reload
-firewall-cmd --list-all --zone=public
+$ systemctl disable firewalld && systemctl stop firewalld
 ```
 
-- k8s worker firewall需要开放相关端口（worker）
-
-协议 | 方向 | 端口 | 说明
-:--- | :--- | :--- | :---
-TCP | Inbound | 10250       | Kubelet API
-TCP | Inbound | 10255       | Read-only Kubelet API
-TCP | Inbound | 30000-32767 | NodePort Services**
-
-```
-systemctl status firewalld
-
-firewall-cmd --zone=public --add-port=10250/tcp --permanent
-firewall-cmd --zone=public --add-port=10255/tcp --permanent
-firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
-
-firewall-cmd --reload
-firewall-cmd --list-all --zone=public
-```
-
-- 所有k8s节点允许kube-proxy的forward
-
-```
-firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
-firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment "docker subnet"
-
-firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -i flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
-firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
-
-firewall-cmd --reload
-firewall-cmd --list-all --zone=public
-
-firewall-cmd --direct --get-all-rules
-
-systemctl restart firewalld
-```
-
-- 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令
-
-```
-iptables -S
-iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
-iptables -L -n --line-numbers | grep -E "DROP|REJECT"
-```
-
-- 所有节点设置enforce
+- 所有节点设置selinux的enforce为permissive
 
 ```
 $ vi /etc/selinux/config
@@ -104,12 +131,6 @@ systemctl enable docker && systemctl start docker
 
 yum install -y kubelet kubeadm kubectl
 systemctl enable kubelet && systemctl start kubelet
-```
-
-- 所有节点安装ceph组件，用于连接cephfs
-
-```
-yum -y install ceph-common
 ```
 
 - 在master节点安装并启动keepalived
@@ -190,29 +211,31 @@ Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
 $ systemctl daemon-reload && systemctl restart kubelet
 ```
 
-- 在master节点设置/root/kube-yaml/create-config.sh文件，用于初始化配置文件
+- 在master节点设置/root/kubeadm-ha/create-config.sh文件，用于初始化配置文件
 
 ```
-vi /root/kube-yaml/create-config.sh
+vi /root/kubeadm-ha/create-config.sh
 
-# local ip address
+# local machine ip address
 export K8SHA_IPLOCAL=192.168.20.27
 
-# etcd name, options: etcd1, etcd2, etcd3
+# local machine etcd name, options: etcd1, etcd2, etcd3
 export K8SHA_ETCDNAME=etcd1
 
-# keepalived state config, options: MASTER, BACKUP, only one MASTER
+# local machine keepalived state config, options: MASTER, BACKUP. One keepalived cluster only one MASTER, other's are BACKUP
 export K8SHA_KA_STATE=MASTER
 
-# keepalived priority config, options: 102, 101, 100, MASTER must 102
+# local machine keepalived priority config, options: 102, 101, 100. MASTER must 102
 export K8SHA_KA_PRIO=102
 
-# keepalived interface config, for example: eth0
+# local machine keepalived network interface name config, for example: eth0
 export K8SHA_KA_INTF=nm-bond
 
 #######################################
-# all masters settings must use the same below 
-# master virtual ip address
+# all masters settings below must be same
+#######################################
+
+# master keepalived virtual ip address
 export K8SHA_IPVIRTUAL=192.168.20.10
 
 # master01 ip address
@@ -236,18 +259,18 @@ export K8SHA_HOSTNAME3=devops-master03
 # keepalived auth_pass config, all masters must be same
 export K8SHA_KA_AUTH=4cdf7dc3b4c90194d1600c483e10ad1d
 
-# kubernetes cluster token, use 'kubeadm token generate' to generate
+# kubernetes cluster token, you can use 'kubeadm token generate' to get a new one
 export K8SHA_TOKEN=7f276c.0741d82a5337f526
 
 # kubernetes CIDR pod subnet, if CIDR pod subnet is "10.244.0.0/16" please set to "10.244.0.0\\/16"
 export K8SHA_CIDR=10.244.0.0\\/16
 
-# calico settings, set a reachable ip address for the cluster network interface
+# calico network settings, set a reachable ip address for the cluster network interface, for example you can use the gateway ip address
 export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 ```
 
 ```
-cd /root/kube-yaml/
+cd /root/kubeadm-ha/
 
 ./create-config.sh
 etcd config success: etcd/docker-compose.yaml
@@ -261,7 +284,7 @@ calico config success: kube-calico/calico.yaml
 
 ```
 kubeadm reset
-cd /root/kube-yaml/etcd
+cd /root/kubeadm-ha/etcd
 rm -rf /var/lib/etcd-cluster
 docker-compose stop && docker-compose rm -f
 docker-compose up -d
@@ -289,20 +312,20 @@ ip link del docker0
 ip link del flannel.1
 ip link del cni0
 
-systemctl restart docker kubelet
+systemctl restart docker && systemctl restart kubelet
 ip a | grep -E 'docker|flannel|cni'
 ```
 
 - 在devops-master01进行初始化
 
 ```
-cd /root/kube-yaml/
-kubeadm init --config=/root/kube-yaml/kubeadm-init.yaml
+cd /root/kubeadm-ha/
+kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
 ...
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.27:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
-- 在devops-master01上设置kubectl客户端连接
+- 在所有节点上设置kubectl客户端连接
 
 ```
 $ vi ~/.bashrc
@@ -311,10 +334,10 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 $ source ~/.bashrc
 ```
 
-- 在devops-master01上启动flannel网络、dashboard以及heapster
+- 在devops-master01上启动flannel网络、calico网络、dashboard以及heapster
 
 ```
-kubectl apply -f /root/kube-yaml/kube-flannel/
+kubectl apply -f /root/kubeadm-ha/kube-flannel/
 
 # 等待所有pods正常
 kubectl get pods --all-namespaces -w
@@ -324,7 +347,7 @@ kubectl get nodes
 
 kubectl taint nodes --all node-role.kubernetes.io/master-
 
-kubectl apply -f /root/kube-yaml/kube-calico/
+kubectl apply -f /root/kubeadm-ha/kube-calico/
 configmap "calico-config" created
 secret "calico-etcd-secrets" created
 daemonset "calico-node" created
@@ -347,7 +370,7 @@ kube-system   kube-flannel-ds-g4qcj                     1/1       Running   0   
 kube-system   kube-proxy-tn9nq                          1/1       Running   0          7m
 kube-system   kube-scheduler-devops-master01            1/1       Running   0          6m
 
-kubectl apply -f /root/kube-yaml/kube-dashboard/
+kubectl apply -f /root/kubeadm-ha/kube-dashboard/
 serviceaccount "admin-user" created
 clusterrolebinding "admin-user" created
 secret "kubernetes-dashboard-certs" created
@@ -382,9 +405,9 @@ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | gre
 - 创建heapster
 
 ```
-kubectl apply -f /root/kube-yaml/kube-heapster/influxdb/
+kubectl apply -f /root/kubeadm-ha/kube-heapster/influxdb/
 
-kubectl apply -f /root/kube-yaml/kube-heapster/rbac/
+kubectl apply -f /root/kubeadm-ha/kube-heapster/rbac/
 
 kubectl get pods --all-namespaces 
 NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
@@ -401,7 +424,7 @@ kube-system   kubernetes-dashboard-7b7b5cd79b-qnwrr     1/1       Running   1   
 kube-system   monitoring-grafana-76848b566c-zdmm7       1/1       Running   1          3m
 kube-system   monitoring-influxdb-6c4b84d695-5zrmf      1/1       Running   1          3m
 
-systemctl restart docker kubelet
+systemctl restart docker && systemctl restart kubelet
 
 # 等待5分钟
 
@@ -432,11 +455,11 @@ scp -r /etc/kubernetes/pki devops-master02:/etc/kubernetes/
 scp -r /etc/kubernetes/pki devops-master03:/etc/kubernetes/
 ```
 
-- 在devops-master02进行初始化，等待所有pods正常启动后再进行下一个master初始化，特别要保证calico-node正常
+- 在devops-master02进行初始化
 
 ```
-cd /root/kube-yaml/
-kubeadm init --config=/root/kube-yaml/kubeadm-init.yaml
+cd /root/kubeadm-ha/
+kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
 ...
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.28:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 
@@ -446,8 +469,8 @@ kubectl get pods --all-namespaces -o wide | grep master02
 - 在devops-master03进行初始化
 
 ```
-cd /root/kube-yaml/
-kubeadm init --config=/root/kube-yaml/kubeadm-init.yaml
+cd /root/kubeadm-ha/
+kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
 ...
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.29:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 
@@ -470,7 +493,7 @@ devops-master03   Ready     master    4m        v1.9.1
 vi /etc/kubernetes/manifests/kube-apiserver.yaml
     - --apiserver-count=3
 
-systemctl restart docker kubelet
+systemctl restart docker && systemctl restart kubelet
 ```
 
 - 在devops-master01上检查高可用状态
@@ -591,16 +614,12 @@ NAME              STATUS    ROLES     AGE       VERSION
 devops-master01   Ready     master    38m       v1.9.1
 devops-master02   Ready     master    25m       v1.9.1
 devops-master03   Ready     master    25m       v1.9.1
-
-kubeadm token list
-TOKEN                     TTL         EXPIRES   USAGES                   DESCRIPTION                                                EXTRA GROUPS
-7f276c.0741d82a5337f526   <forever>   <never>   authentication,signing   The default bootstrap token generated by 'kubeadm init'.   system:bootstrappers:kubeadm:default-node-token
 ```
 
 - 在master上安装keepalived
 
 ```
-cp /root/kube-yaml/keepalived/check_apiserver.sh /etc/keepalived/
+cp /root/kubeadm-ha/keepalived/check_apiserver.sh /etc/keepalived/
 
 ll /etc/keepalived/
 
@@ -612,7 +631,7 @@ ping 192.168.20.10
 - 在master上安装并启动nginx作为负载均衡
 
 ```
-cd /root/kube-yaml/nginx-lb
+cd /root/kubeadm-ha/nginx-lb
 
 docker-compose up -d
 ```
@@ -640,29 +659,6 @@ kubectl edit -n kube-system configmap/kube-proxy
 kubectl get pods --all-namespaces -o wide | grep proxy
 
 kubectl delete pod -n kube-system kube-proxy-XXX
-```
-
-- 在workers上重置kubernetes以及网络端口
-
-```
-# 解决 Error adding network: "cni0" already has an IP address different from 10.2.44.1/24
-
-kubeadm reset
-systemctl stop kubelet
-systemctl stop docker
-rm -rf /var/lib/cni/
-rm -rf /var/lib/kubelet/*
-rm -rf /etc/cni/
-
-ip a | grep -E 'docker|flannel|cni'
-ip link del docker0
-ip link del flannel.1
-ip link del cni0
-
-systemctl restart docker kubelet
-
-# 等待
-ip a | grep -E 'docker|flannel|cni'
 ```
 
 - 在workers上加入kubernetes集群
@@ -695,7 +691,7 @@ kubectl label nodes devops-node04 role=worker
 - 使用calicoctl查看node的情况
 
 ```
-kubectl apply -f /root/kube-yaml/kube-calico/calicoctl/
+kubectl apply -f /root/kubeadm-ha/kube-calico/calicoctl/
 
 kubectl get pods --all-namespaces -o wide | grep ctl
 kube-system   calicoctl                                 1/1       Running            0          33s       192.168.20.27    devops-master01
@@ -709,55 +705,5 @@ devops-node01     (unknown)   192.168.20.17/24
 devops-node02     (unknown)   192.168.20.18/24          
 devops-node03     (unknown)   192.168.20.19/24          
 devops-node04     (unknown)   192.168.20.20/24          
-```
-
-- 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令
-
-```
-iptables -S
-iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
-iptables -L -n --line-numbers | grep -E "DROP|REJECT"
-```
-
-- 所有节点设置harbor的registry
-
-```
-mkdir -p /etc/docker/certs.d/devops-reg.io
-
-echo '-----BEGIN CERTIFICATE-----
-MIIFvzCCA6egAwIBAgIJAN9MRxf7YGQeMA0GCSqGSIb3DQEBCwUAMIGJMQswCQYD
-VQQGEwJDTjESMBAGA1UECAwJZ3Vhbmdkb25nMRIwEAYDVQQHDAlndWFuZ3pob3Ux
-DTALBgNVBAoMBGdtY2MxDDAKBgNVBAsMA3N3ZzEWMBQGA1UEAwwNZGV2b3BzLXJl
-Zy5pbzEdMBsGCSqGSIb3DQEJARYOY29va2VlbUBxcS5jb20wHhcNMTgwMTE3MDIy
-NDUxWhcNMTkwMTE3MDIyNDUxWjCBiTELMAkGA1UEBhMCQ04xEjAQBgNVBAgMCWd1
-YW5nZG9uZzESMBAGA1UEBwwJZ3Vhbmd6aG91MQ0wCwYDVQQKDARnbWNjMQwwCgYD
-VQQLDANzd2cxFjAUBgNVBAMMDWRldm9wcy1yZWcuaW8xHTAbBgkqhkiG9w0BCQEW
-DmNvb2tlZW1AcXEuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA
-wCYBO6sdvHLqa2aFmb308QBRlekVrADhBkRB/TlPYoO8CTGnNDBzJPrOo7a+VyiZ
-0BGVzaCbm5uoUc55vfvAm36/EsisiHMGBW+Z/OcMxWXs+WNv6ziRloh8pzNHUkC6
-kyhqoqqOA8INv18UBcmmA9d3lyyMcz0ybPj8s+PpTFlwDK/7KBgtf0/lD2JRQW2B
-b9EKsC/wHGYM3GDhX/fvSogbOMq/D1kZExRHsOH4VJuYmY9rGh0eGHAGymGUL5hA
-SftKK9N0guLqtAHxC3yzTTkzQ4YL6ps1mQRg2D2FlkSjpCYiT1ey31P1wIDlGRYY
-AgDfKxqjGTy0GuWCt9mi2sC0hs0pyI1NRLIyf0OOuaBMkgwg+arxQ/yu2ipqzmVD
-CjTsYnfZoGl5tY+syJjMc+kFEk/OJMbqajEEVnetkDnaHyL9uj4sAiy+ZUhFpjex
-ivtO7V9MqrR6XAJln9YZkR1TFyWKG9wzw6FCXqzHO7Tn53nWvPWe/+JFfN/2KajC
-sJ5GBzWdVDow19MAu2adlkDAfXdkkKDNTuj8/Sf3+imhcFLJlmmuK1mP1OwTxFwZ
-86OFfT6/hAQJPwTSz1XMuqKudo7ekJNzOXFVVE7ppHdr8BKT9Shl97VIvh8DidTy
-CiA53RTR1XjLYUXIjkuJ4xopP0Y+HlHkKpeZIAo4PlkCAwEAAaMoMCYwJAYDVR0R
-BB0wG4INZGV2b3BzLXJlZy5pb4cEwKgUH4cEvABgTzANBgkqhkiG9w0BAQsFAAOC
-AgEAXbNxTcqHBgS32j3NeInftDhT/H+PU69MyDv+Wjyrya/oy5w9EdmlDixOx3un
-94vj1uqUp/YWmlrq5cMDsdWcW+Q+mWza5/x0egUOHpe1iWAvczC2+8Wf1eXwYIJZ
-bAdm271XyWWglTGonFvdw9pE6r0i9jn2evRbxqEYd1YLdmJCmUAE9DoUnLxGHEah
-QWwd/WscFyP9QrojmXRTwCr/h12zLoArQldEbCTHpWvKOes+cCII0VX9tX0c2ucL
-TJWuGXXIwGY2r8UEv7ISf7OXMh8XAeix7nml4yulBFxBjq+NtpUk0wyCSCC1cyHE
-csjvzXiVCK9FYcNyI3gm7pzAu5va35G60yb0wETirXrc7No/HsIH490frDHpsFa5
-3sc9ia6LuM5gxieCkwiwG8rb//wE7y7FU+tGTdyogIFqZOA3JxpuKcrXsgBg4D1f
-DkVfARasycxFa2SnR+YOV7IBI4jMICi7AN+z3TF8YiDQSVYGl05TzIKLj+tjHxrD
-A+fMhYL5q1JfiupMSxWhs+/pdcPwYOAgZnyqrGtLYKG7QwM8+FznCRCrypwHerTE
-T1N5oF6HrxAINjTAm4bcRQwLcvvuekcBIHUSPvQqF0Omfn4Y6W9N8RgLh61V3hq5
-et2CIhi2ykpxNqOEWmH1isv7SvCZymslzhqjdpuWOFF/7xE=
------END CERTIFICATE-----' > /etc/docker/certs.d/devops-reg.io/devops-reg.io.crt
-
-docker login devops-reg.io
 ```
 
