@@ -290,6 +290,8 @@ spec:
       # it isn't governed by policy that would prevent it from working.
       hostNetwork: true
       serviceAccountName: calico-kube-controllers
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       containers:
         - name: calico-kube-controllers
           image: quay.io/calico/kube-controllers:v2.0.0

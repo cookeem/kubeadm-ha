@@ -1,0 +1,1905 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>body {
+  max-width: 980px;
+  border: 1px solid #ddd;
+  outline: 1300px solid #fff;
+  margin: 16px auto;
+}
+
+body .markdown-body
+{
+  padding: 45px;
+}
+
+@font-face {
+  font-family: fontawesome-mini;
+  src: url(data:font/woff;charset=utf-8;base64,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) format('woff');
+}
+
+@font-face {
+  font-family: octicons-anchor;
+  src: url(data:font/woff;charset=utf-8;base64,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) format('woff');
+}
+
+.markdown-body {
+  font-family: sans-serif;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  color: #333333;
+  overflow: hidden;
+  font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.markdown-body a {
+  background: transparent;
+}
+
+.markdown-body a:active,
+.markdown-body a:hover {
+  outline: 0;
+}
+
+.markdown-body b,
+.markdown-body strong {
+  font-weight: bold;
+}
+
+.markdown-body mark {
+  background: #ff0;
+  color: #000;
+  font-style: italic;
+  font-weight: bold;
+}
+
+.markdown-body sub,
+.markdown-body sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+.markdown-body sup {
+  top: -0.5em;
+}
+.markdown-body sub {
+  bottom: -0.25em;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.markdown-body img {
+  border: 0;
+}
+
+.markdown-body hr {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+  height: 0;
+}
+
+.markdown-body pre {
+  overflow: auto;
+}
+
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body pre,
+.markdown-body samp {
+  font-family: monospace, monospace;
+  font-size: 1em;
+}
+
+.markdown-body input {
+  color: inherit;
+  font: inherit;
+  margin: 0;
+}
+
+.markdown-body html input[disabled] {
+  cursor: default;
+}
+
+.markdown-body input {
+  line-height: normal;
+}
+
+.markdown-body input[type="checkbox"] {
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.markdown-body td,
+.markdown-body th {
+  padding: 0;
+}
+
+.markdown-body .codehilitetable {
+  border: 0;
+  border-spacing: 0;
+}
+
+.markdown-body .codehilitetable tr {
+  border: 0;
+}
+
+.markdown-body .codehilitetable pre,
+.markdown-body .codehilitetable div.codehilite {
+  margin: 0;
+}
+
+.markdown-body .linenos,
+.markdown-body .code,
+.markdown-body .codehilitetable td {
+  border: 0;
+  padding: 0;
+}
+
+.markdown-body td:not(.linenos) .linenodiv {
+  padding: 0 !important;
+}
+
+.markdown-body .code {
+  width: 100%;
+}
+
+.markdown-body .linenos div pre,
+.markdown-body .linenodiv pre,
+.markdown-body .linenodiv {
+  border: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  -webkit-border-top-left-radius: 3px;
+  -webkit-border-bottom-left-radius: 3px;
+  -moz-border-radius-topleft: 3px;
+  -moz-border-radius-bottomleft: 3px;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.markdown-body .code div pre,
+.markdown-body .code div {
+  border: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  -webkit-border-top-right-radius: 3px;
+  -webkit-border-bottom-right-radius: 3px;
+  -moz-border-radius-topright: 3px;
+  -moz-border-radius-bottomright: 3px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+.markdown-body * {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.markdown-body input {
+  font: 13px Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+  line-height: 1.4;
+}
+
+.markdown-body a {
+  color: #4183c4;
+  text-decoration: none;
+}
+
+.markdown-body a:hover,
+.markdown-body a:focus,
+.markdown-body a:active {
+  text-decoration: underline;
+}
+
+.markdown-body hr {
+  height: 0;
+  margin: 15px 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.markdown-body hr:before,
+.markdown-body hr:after {
+  display: table;
+  content: " ";
+}
+
+.markdown-body hr:after {
+  clear: both;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  line-height: 1.1;
+}
+
+.markdown-body h1 {
+  font-size: 30px;
+}
+
+.markdown-body h2 {
+  font-size: 21px;
+}
+
+.markdown-body h3 {
+  font-size: 16px;
+}
+
+.markdown-body h4 {
+  font-size: 14px;
+}
+
+.markdown-body h5 {
+  font-size: 12px;
+}
+
+.markdown-body h6 {
+  font-size: 11px;
+}
+
+.markdown-body blockquote {
+  margin: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body ol ol,
+.markdown-body ul ol {
+  list-style-type: lower-roman;
+}
+
+.markdown-body ul ul ol,
+.markdown-body ul ol ol,
+.markdown-body ol ul ol,
+.markdown-body ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.markdown-body dd {
+  margin-left: 0;
+}
+
+.markdown-body code,
+.markdown-body pre,
+.markdown-body samp {
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 12px;
+}
+
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body kbd {
+  background-color: #e7e7e7;
+  background-image: -moz-linear-gradient(#fefefe, #e7e7e7);
+  background-image: -webkit-linear-gradient(#fefefe, #e7e7e7);
+  background-image: linear-gradient(#fefefe, #e7e7e7);
+  background-repeat: repeat-x;
+  border-radius: 2px;
+  border: 1px solid #cfcfcf;
+  color: #000;
+  padding: 3px 5px;
+  line-height: 10px;
+  font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  display: inline-block;
+}
+
+.markdown-body>*:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-body .headeranchor-link {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  padding-right: 6px;
+  padding-left: 30px;
+  margin-left: -30px;
+}
+
+.markdown-body .headeranchor-link:focus {
+  outline: none;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  position: relative;
+  margin-top: 1em;
+  margin-bottom: 16px;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+.markdown-body h1 .headeranchor,
+.markdown-body h2 .headeranchor,
+.markdown-body h3 .headeranchor,
+.markdown-body h4 .headeranchor,
+.markdown-body h5 .headeranchor,
+.markdown-body h6 .headeranchor {
+  display: none;
+  color: #000;
+  vertical-align: middle;
+}
+
+.markdown-body h1:hover .headeranchor-link,
+.markdown-body h2:hover .headeranchor-link,
+.markdown-body h3:hover .headeranchor-link,
+.markdown-body h4:hover .headeranchor-link,
+.markdown-body h5:hover .headeranchor-link,
+.markdown-body h6:hover .headeranchor-link {
+  height: 1em;
+  padding-left: 8px;
+  margin-left: -30px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.markdown-body h1:hover .headeranchor-link .headeranchor,
+.markdown-body h2:hover .headeranchor-link .headeranchor,
+.markdown-body h3:hover .headeranchor-link .headeranchor,
+.markdown-body h4:hover .headeranchor-link .headeranchor,
+.markdown-body h5:hover .headeranchor-link .headeranchor,
+.markdown-body h6:hover .headeranchor-link .headeranchor {
+  display: inline-block;
+}
+
+.markdown-body h1 {
+  padding-bottom: 0.3em;
+  font-size: 2.25em;
+  line-height: 1.2;
+  border-bottom: 1px solid #eee;
+}
+
+.markdown-body h2 {
+  padding-bottom: 0.3em;
+  font-size: 1.75em;
+  line-height: 1.225;
+  border-bottom: 1px solid #eee;
+}
+
+.markdown-body h3 {
+  font-size: 1.5em;
+  line-height: 1.43;
+}
+
+.markdown-body h4 {
+  font-size: 1.25em;
+}
+
+.markdown-body h5 {
+  font-size: 1em;
+}
+
+.markdown-body h6 {
+  font-size: 1em;
+  color: #777;
+}
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body pre,
+.markdown-body .admonition {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.markdown-body hr {
+  height: 4px;
+  padding: 0;
+  margin: 16px 0;
+  background-color: #e7e7e7;
+  border: 0 none;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body li>p {
+  margin-top: 16px;
+}
+
+.markdown-body dl {
+  padding: 0;
+}
+
+.markdown-body dl dt {
+  padding: 0;
+  margin-top: 16px;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: bold;
+}
+
+.markdown-body dl dd {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.markdown-body blockquote {
+  padding: 0 15px;
+  color: #777;
+  border-left: 4px solid #ddd;
+}
+
+.markdown-body blockquote>:first-child {
+  margin-top: 0;
+}
+
+.markdown-body blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body table {
+  display: block;
+  width: 100%;
+  overflow: auto;
+  word-break: normal;
+  word-break: keep-all;
+}
+
+.markdown-body table th {
+  font-weight: bold;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid #ddd;
+}
+
+.markdown-body table tr {
+  background-color: #fff;
+  border-top: 1px solid #ccc;
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: #f8f8f8;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.markdown-body code,
+.markdown-body samp {
+  padding: 0;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(0,0,0,0.04);
+  border-radius: 3px;
+}
+
+.markdown-body code:before,
+.markdown-body code:after {
+  letter-spacing: -0.2em;
+  content: "\00a0";
+}
+
+.markdown-body pre>code {
+  padding: 0;
+  margin: 0;
+  font-size: 100%;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
+}
+
+.markdown-body .codehilite {
+  margin-bottom: 16px;
+}
+
+.markdown-body .codehilite pre,
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f7f7f7;
+  border-radius: 3px;
+}
+
+.markdown-body .codehilite pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.markdown-body pre {
+  word-wrap: normal;
+}
+
+.markdown-body pre code {
+  display: inline;
+  max-width: initial;
+  padding: 0;
+  margin: 0;
+  overflow: initial;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+}
+
+.markdown-body pre code:before,
+.markdown-body pre code:after {
+  content: normal;
+}
+
+/* Admonition */
+.markdown-body .admonition {
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  position: relative;
+  border-radius: 3px;
+  border: 1px solid #e0e0e0;
+  border-left: 6px solid #333;
+  padding: 10px 10px 10px 30px;
+}
+
+.markdown-body .admonition table {
+  color: #333;
+}
+
+.markdown-body .admonition p {
+  padding: 0;
+}
+
+.markdown-body .admonition-title {
+  font-weight: bold;
+  margin: 0;
+}
+
+.markdown-body .admonition>.admonition-title {
+  color: #333;
+}
+
+.markdown-body .attention>.admonition-title {
+  color: #a6d796;
+}
+
+.markdown-body .caution>.admonition-title {
+  color: #d7a796;
+}
+
+.markdown-body .hint>.admonition-title {
+  color: #96c6d7;
+}
+
+.markdown-body .danger>.admonition-title {
+  color: #c25f77;
+}
+
+.markdown-body .question>.admonition-title {
+  color: #96a6d7;
+}
+
+.markdown-body .note>.admonition-title {
+  color: #d7c896;
+}
+
+.markdown-body .admonition:before,
+.markdown-body .attention:before,
+.markdown-body .caution:before,
+.markdown-body .hint:before,
+.markdown-body .danger:before,
+.markdown-body .question:before,
+.markdown-body .note:before {
+  font: normal normal 16px fontawesome-mini;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  line-height: 1.5;
+  color: #333;
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding-top: 10px;
+  padding-left: 10px;
+}
+
+.markdown-body .admonition:before {
+  content: "\f056\00a0";
+  color: 333;
+}
+
+.markdown-body .attention:before {
+  content: "\f058\00a0";
+  color: #a6d796;
+}
+
+.markdown-body .caution:before {
+  content: "\f06a\00a0";
+  color: #d7a796;
+}
+
+.markdown-body .hint:before {
+  content: "\f05a\00a0";
+  color: #96c6d7;
+}
+
+.markdown-body .danger:before {
+  content: "\f057\00a0";
+  color: #c25f77;
+}
+
+.markdown-body .question:before {
+  content: "\f059\00a0";
+  color: #96a6d7;
+}
+
+.markdown-body .note:before {
+  content: "\f040\00a0";
+  color: #d7c896;
+}
+
+.markdown-body .admonition::after {
+  content: normal;
+}
+
+.markdown-body .attention {
+  border-left: 6px solid #a6d796;
+}
+
+.markdown-body .caution {
+  border-left: 6px solid #d7a796;
+}
+
+.markdown-body .hint {
+  border-left: 6px solid #96c6d7;
+}
+
+.markdown-body .danger {
+  border-left: 6px solid #c25f77;
+}
+
+.markdown-body .question {
+  border-left: 6px solid #96a6d7;
+}
+
+.markdown-body .note {
+  border-left: 6px solid #d7c896;
+}
+
+.markdown-body .admonition>*:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body .admonition>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* progress bar*/
+.markdown-body .progress {
+  display: block;
+  width: 300px;
+  margin: 10px 0;
+  height: 24px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  background-color: #ededed;
+  position: relative;
+  box-shadow: inset -1px 1px 3px rgba(0, 0, 0, .1);
+}
+
+.markdown-body .progress-label {
+  position: absolute;
+  text-align: center;
+  font-weight: bold;
+  width: 100%; margin: 0;
+  line-height: 24px;
+  color: #333;
+  text-shadow: 1px 1px 0 #fefefe, -1px -1px 0 #fefefe, -1px 1px 0 #fefefe, 1px -1px 0 #fefefe, 0 1px 0 #fefefe, 0 -1px 0 #fefefe, 1px 0 0 #fefefe, -1px 0 0 #fefefe, 1px 1px 2px #000;
+  -webkit-font-smoothing: antialiased !important;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.markdown-body .progress-bar {
+  height: 24px;
+  float: left;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  background-color: #96c6d7;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -1px 0 rgba(0, 0, 0, .1);
+  background-size: 30px 30px;
+  background-image: -webkit-linear-gradient(
+    135deg, rgba(255, 255, 255, .4) 27%,
+    transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%,
+    transparent 77%, transparent
+  );
+  background-image: -moz-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+  background-image: -ms-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+  background-image: -o-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, .4) 27%, transparent 27%,
+    transparent 52%, rgba(255, 255, 255, .4) 52%,
+    rgba(255, 255, 255, .4) 77%, transparent 77%,
+    transparent
+  );
+}
+
+.markdown-body .progress-100plus .progress-bar {
+  background-color: #a6d796;
+}
+
+.markdown-body .progress-80plus .progress-bar {
+  background-color: #c6d796;
+}
+
+.markdown-body .progress-60plus .progress-bar {
+  background-color: #d7c896;
+}
+
+.markdown-body .progress-40plus .progress-bar {
+  background-color: #d7a796;
+}
+
+.markdown-body .progress-20plus .progress-bar {
+  background-color: #d796a6;
+}
+
+.markdown-body .progress-0plus .progress-bar {
+  background-color: #c25f77;
+}
+
+.markdown-body .candystripe-animate .progress-bar{
+  -webkit-animation: animate-stripes 3s linear infinite;
+  -moz-animation: animate-stripes 3s linear infinite;
+  animation: animate-stripes 3s linear infinite;
+}
+
+@-webkit-keyframes animate-stripes {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 60px 0;
+  }
+}
+
+@-moz-keyframes animate-stripes {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 60px 0;
+  }
+}
+
+@keyframes animate-stripes {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 60px 0;
+  }
+}
+
+.markdown-body .gloss .progress-bar {
+  box-shadow:
+    inset 0 4px 12px rgba(255, 255, 255, .7),
+    inset 0 -12px 0 rgba(0, 0, 0, .05);
+}
+
+/* Multimarkdown Critic Blocks */
+.markdown-body .critic_mark {
+  background: #ff0;
+}
+
+.markdown-body .critic_delete {
+  color: #c82829;
+  text-decoration: line-through;
+}
+
+.markdown-body .critic_insert {
+  color: #718c00 ;
+  text-decoration: underline;
+}
+
+.markdown-body .critic_comment {
+  color: #8e908c;
+  font-style: italic;
+}
+
+.markdown-body .headeranchor {
+  font: normal normal 16px octicons-anchor;
+  line-height: 1;
+  display: inline-block;
+  text-decoration: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.headeranchor:before {
+  content: '\f05c';
+}
+
+.markdown-body .task-list-item {
+  list-style-type: none;
+}
+
+.markdown-body .task-list-item+.task-list-item {
+  margin-top: 3px;
+}
+
+.markdown-body .task-list-item input {
+  margin: 0 4px 0.25em -20px;
+  vertical-align: middle;
+}
+
+/* Media */
+@media only screen and (min-width: 480px) {
+  .markdown-body {
+    font-size:14px;
+  }
+}
+
+@media only screen and (min-width: 768px) {
+  .markdown-body {
+    font-size:16px;
+  }
+}
+
+@media print {
+  .markdown-body * {
+    background: transparent !important;
+    color: black !important;
+    filter:none !important;
+    -ms-filter: none !important;
+  }
+
+  .markdown-body {
+    font-size:12pt;
+    max-width:100%;
+    outline:none;
+    border: 0;
+  }
+
+  .markdown-body a,
+  .markdown-body a:visited {
+    text-decoration: underline;
+  }
+
+  .markdown-body .headeranchor-link {
+    display: none;
+  }
+
+  .markdown-body a[href]:after {
+    content: " (" attr(href) ")";
+  }
+
+  .markdown-body abbr[title]:after {
+    content: " (" attr(title) ")";
+  }
+
+  .markdown-body .ir a:after,
+  .markdown-body a[href^="javascript:"]:after,
+  .markdown-body a[href^="#"]:after {
+    content: "";
+  }
+
+  .markdown-body pre {
+    white-space: pre;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .markdown-body pre,
+  .markdown-body blockquote {
+    border: 1px solid #999;
+    padding-right: 1em;
+    page-break-inside: avoid;
+  }
+
+  .markdown-body .progress,
+  .markdown-body .progress-bar {
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+  }
+
+  .markdown-body .progress {
+    border: 1px solid #ddd;
+  }
+
+  .markdown-body .progress-bar {
+    height: 22px;
+    border-right: 1px solid #ddd;
+  }
+
+  .markdown-body tr,
+  .markdown-body img {
+    page-break-inside: avoid;
+  }
+
+  .markdown-body img {
+    max-width: 100% !important;
+  }
+
+  .markdown-body p,
+  .markdown-body h2,
+  .markdown-body h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .markdown-body h2,
+  .markdown-body h3 {
+    page-break-after: avoid;
+  }
+}
+</style><title>README</title></head><body><article class="markdown-body"><h1 id="kubeadm-highavailiability-kubeadmkubernetesv19xv17xv16x"><a name="user-content-kubeadm-highavailiability-kubeadmkubernetesv19xv17xv16x" href="#kubeadm-highavailiability-kubeadmkubernetesv19xv17xv16x" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.9.x和v1.7.x版本以及v1.6.x版本</h1>
+<p><img alt="k8s logo" src="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/images/v1.6-v1.7/Kubernetes.png" /></p>
+<ul>
+<li><a href="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/README_CN.md">中文文档(for v1.9.x版本)</a></li>
+<li><a href="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/README.md">English document(for v1.9.x version)</a></li>
+<li><a href="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/v1.6-v1.7/README_CN.md">中文文档(for v1.7.x版本)</a></li>
+<li><a href="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/v1.6-v1.7/README.md">English document(for v1.7.x version)</a></li>
+<li><a href="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/v1.6-v1.7/README_v1.6.x_CN.md">中文文档(for v1.6.x版本)</a></li>
+<li><a href="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/v1.6-v1.7/README_v1.6.x.md">English document(for v1.6.x version)</a></li>
+</ul>
+<hr />
+<ul>
+<li><a href="https://github.com/cookeem/kubeadm-ha/">GitHub项目地址</a></li>
+<li><a href="https://git.oschina.net/cookeem/kubeadm-ha/">OSChina项目地址</a></li>
+</ul>
+<hr />
+<ul>
+<li>该指引适用于v1.9.x版本的kubernetes集群</li>
+</ul>
+<blockquote>
+<p>v1.9.0以前的版本kubeadm还不支持高可用部署，因此不推荐作为生产环境的部署方式。从v1.9.x版本开始，kubeadm官方正式支持高可用集群的部署，安装kubeadm务必保证版本至少为1.9.0。</p>
+</blockquote>
+<h3 id="_1"><a name="user-content-_1" href="#_1" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>目录</h3>
+<ol>
+<li><a href="#部署架构">部署架构</a><ol>
+<li><a href="#概要部署架构">概要部署架构</a></li>
+<li><a href="#详细部署架构">详细部署架构</a></li>
+<li><a href="#主机节点清单">主机节点清单</a></li>
+</ol>
+</li>
+<li><a href="#安装前准备">安装前准备</a><ol>
+<li><a href="#版本信息">版本信息</a></li>
+<li><a href="#所需docker镜像">所需docker镜像</a></li>
+<li><a href="#系统设置">系统设置</a></li>
+</ol>
+</li>
+<li><a href="#kubernetes安装">kubernetes安装</a><ol>
+<li><a href="#kubernetes相关服务安装">kubernetes相关服务安装</a></li>
+</ol>
+</li>
+<li><a href="#配置文件初始化">配置文件初始化</a><ol>
+<li><a href="#初始化脚本配置">初始化脚本配置</a> </li>
+<li><a href="#独立etcd集群部署">独立etcd集群部署</a></li>
+</ol>
+</li>
+<li><a href="#第一台master初始化">第一台master初始化</a><ol>
+<li><a href="#kubeadm初始化">kubeadm初始化</a></li>
+<li><a href="#flannel网络组件安装">flannel网络组件安装</a></li>
+<li><a href="#dashboard组件安装">dashboard组件安装</a></li>
+<li><a href="#heapster组件安装">heapster组件安装</a></li>
+</ol>
+</li>
+<li><a href="#master集群高可用设置">master集群高可用设置</a><ol>
+<li><a href="#复制配置">复制配置</a></li>
+<li><a href="#修改配置">修改配置</a></li>
+<li><a href="#验证高可用安装">验证高可用安装</a></li>
+<li><a href="#keepalived安装配置">keepalived安装配置</a></li>
+<li><a href="#nginx负载均衡配置">nginx负载均衡配置</a></li>
+<li><a href="#kube-proxy配置">kube-proxy配置</a></li>
+<li><a href="#验证master集群高可用">验证master集群高可用</a></li>
+</ol>
+</li>
+<li><a href="#node节点加入高可用集群设置">node节点加入高可用集群设置</a><ol>
+<li><a href="#kubeadm加入高可用集群">kubeadm加入高可用集群</a></li>
+<li><a href="#部署应用验证集群">部署应用验证集群</a></li>
+</ol>
+</li>
+</ol>
+<h3 id="_2"><a name="user-content-_2" href="#_2" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>部署架构</h3>
+<h4 id="_3"><a name="user-content-_3" href="#_3" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>概要部署架构</h4>
+<p><img alt="ha logo" src="/Volumes/Share/Install/kubeadm-yaml/kubeadm-ha/images/v1.6-v1.7/ha.png" /></p>
+<ul>
+<li>kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。</li>
+</ul>
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<h4 id="_4"><a name="user-content-_4" href="#_4" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>详细部署架构</h4>
+<p><img alt="k8s ha" src="images/v1.6-v1.7/devops-ha.png" /></p>
+<ul>
+<li>kubernetes组件说明</li>
+</ul>
+<blockquote>
+<p>kube-apiserver：集群核心，集群API接口、集群各个组件通信的中枢；集群安全控制；</p>
+<p>etcd：集群的数据中心，用于存放集群的配置以及状态信息，非常重要，如果数据丢失那么集群将无法恢复；因此高可用集群部署首先就是etcd是高可用集群；</p>
+<p>kube-scheduler：集群Pod的调度中心；默认kubeadm安装情况下&ndash;leader-elect参数已经设置为true，保证master集群中只有一个kube-scheduler处于活跃状态；</p>
+<p>kube-controller-manager：集群状态管理器，当集群状态与期望不同时，kcm会努力让集群恢复期望状态，比如：当一个pod死掉，kcm会努力新建一个pod来恢复对应replicas set期望的状态；默认kubeadm安装情况下&ndash;leader-elect参数已经设置为true，保证master集群中只有一个kube-controller-manager处于活跃状态；</p>
+<p>kubelet: kubernetes node agent，负责与node上的docker engine打交道；</p>
+<p>kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。</p>
+</blockquote>
+<ul>
+<li>负载均衡</li>
+</ul>
+<blockquote>
+<p>keepalived集群设置一个虚拟ip地址，虚拟ip地址指向devops-master01、devops-master02、devops-master03。</p>
+<p>nginx用于devops-master01、devops-master02、devops-master03的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.20.10)以及nginx端口(16443)访问master集群的apiserver。</p>
+</blockquote>
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<h4 id="_5"><a name="user-content-_5" href="#_5" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>主机节点清单</h4>
+<table>
+<thead>
+<tr>
+<th align="left">主机名</th>
+<th>IP地址</th>
+<th>说明</th>
+<th>组件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">devops-master01 ~ 03</td>
+<td>192.168.20.27 ~ 29</td>
+<td>master节点 * 3</td>
+<td>keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster、calico</td>
+</tr>
+<tr>
+<td align="left">无</td>
+<td>192.168.20.10</td>
+<td>keepalived虚拟IP</td>
+<td>无</td>
+</tr>
+<tr>
+<td align="left">devops-node01 ~ 04</td>
+<td>192.168.20.17 ~ 20</td>
+<td>node节点 * 4</td>
+<td>kubelet、kube-proxy</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<h3 id="_6"><a name="user-content-_6" href="#_6" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>安装前准备</h3>
+<h4 id="_7"><a name="user-content-_7" href="#_7" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>版本信息</h4>
+<ul>
+<li>Linux版本：CentOS 7.4.1708</li>
+</ul>
+<pre><code>cat /etc/redhat-release 
+CentOS Linux release 7.4.1708 (Core) 
+</code></pre>
+
+<ul>
+<li>docker版本：17.12.0-ce-rc2</li>
+</ul>
+<pre><code>$ docker version
+Client:
+ Version:   17.12.0-ce-rc2
+ API version:   1.35
+ Go version:    go1.9.2
+ Git commit:    f9cde63
+ Built: Tue Dec 12 06:42:20 2017
+ OS/Arch:   linux/amd64
+
+Server:
+ Engine:
+  Version:  17.12.0-ce-rc2
+  API version:  1.35 (minimum version 1.12)
+  Go version:   go1.9.2
+  Git commit:   f9cde63
+  Built:    Tue Dec 12 06:44:50 2017
+  OS/Arch:  linux/amd64
+  Experimental: false
+</code></pre>
+
+<ul>
+<li>kubeadm版本：v1.9.1</li>
+</ul>
+<pre><code>$ kubeadm version
+kubeadm version: &amp;version.Info{Major:&quot;1&quot;, Minor:&quot;9&quot;, GitVersion:&quot;v1.9.1&quot;, GitCommit:&quot;3a1c9449a956b6026f075fa3134ff92f7d55f812&quot;, GitTreeState:&quot;clean&quot;, BuildDate:&quot;2018-01-04T11:40:06Z&quot;, GoVersion:&quot;go1.9.2&quot;, Compiler:&quot;gc&quot;, Platform:&quot;linux/amd64&quot;}
+</code></pre>
+
+<ul>
+<li>kubelet版本：v1.9.1</li>
+</ul>
+<pre><code>$ kubelet --version
+Kubernetes v1.9.1
+</code></pre>
+
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<h4 id="docker"><a name="user-content-docker" href="#docker" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>所需docker镜像</h4>
+<ul>
+<li>在本机MacOSX上pull相关docker镜像</li>
+</ul>
+<pre><code>$ docker pull quay.io/calico/kube-controllers:v2.0.0
+$ docker pull quay.io/calico/node:v3.0.1
+$ docker pull quay.io/calico/cni:v2.0.0
+$ docker pull quay.io/coreos/flannel:v0.9.1-amd64
+$ docker pull gcr.io/google_containers/heapster-amd64:v1.4.2
+$ docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.4.3
+$ docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.3.3
+$ docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
+$ docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
+$ docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.7
+$ docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.9.1
+$ docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.9.1
+$ docker pull gcr.io/google_containers/kube-proxy-amd64:v1.9.1
+$ docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.9.1
+$ docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.1
+$ docker pull nginx
+</code></pre>
+
+<ul>
+<li>在本机MacOSX上获取代码，并进入代码目录</li>
+</ul>
+<pre><code>$ git clone https://github.com/cookeem/kubeadm-ha
+$ cd kubeadm-ha
+</code></pre>
+
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<h4 id="_8"><a name="user-content-_8" href="#_8" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>系统设置</h4>
+<ul>
+<li>
+<p>以下在kubernetes所有节点上都是使用root用户进行操作</p>
+</li>
+<li>
+<p>在kubernetes所有节点上增加kubernetes仓库 </p>
+</li>
+</ul>
+<pre><code>$ cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+</code></pre>
+
+<ul>
+<li>在kubernetes所有节点上进行系统更新</li>
+</ul>
+<pre><code>$ yum update -y
+</code></pre>
+
+<ul>
+<li>在kubernetes所有节点上关闭防火墙</li>
+</ul>
+<pre><code>$ systemctl disable firewalld &amp;&amp; systemctl stop firewalld &amp;&amp; systemctl status firewalld
+</code></pre>
+
+<ul>
+<li>在kubernetes所有节点上设置SELINUX为permissive模式</li>
+</ul>
+<pre><code>$ vi /etc/selinux/config
+SELINUX=permissive
+
+$ setenforce 0
+</code></pre>
+
+<ul>
+<li>在kubernetes所有节点上设置iptables参数，否则kubeadm init会提示错误</li>
+</ul>
+<pre><code>$ cat &lt;&lt;EOF &gt;  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+sysctl --system
+</code></pre>
+
+<ul>
+<li>在kubernetes所有节点上重启主机</li>
+</ul>
+<pre><code>$ reboot
+</code></pre>
+
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<h3 id="kubernetes"><a name="user-content-kubernetes" href="#kubernetes" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>kubernetes安装</h3>
+<h4 id="kubernetes_1"><a name="user-content-kubernetes_1" href="#kubernetes_1" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>kubernetes相关服务安装</h4>
+<ul>
+<li>在kubernetes所有节点上验证SELINUX模式，必须保证SELINUX为permissive模式，否则kubernetes启动会出现各种异常</li>
+</ul>
+<pre><code>$ getenforce
+Permissive
+</code></pre>
+
+<ul>
+<li>在kubernetes所有节点上安装并启动kubernetes </li>
+</ul>
+<pre><code>yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
+yum install -y docker-compose-1.9.0-5.el7.noarch
+systemctl enable docker &amp;&amp; systemctl start docker
+
+yum install -y kubelet-1.9.1-0.x86_64 kubeadm-1.9.1-0.x86_64 kubectl-1.9.1-0.x86_64
+systemctl enable kubelet &amp;&amp; systemctl start kubelet
+</code></pre>
+
+<ul>
+<li>在master节点安装并启动keepalived</li>
+</ul>
+<pre><code>yum install -y keepalived
+systemctl enable keepalived &amp;&amp; systemctl restart keepalived
+</code></pre>
+
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<h3 id="_9"><a name="user-content-_9" href="#_9" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>配置文件初始化</h3>
+<h4 id="_10"><a name="user-content-_10" href="#_10" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>初始化脚本配置</h4>
+<h4 id="etcd"><a name="user-content-etcd" href="#etcd" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>独立etcd集群部署</h4>
+<hr />
+<p><a href="#目录">返回目录</a></p>
+<ul>
+<li>在master节点安装并启动keepalived</li>
+</ul>
+<pre><code>yum install -y keepalived
+systemctl enable keepalived &amp;&amp; systemctl restart keepalived
+</code></pre>
+
+<ul>
+<li>所有节点加载相关docker images</li>
+</ul>
+<pre><code>docker load -i /root/kube-images/etcd-amd64-3.1.10
+docker load -i /root/kube-images/flannel-v0.9.1-amd64
+docker load -i /root/kube-images/heapster-amd64-v1.4.2
+docker load -i /root/kube-images/heapster-grafana-amd64-v4.4.3
+docker load -i /root/kube-images/heapster-influxdb-amd64-v1.3.3
+docker load -i /root/kube-images/devops-dns-dnsmasq-nanny-amd64-1.14.7
+docker load -i /root/kube-images/devops-dns-kube-dns-amd64-1.14.7
+docker load -i /root/kube-images/devops-dns-sidecar-amd64-1.14.7
+docker load -i /root/kube-images/kube-apiserver-amd64-v1.9.1
+docker load -i /root/kube-images/kube-controller-manager-amd64-v1.9.1
+docker load -i /root/kube-images/kube-proxy-amd64-v1.9.1
+docker load -i /root/kube-images/kubernetes-dashboard-amd64-v1.8.1
+docker load -i /root/kube-images/kube-scheduler-amd64-v1.9.1
+docker load -i /root/kube-images/pause-amd64-3.0
+docker load -i /root/kube-images/nginx
+
+docker tag k8s.gcr.io/kube-apiserver-amd64:v1.9.1 gcr.io/google_containers/kube-apiserver-amd64:v1.9.1
+docker tag k8s.gcr.io/kube-scheduler-amd64:v1.9.1 gcr.io/google_containers/kube-scheduler-amd64:v1.9.1
+docker tag k8s.gcr.io/kube-proxy-amd64:v1.9.1 gcr.io/google_containers/kube-proxy-amd64:v1.9.1
+docker tag k8s.gcr.io/kube-controller-manager-amd64:v1.9.1 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.1
+docker tag k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.1 gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.1
+docker tag k8s.gcr.io/devops-dns-sidecar-amd64:1.14.7 gcr.io/google_containers/devops-dns-sidecar-amd64:1.14.7
+docker tag k8s.gcr.io/devops-dns-kube-dns-amd64:1.14.7 gcr.io/google_containers/devops-dns-kube-dns-amd64:1.14.7
+docker tag k8s.gcr.io/devops-dns-dnsmasq-nanny-amd64:1.14.7 gcr.io/google_containers/devops-dns-dnsmasq-nanny-amd64:1.14.7
+docker tag k8s.gcr.io/etcd-amd64:3.1.10 gcr.io/google_containers/etcd-amd64:3.1.10
+docker tag k8s.gcr.io/heapster-influxdb-amd64:v1.3.3 gcr.io/google_containers/heapster-influxdb-amd64:v1.3.3
+docker tag k8s.gcr.io/heapster-grafana-amd64:v4.4.3 gcr.io/google_containers/heapster-grafana-amd64:v4.4.3
+docker tag k8s.gcr.io/heapster-amd64:v1.4.2 gcr.io/google_containers/heapster-amd64:v1.4.2
+docker tag k8s.gcr.io/pause-amd64:3.0 gcr.io/google_containers/pause-amd64:3.0
+
+docker rmi k8s.gcr.io/kube-apiserver-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kube-scheduler-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kube-proxy-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kube-controller-manager-amd64:v1.9.1 
+docker rmi k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.1 
+docker rmi k8s.gcr.io/devops-dns-sidecar-amd64:1.14.7 
+docker rmi k8s.gcr.io/devops-dns-kube-dns-amd64:1.14.7 
+docker rmi k8s.gcr.io/devops-dns-dnsmasq-nanny-amd64:1.14.7 
+docker rmi k8s.gcr.io/etcd-amd64:3.1.10 
+docker rmi k8s.gcr.io/heapster-influxdb-amd64:v1.3.3 
+docker rmi k8s.gcr.io/heapster-grafana-amd64:v4.4.3 
+docker rmi k8s.gcr.io/heapster-amd64:v1.4.2 
+docker rmi k8s.gcr.io/pause-amd64:3.0 
+
+docker images
+</code></pre>
+
+<ul>
+<li>所有节点禁用swap</li>
+</ul>
+<pre><code>swapoff -a
+
+vi /etc/fstab
+#/dev/mapper/centos-swap swap                    swap    defaults        0 0
+
+cat /proc/swaps
+</code></pre>
+
+<ul>
+<li>所有节点设置kubeadm使用cgroupfs</li>
+</ul>
+<pre><code>$ vi /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+#Environment=&quot;KUBELET_CGROUP_ARGS=--cgroup-driver=systemd&quot;
+Environment=&quot;KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs&quot;
+
+$ systemctl daemon-reload &amp;&amp; systemctl restart kubelet
+</code></pre>
+
+<ul>
+<li>在master节点设置/root/kubeadm-ha/create-config.sh文件，用于初始化配置文件</li>
+</ul>
+<pre><code>vi /root/kubeadm-ha/create-config.sh
+
+# local machine ip address
+export K8SHA_IPLOCAL=192.168.20.27
+
+# local machine etcd name, options: etcd1, etcd2, etcd3
+export K8SHA_ETCDNAME=etcd1
+
+# local machine keepalived state config, options: MASTER, BACKUP. One keepalived cluster only one MASTER, other's are BACKUP
+export K8SHA_KA_STATE=MASTER
+
+# local machine keepalived priority config, options: 102, 101, 100. MASTER must 102
+export K8SHA_KA_PRIO=102
+
+# local machine keepalived network interface name config, for example: eth0
+export K8SHA_KA_INTF=nm-bond
+
+#######################################
+# all masters settings below must be same
+#######################################
+
+# master keepalived virtual ip address
+export K8SHA_IPVIRTUAL=192.168.20.10
+
+# master01 ip address
+export K8SHA_IP1=192.168.20.27
+
+# master02 ip address
+export K8SHA_IP2=192.168.20.28
+
+# master03 ip address
+export K8SHA_IP3=192.168.20.29
+
+# master01 hostname
+export K8SHA_HOSTNAME1=devops-master01
+
+# master02 hostname
+export K8SHA_HOSTNAME2=devops-master02
+
+# master03 hostname
+export K8SHA_HOSTNAME3=devops-master03
+
+# keepalived auth_pass config, all masters must be same
+export K8SHA_KA_AUTH=4cdf7dc3b4c90194d1600c483e10ad1d
+
+# kubernetes cluster token, you can use 'kubeadm token generate' to get a new one
+export K8SHA_TOKEN=7f276c.0741d82a5337f526
+
+# kubernetes CIDR pod subnet, if CIDR pod subnet is &quot;10.244.0.0/16&quot; please set to &quot;10.244.0.0\\/16&quot;
+export K8SHA_CIDR=10.244.0.0\\/16
+
+# calico network settings, set a reachable ip address for the cluster network interface, for example you can use the gateway ip address
+export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
+</code></pre>
+
+<pre><code>cd /root/kubeadm-ha/
+
+./create-config.sh
+etcd config success: etcd/docker-compose.yaml
+keepalived config success: /etc/keepalived/keepalived.conf
+nginx load balance config success: nginx-lb/nginx-lb.conf
+kubeadm init config success: kubeadm-init.yaml
+calico config success: kube-calico/calico.yaml
+</code></pre>
+
+<ul>
+<li>在devops-master01、devops-master02、devops-master03上启动etcd</li>
+</ul>
+<pre><code>kubeadm reset
+cd /root/kubeadm-ha/etcd
+rm -rf /var/lib/etcd-cluster
+docker-compose stop &amp;&amp; docker-compose rm -f
+docker-compose up -d
+</code></pre>
+
+<ul>
+<li>在devops-master01、devops-master02、devops-master03上检查etcd集群状态</li>
+</ul>
+<pre><code>docker exec -ti etcd etcdctl cluster-health
+
+docker exec -ti etcd etcdctl member list
+</code></pre>
+
+<ul>
+<li>在devops-master01、devops-master02、devops-master03上重置网络</li>
+</ul>
+<pre><code>systemctl stop kubelet
+systemctl stop docker
+rm -rf /var/lib/cni/
+rm -rf /var/lib/kubelet/*
+rm -rf /etc/cni/
+
+ip a | grep -E 'docker|flannel|cni'
+ip link del docker0
+ip link del flannel.1
+ip link del cni0
+
+systemctl restart docker &amp;&amp; systemctl restart kubelet
+ip a | grep -E 'docker|flannel|cni'
+</code></pre>
+
+<ul>
+<li>在devops-master01进行初始化</li>
+</ul>
+<pre><code>cd /root/kubeadm-ha/
+kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
+...
+  kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.27:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
+</code></pre>
+
+<ul>
+<li>在所有节点上设置kubectl客户端连接</li>
+</ul>
+<pre><code>$ vi ~/.bashrc
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+$ source ~/.bashrc
+</code></pre>
+
+<ul>
+<li>在devops-master01上启动flannel网络、calico网络、dashboard以及heapster</li>
+</ul>
+<pre><code>kubectl apply -f /root/kubeadm-ha/kube-flannel/
+
+# 等待所有pods正常
+kubectl get pods --all-namespaces -w
+
+# 等待master为Ready状态
+kubectl get nodes
+
+kubectl taint nodes --all node-role.kubernetes.io/master-
+
+kubectl apply -f /root/kubeadm-ha/kube-calico/
+configmap &quot;calico-config&quot; created
+secret &quot;calico-etcd-secrets&quot; created
+daemonset &quot;calico-node&quot; created
+deployment &quot;calico-kube-controllers&quot; created
+serviceaccount &quot;calico-kube-controllers&quot; created
+serviceaccount &quot;calico-node&quot; created
+clusterrole &quot;calico-kube-controllers&quot; created
+clusterrolebinding &quot;calico-kube-controllers&quot; created
+clusterrole &quot;calico-node&quot; created
+clusterrolebinding &quot;calico-node&quot; created
+
+kubectl get pods --all-namespaces -w
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-d987c6db5-vzfvr   1/1       Running   0          4m
+kube-system   calico-node-rwt78                         2/2       Running   0          1m
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          6m
+kube-system   kube-controller-manager-devops-master01   1/1       Running   0          6m
+kube-system   kube-dns-6f4fd4bdf-x9pvq                  3/3       Running   0          7m
+kube-system   kube-flannel-ds-g4qcj                     1/1       Running   0          3m
+kube-system   kube-proxy-tn9nq                          1/1       Running   0          7m
+kube-system   kube-scheduler-devops-master01            1/1       Running   0          6m
+
+kubectl apply -f /root/kubeadm-ha/kube-dashboard/
+serviceaccount &quot;admin-user&quot; created
+clusterrolebinding &quot;admin-user&quot; created
+secret &quot;kubernetes-dashboard-certs&quot; created
+serviceaccount &quot;kubernetes-dashboard&quot; created
+role &quot;kubernetes-dashboard-minimal&quot; created
+rolebinding &quot;kubernetes-dashboard-minimal&quot; created
+deployment &quot;kubernetes-dashboard&quot; created
+service &quot;kubernetes-dashboard&quot; created
+
+kubectl get pods --all-namespaces
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-d987c6db5-tncpw   1/1       Running   0          2m
+kube-system   calico-node-tfxkx                         2/2       Running   0          2m
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          4m
+kube-system   kube-controller-manager-devops-master01   1/1       Running   0          4m
+kube-system   kube-dns-6f4fd4bdf-wtr46                  3/3       Running   0          5m
+kube-system   kube-flannel-ds-rx4tp                     1/1       Running   0          4m
+kube-system   kube-proxy-cgdsn                          1/1       Running   0          5m
+kube-system   kube-scheduler-devops-master01            1/1       Running   0          4m
+kube-system   kubernetes-dashboard-7b7b5cd79b-lktn5     1/1       Running   0          2m
+</code></pre>
+
+<ul>
+<li>
+<p>访问dashboard地址<br />
+https://devops-master01:30000/#!/login</p>
+</li>
+<li>
+<p>获取token，把token粘贴到login页面的token中，即可进入dashboard</p>
+</li>
+</ul>
+<pre><code>kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+</code></pre>
+
+<ul>
+<li>创建heapster</li>
+</ul>
+<pre><code>kubectl apply -f /root/kubeadm-ha/kube-heapster/influxdb/
+
+kubectl apply -f /root/kubeadm-ha/kube-heapster/rbac/
+
+kubectl get pods --all-namespaces 
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
+kube-system   calico-etcd-87fbn                         1/1       Running   1          8m
+kube-system   calico-kube-controllers-d669cc78f-4fvkh   1/1       Running   1          8m
+kube-system   calico-node-dd67w                         2/2       Running   2          8m
+kube-system   heapster-dfd674df9-brt5x                  1/1       Running   1          3m
+kube-system   kube-apiserver-devops-master01            1/1       Running   1          8m
+kube-system   kube-controller-manager-devops-master01   1/1       Running   1          8m
+kube-system   kube-dns-6f4fd4bdf-j47pk                  3/3       Running   3          9m
+kube-system   kube-proxy-8wl95                          1/1       Running   1          9m
+kube-system   kube-scheduler-devops-master01            1/1       Running   1          8m
+kube-system   kubernetes-dashboard-7b7b5cd79b-qnwrr     1/1       Running   1          6m
+kube-system   monitoring-grafana-76848b566c-zdmm7       1/1       Running   1          3m
+kube-system   monitoring-influxdb-6c4b84d695-5zrmf      1/1       Running   1          3m
+
+systemctl restart docker &amp;&amp; systemctl restart kubelet
+
+# 等待5分钟
+
+kubectl top pod --all-namespaces
+NAMESPACE     NAME                                      CPU(cores)   MEMORY(bytes)   
+kube-system   calico-kube-controllers-d987c6db5-zjxnv   0m           20Mi            
+kube-system   calico-node-hmdlg                         16m          83Mi            
+kube-system   heapster-dfd674df9-hct67                  1m           24Mi            
+kube-system   kube-apiserver-devops-master01            24m          240Mi           
+kube-system   kube-controller-manager-devops-master01   14m          50Mi            
+kube-system   kube-dns-6f4fd4bdf-zg66x                  1m           49Mi            
+kube-system   kube-flannel-ds-h7ng4                     6m           33Mi            
+kube-system   kube-proxy-mxcwz                          2m           29Mi            
+kube-system   kube-scheduler-devops-master01            5m           22Mi            
+kube-system   kubernetes-dashboard-7b7b5cd79b-6ldfn     0m           20Mi            
+kube-system   monitoring-grafana-76848b566c-h5998       0m           28Mi            
+kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi            
+</code></pre>
+
+<ul>
+<li>
+<p>访问dashboard地址，等10分钟，就会显示性能数据<br />
+https://devops-master01:30000/#!/login</p>
+</li>
+<li>
+<p>在devops-master01上复制/etc/kubernetes/pki到devops-master02、devops-master03</p>
+</li>
+</ul>
+<pre><code>scp -r /etc/kubernetes/pki devops-master02:/etc/kubernetes/
+
+scp -r /etc/kubernetes/pki devops-master03:/etc/kubernetes/
+</code></pre>
+
+<ul>
+<li>在devops-master02进行初始化</li>
+</ul>
+<pre><code>cd /root/kubeadm-ha/
+kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
+...
+  kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.28:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
+
+kubectl get pods --all-namespaces -o wide | grep master02
+</code></pre>
+
+<ul>
+<li>在devops-master03进行初始化</li>
+</ul>
+<pre><code>cd /root/kubeadm-ha/
+kubeadm init --config=/root/kubeadm-ha/kubeadm-init.yaml
+...
+  kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.29:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
+
+kubectl get pods --all-namespaces -o wide | grep master03
+</code></pre>
+
+<ul>
+<li>在devops-master01上检查nodes加入情况</li>
+</ul>
+<pre><code>kubectl get nodes
+NAME              STATUS    ROLES     AGE       VERSION
+devops-master01   Ready     master    19m       v1.9.1
+devops-master02   Ready     master    4m        v1.9.1
+devops-master03   Ready     master    4m        v1.9.1
+</code></pre>
+
+<ul>
+<li>在所有master上增加apiserver的apiserver-count设置</li>
+</ul>
+<pre><code>vi /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --apiserver-count=3
+
+systemctl restart docker &amp;&amp; systemctl restart kubelet
+</code></pre>
+
+<ul>
+<li>在devops-master01上检查高可用状态</li>
+</ul>
+<pre><code>kubectl get pods --all-namespaces -o wide
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE       IP              NODE
+kube-system   calico-kube-controllers-d987c6db5-zjxnv   1/1       Running   2          14m       192.168.20.27   devops-master01
+kube-system   calico-node-dldxz                         2/2       Running   2          3m        192.168.20.29   devops-master03
+kube-system   calico-node-hmdlg                         2/2       Running   4          14m       192.168.20.27   devops-master01
+kube-system   calico-node-tkbbx                         2/2       Running   2          3m        192.168.20.28   devops-master02
+kube-system   heapster-dfd674df9-hct67                  1/1       Running   2          11m       10.244.172.11   devops-master01
+kube-system   kube-apiserver-devops-master01            1/1       Running   1          2m        192.168.20.27   devops-master01
+kube-system   kube-apiserver-devops-master02            1/1       Running   1          2m        192.168.20.28   devops-master02
+kube-system   kube-apiserver-devops-master03            1/1       Running   0          24s       192.168.20.29   devops-master03
+kube-system   kube-controller-manager-devops-master01   1/1       Running   2          15m       192.168.20.27   devops-master01
+kube-system   kube-controller-manager-devops-master02   1/1       Running   1          2m        192.168.20.28   devops-master02
+kube-system   kube-controller-manager-devops-master03   1/1       Running   1          2m        192.168.20.29   devops-master03
+kube-system   kube-dns-6f4fd4bdf-zg66x                  3/3       Running   6          16m       10.244.172.13   devops-master01
+kube-system   kube-flannel-ds-6njgf                     1/1       Running   1          3m        192.168.20.29   devops-master03
+kube-system   kube-flannel-ds-g24ww                     1/1       Running   1          3m        192.168.20.28   devops-master02
+kube-system   kube-flannel-ds-h7ng4                     1/1       Running   2          16m       192.168.20.27   devops-master01
+kube-system   kube-proxy-2kk8s                          1/1       Running   1          3m        192.168.20.28   devops-master02
+kube-system   kube-proxy-mxcwz                          1/1       Running   2          16m       192.168.20.27   devops-master01
+kube-system   kube-proxy-vz7nf                          1/1       Running   1          3m        192.168.20.29   devops-master03
+kube-system   kube-scheduler-devops-master01            1/1       Running   2          16m       192.168.20.27   devops-master01
+kube-system   kube-scheduler-devops-master02            1/1       Running   1          2m        192.168.20.28   devops-master02
+kube-system   kube-scheduler-devops-master03            1/1       Running   1          2m        192.168.20.29   devops-master03
+kube-system   kubernetes-dashboard-7b7b5cd79b-6ldfn     1/1       Running   3          12m       10.244.172.12   devops-master01
+kube-system   monitoring-grafana-76848b566c-h5998       1/1       Running   2          11m       10.244.172.14   devops-master01
+kube-system   monitoring-influxdb-6c4b84d695-whzmp      1/1       Running   2          11m       10.244.172.10   devops-master01
+</code></pre>
+
+<pre><code>kubectl taint nodes --all node-role.kubernetes.io/master-
+node &quot;devops-master02&quot; untainted
+node &quot;devops-master03&quot; untainted
+</code></pre>
+
+<ul>
+<li>
+<p>注意，kubernetes-dashboard在scale的过程中经常会出现Error或者CrashLoopBackOff，需要耐心等待<br />
+<pre><code>kubectl get deploy -n kube-system
+
+kubectl scale --replicas=3 -n kube-system deployment/calico-kube-controllers
+kubectl get pods --all-namespaces -o wide| grep calico-kube-controllers
+
+kubectl scale --replicas=3 -n kube-system deployment/kube-dns
+kubectl get pods --all-namespaces -o wide| grep kube-dns
+
+kubectl scale --replicas=3 -n kube-system deployment/kubernetes-dashboard
+kubectl get pods --all-namespaces -o wide| grep kubernetes-dashboard
+
+# heapster启动多个就会出现问题，请不要启动多个
+# kubectl scale --replicas=1 -n kube-system deployment/heapster
+# kubectl get pods --all-namespaces -o wide| grep heapster
+# 
+# kubectl scale --replicas=1 -n kube-system deployment/monitoring-grafana
+# kubectl get pods --all-namespaces -o wide| grep monitoring-grafana
+# 
+# kubectl scale --replicas=1 -n kube-system deployment/monitoring-influxdb
+# kubectl get pods --all-namespaces -o wide| grep monitoring-influxdb
+</code></pre></p>
+</li>
+<li>
+<p>检查所有pods的运行状态，所有节点都有运行以下pods，其中heapster相关的pod整个集群只能够启动一个，总共30个pods:<br />
+<pre><code>kube-apiserver
+kube-controller-manager
+kube-proxy
+kube-scheduler
+kube-dns
+
+kube-flannel-ds
+
+calico-kube-controllers
+calico-node
+
+kubernetes-dashboard
+</code></pre></p>
+</li>
+</ul>
+<pre><code>kubectl get pods --all-namespaces -o wide
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE       IP               NODE
+kube-system   calico-kube-controllers-d987c6db5-5mdp9   1/1       Running   0          1m        192.168.20.28    devops-master02
+kube-system   calico-kube-controllers-d987c6db5-pbgg5   1/1       Running   0          1m        192.168.20.29    devops-master03
+kube-system   calico-kube-controllers-d987c6db5-v9k5x   1/1       Running   2          14m       192.168.20.27    devops-master01
+kube-system   calico-node-59kcc                         2/2       Running   2          6m        192.168.20.29    devops-master03
+kube-system   calico-node-6gc8k                         2/2       Running   2          9m        192.168.20.28    devops-master02
+kube-system   calico-node-7qc5h                         2/2       Running   4          14m       192.168.20.27    devops-master01
+kube-system   heapster-dfd674df9-2qhlf                  1/1       Running   2          12m       10.244.172.10    devops-master01
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          1m        192.168.20.27    devops-master01
+kube-system   kube-apiserver-devops-master02            1/1       Running   1          3m        192.168.20.28    devops-master02
+kube-system   kube-apiserver-devops-master03            1/1       Running   0          1m        192.168.20.29    devops-master03
+kube-system   kube-controller-manager-devops-master01   1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-controller-manager-devops-master02   1/1       Running   1          8m        192.168.20.28    devops-master02
+kube-system   kube-controller-manager-devops-master03   1/1       Running   1          4m        192.168.20.29    devops-master03
+kube-system   kube-dns-6f4fd4bdf-7vb8x                  3/3       Running   6          15m       10.244.172.11    devops-master01
+kube-system   kube-dns-6f4fd4bdf-nqg8s                  3/3       Running   0          1m        10.244.250.129   devops-master02
+kube-system   kube-dns-6f4fd4bdf-vftk9                  3/3       Running   0          1m        10.244.211.129   devops-master03
+kube-system   kube-flannel-ds-jhdhw                     1/1       Running   1          9m        192.168.20.28    devops-master02
+kube-system   kube-flannel-ds-mkcn4                     1/1       Running   1          6m        192.168.20.29    devops-master03
+kube-system   kube-flannel-ds-qs9ht                     1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-proxy-44npj                          1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-proxy-6lgws                          1/1       Running   1          6m        192.168.20.29    devops-master03
+kube-system   kube-proxy-gn6hk                          1/1       Running   1          9m        192.168.20.28    devops-master02
+kube-system   kube-scheduler-devops-master01            1/1       Running   2          15m       192.168.20.27    devops-master01
+kube-system   kube-scheduler-devops-master02            1/1       Running   1          8m        192.168.20.28    devops-master02
+kube-system   kube-scheduler-devops-master03            1/1       Running   1          5m        192.168.20.29    devops-master03
+kube-system   kubernetes-dashboard-7b7b5cd79b-8gw4f     1/1       Running   4          14m       10.244.172.13    devops-master01
+kube-system   kubernetes-dashboard-7b7b5cd79b-fhtvl     1/1       Running   0          55s       10.244.211.130   devops-master03
+kube-system   kubernetes-dashboard-7b7b5cd79b-vwkxs     1/1       Running   0          55s       10.244.250.130   devops-master02
+kube-system   monitoring-grafana-76848b566c-hzwwk       1/1       Running   2          12m       10.244.172.14    devops-master01
+kube-system   monitoring-influxdb-6c4b84d695-hmktb      1/1       Running   2          12m       10.244.172.12    devops-master01
+</code></pre>
+
+<pre><code>kubectl get nodes
+NAME              STATUS    ROLES     AGE       VERSION
+devops-master01   Ready     master    38m       v1.9.1
+devops-master02   Ready     master    25m       v1.9.1
+devops-master03   Ready     master    25m       v1.9.1
+</code></pre>
+
+<ul>
+<li>在master上安装keepalived</li>
+</ul>
+<pre><code>cp /root/kubeadm-ha/keepalived/check_apiserver.sh /etc/keepalived/
+
+ll /etc/keepalived/
+
+systemctl restart keepalived
+
+ping 192.168.20.10
+</code></pre>
+
+<ul>
+<li>在master上安装并启动nginx作为负载均衡</li>
+</ul>
+<pre><code>cd /root/kubeadm-ha/nginx-lb
+
+docker-compose up -d
+</code></pre>
+
+<ul>
+<li>在master上验证负载均衡和keepalived是否成功</li>
+</ul>
+<pre><code>curl -k 192.168.20.10:16443 | wc -l
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    14    0    14    0     0   3958      0 --:--:-- --:--:-- --:--:-- 14000
+1
+</code></pre>
+
+<ul>
+<li>在devops-master01上设置proxy高可用</li>
+</ul>
+<pre><code>kubectl edit -n kube-system configmap/kube-proxy
+        server: https://192.168.20.10:16443
+</code></pre>
+
+<ul>
+<li>在master上重启proxy</li>
+</ul>
+<pre><code>kubectl get pods --all-namespaces -o wide | grep proxy
+
+kubectl delete pod -n kube-system kube-proxy-XXX
+</code></pre>
+
+<ul>
+<li>在workers上加入kubernetes集群</li>
+</ul>
+<pre><code>kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.27:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
+</code></pre>
+
+<ul>
+<li>在workers上修改kubernetes集群设置</li>
+</ul>
+<pre><code>sed -e &quot;s/192.168.20.27:6443/192.168.20.10:16443/g&quot; /etc/kubernetes/bootstrap-kubelet.conf &gt; /etc/kubernetes/bootstrap-kubelet.conf
+
+systemctl restart docker &amp;&amp; systemctl restart kubelet
+</code></pre>
+
+<pre><code>kubectl get nodes
+NAME              STATUS    ROLES     AGE       VERSION
+devops-master01   Ready     master    46m       v1.9.1
+devops-master02   Ready     master    44m       v1.9.1
+devops-master03   Ready     master    44m       v1.9.1
+devops-node01     Ready     &lt;none&gt;    50s       v1.9.1
+devops-node02     Ready     &lt;none&gt;    26s       v1.9.1
+devops-node03     Ready     &lt;none&gt;    22s       v1.9.1
+devops-node04     Ready     &lt;none&gt;    17s       v1.9.1
+</code></pre>
+
+<ul>
+<li>设置workers的节点标签</li>
+</ul>
+<pre><code>kubectl label nodes devops-node01 role=worker
+kubectl label nodes devops-node02 role=worker
+kubectl label nodes devops-node03 role=worker
+kubectl label nodes devops-node04 role=worker
+</code></pre>
+
+<ul>
+<li>使用calicoctl查看node的情况</li>
+</ul>
+<pre><code>kubectl apply -f /root/kubeadm-ha/kube-calico/calicoctl/
+
+kubectl get pods --all-namespaces -o wide | grep ctl
+kube-system   calicoctl                                 1/1       Running            0          33s       192.168.20.27    devops-master01
+
+kubectl exec -ti -n kube-system calicoctl -- calicoctl get nodes -o wide
+NAME              ASN         IPV4               IPV6   
+devops-master01   (unknown)   192.168.20.27/24          
+devops-master02   (unknown)   192.168.20.28/24          
+devops-master03   (unknown)   192.168.20.29/24          
+devops-node01     (unknown)   192.168.20.17/24          
+devops-node02     (unknown)   192.168.20.18/24          
+devops-node03     (unknown)   192.168.20.19/24          
+devops-node04     (unknown)   192.168.20.20/24          
+</code></pre></article></body></html>

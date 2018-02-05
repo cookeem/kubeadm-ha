@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    nodePort: 32000
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: https
+    nodePort: 32001
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app: ingress-nginx
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-demo
+  namespace: default
+spec:
+  rules:
+  - host: devops-master-lb
+    http:
+      paths:
+      - backend:
+          serviceName: jenkins
+          servicePort: 80
+        path: /jenkins
+      - backend:
+          serviceName: gitlab
+          servicePort: 80
+        path: /gitlab
+      - backend:
+          serviceName: nexus
+          servicePort: 8081
+        path: /nexus
+      - backend:
+          serviceName: inops-tomcat
+          servicePort: 8080
+        path: /inops

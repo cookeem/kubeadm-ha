@@ -1,10 +1,11 @@
 #!/bin/bash
 
+# if check error then repeat check for 12 times, else exit
 err=0
-for k in $( seq 1 10 )
+for k in $(seq 1 12)
 do
     check_code=$(curl localhost:6443 | wc -l)
-    if [ "$check_code" = "1" ]; then
+    if [[ $check_code == "0" ]]; then
         err=$(expr $err + 1)
         sleep 5
         continue
@@ -13,7 +14,8 @@ do
         break
     fi
 done
-if [ "$err" != "0" ]; then
+
+if [[ $err != "0" ]]; then
     echo "systemctl stop keepalived"
     /usr/bin/systemctl stop keepalived
     exit 1
