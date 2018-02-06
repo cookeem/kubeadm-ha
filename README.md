@@ -1,4 +1,4 @@
-# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.9.x和v1.7.x版本以及v1.6.x版本
+# kubeadm-highavailiability - kubernetes high availiability deployment based on kubeadm, for Kubernetes version 1.9.x/1.7.x/1.6.x
 
 ![k8s logo](images/v1.6-v1.7/Kubernetes.png)
 
@@ -11,85 +11,84 @@
 
 ---
 
-- [GitHub项目地址](https://github.com/cookeem/kubeadm-ha/)
-- [OSChina项目地址](https://git.oschina.net/cookeem/kubeadm-ha/)
+- [GitHub project URL](https://github.com/cookeem/kubeadm-ha/)
+- [OSChina project URL](https://git.oschina.net/cookeem/kubeadm-ha/)
 
 ---
 
-- 该指引适用于v1.9.x版本的kubernetes集群
+- This operation instruction is for version v1.9.x kubernetes cluster
 
-> v1.9.0以前的版本kubeadm还不支持高可用部署，因此不推荐作为生产环境的部署方式。从v1.9.x版本开始，kubeadm官方正式支持高可用集群的部署，安装kubeadm务必保证版本至少为1.9.0。
+> Before v1.9.0 kubeadm still not support high availability deployment, so it's not recommend for production usage. But from v1.9.0, kubeadm support high availability deployment officially, this instruction version for at least v1.9.0.
 
-### 目录
+### category
 
-### 目录
-
-1. [部署架构](#部署架构)
-    1. [概要部署架构](#概要部署架构)
-    1. [详细部署架构](#详细部署架构)
-    1. [主机节点清单](#主机节点清单)
-    1. [端口清单](#端口清单)
-1. [安装前准备](#安装前准备)
-    1. [版本信息](#版本信息)
-    1. [所需docker镜像](#所需docker镜像)
-    1. [系统设置](#系统设置)
-1. [kubernetes安装](#kubernetes安装)
-    1. [kubernetes相关服务安装](#kubernetes相关服务安装)
-1. [配置文件初始化](#配置文件初始化)
-    1. [初始化脚本配置](#初始化脚本配置) 
-    1. [独立etcd集群部署](#独立etcd集群部署)
-1. [第一台master初始化](#第一台master初始化)
-    1. [kubeadm初始化](#kubeadm初始化)
-    1. [安装基础组件](#安装基础组件)
-1. [master集群高可用设置](#master集群高可用设置)
-    1. [复制配置](#复制配置)
-    1. [其余master节点初始化](#其余master节点初始化)
-    1. [keepalived安装配置](#keepalived安装配置)
-    1. [nginx负载均衡配置](#nginx负载均衡配置)
-    1. [kube-proxy配置](#kube-proxy配置)
-1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
-    1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
+1. [deployment architecture](#deployment-architecture)
+    1. [deployment architecture summary](#deployment-architecture-summary)
+    1. [detail deployment architecture](#detail-deployment-architecture)
+    1. [hosts list](#hosts-list)
+    1. [ports list](#ports-list)
+1. [prerequisites](#prerequisites)
+    1. [version info](#version-info)
+    1. [required docker images](#required-docker-images)
+    1. [system configuration](#system-configuration)
+1. [kubernetes installation](#kubernetes-installation)
+    1. [kubernetes and related services installation](#kubernetes-and-related-services-installation)
+1. [configuration files settings](#configuration-files-settings)
+    1. [script files settings](#script-files-settings) 
+    1. [deploy independent etcd cluster](#deploy-independent-etcd-cluster)
+1. [use kubeadm to init first master](#use-kubeadm-to-init-first-master)
+    1. [kubeadm init](#kubeadm-init)
+    1. [basic components installation](#basic-components-installation)
+1. [kubernetes masters high avialiability configuration](#kubernetes-masters-high-avialiability-configuration)
+    1. [copy configuration files](#copy-configuration-files)
+    1. [other master nodes init](#other-master-nodes-init)
+    1. [keepalived installation](#keepalived-installation)
+    1. [nginx load balancer configuration](#nginx-load-balancer-configuration)
+    1. [kube-proxy configuration](#kube-proxy-configuration)
+1. [all nodes join the kubernetes cluster](#all-nodes-join-the-kubernetes-cluster)
+    1. [use kubeadm to join the cluster](#use-kubeadm-to-join-the-cluster)
     
 
+### deployment architecture
 
-### 部署架构
-
-#### 概要部署架构
+#### deployment architecture summary
 
 ![ha logo](images/v1.6-v1.7/ha.png)
 
-* kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
-
 ---
-[返回目录](#目录)
 
-#### 详细部署架构
+[category](#category)
+
+#### detail deployment architecture
 
 ![k8s ha](images/v1.6-v1.7/k8s-ha.png)
 
-* kubernetes组件说明
+* kubernetes components:
 
-> kube-apiserver：集群核心，集群API接口、集群各个组件通信的中枢；集群安全控制；
+> kube-apiserver: exposes the Kubernetes API. It is the front-end for the Kubernetes control plane. It is designed to scale horizontally – that is, it scales by deploying more instances.
 
-> etcd：集群的数据中心，用于存放集群的配置以及状态信息，非常重要，如果数据丢失那么集群将无法恢复；因此高可用集群部署首先就是etcd是高可用集群；
+> etcd: is used as Kubernetes’ backing store. All cluster data is stored here. Always have a backup plan for etcd’s data for your Kubernetes cluster.
 
-> kube-scheduler：集群Pod的调度中心；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-scheduler处于活跃状态；
 
-> kube-controller-manager：集群状态管理器，当集群状态与期望不同时，kcm会努力让集群恢复期望状态，比如：当一个pod死掉，kcm会努力新建一个pod来恢复对应replicas set期望的状态；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-controller-manager处于活跃状态；
+> kube-scheduler: watches newly created pods that have no node assigned, and selects a node for them to run on.
 
-> kubelet: kubernetes node agent，负责与node上的docker engine打交道；
 
-> kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
+> kube-controller-manager: runs controllers, which are the background threads that handle routine tasks in the cluster. Logically, each controller is a separate process, but to reduce complexity, they are all compiled into a single binary and run in a single process.
 
-* 负载均衡
+> kubelet: is the primary node agent. It watches for pods that have been assigned to its node (either by apiserver or via local configuration file)
 
-> keepalived集群设置一个虚拟ip地址，虚拟ip地址指向devops-master01、devops-master02、devops-master03。
+> kube-proxy: enables the Kubernetes service abstraction by maintaining network rules on the host and performing connection forwarding.
 
-> nginx用于devops-master01、devops-master02、devops-master03的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.20.10)以及nginx端口(16443)访问master集群的apiserver。
+
+* load balancer
+
+> keepalived cluster config a virtual IP address (192.168.20.10), this virtual IP address point to devops-master01, devops-master02, devops-master03. 
+
+> nginx service as the load balancer of devops-master01, devops-master02, devops-master03's apiserver. The other nodes kubernetes services connect the keepalived virtual ip address (192.168.20.10) and nginx exposed port (16443) to communicate with the master cluster's apiservers. 
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 #### 主机节点清单
 
@@ -124,7 +123,7 @@ TCP | Inbound | 30000-32767 | NodePort Services**
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 ### 安装前准备
 
@@ -182,7 +181,7 @@ Kubernetes v1.9.1
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 #### 所需docker镜像
 
@@ -209,7 +208,7 @@ $ docker pull nginx
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 #### 系统设置
 
@@ -282,7 +281,7 @@ $ reboot
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 ### kubernetes安装
 
@@ -327,13 +326,13 @@ $ systemctl enable keepalived && systemctl restart keepalived
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 ### 配置文件初始化
 
 #### 初始化脚本配置
 
-* 在所有master节点上获取代码，并进入代码目录
+* 在所有master节点上获取代码，并进入代码category
 
 ```
 $ git clone https://github.com/cookeem/kubeadm-ha
@@ -422,7 +421,7 @@ set calico deployment config file success: kube-calico/calico.yaml
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 #### 独立etcd集群部署
 
@@ -456,7 +455,7 @@ $ docker exec -ti etcd etcdctl member list
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 ### 第一台master初始化
 
@@ -640,13 +639,13 @@ kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 ### master集群高可用设置
 
 #### 复制配置
 
-* 在devops-master01上复制目录/etc/kubernetes/pki到devops-master02、devops-master03，从v1.9.x开始，kubeadm会检测pki目录是否有证书，如果已经存在证书则跳过证书生成的步骤
+* 在devops-master01上复制category/etc/kubernetes/pki到devops-master02、devops-master03，从v1.9.x开始，kubeadm会检测pkicategory是否有证书，如果已经存在证书则跳过证书生成的步骤
 
 ```
 scp -r /etc/kubernetes/pki devops-master02:/etc/kubernetes/
@@ -655,7 +654,7 @@ scp -r /etc/kubernetes/pki devops-master03:/etc/kubernetes/
 ```
 
 ---
-[返回目录](#目录)
+[category](#category)
 
 #### 其余master节点初始化
 
@@ -772,7 +771,7 @@ devops-master03   Ready     master    25m       v1.9.1
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 #### keepalived安装配置
 
@@ -786,7 +785,7 @@ $ ping 192.168.20.10
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 #### nginx负载均衡配置
 
@@ -808,7 +807,7 @@ curl -k 192.168.20.10:16443 | wc -l
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 #### kube-proxy配置
 
@@ -828,7 +827,7 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 ---
 
-[返回目录](#目录)
+[category](#category)
 
 ### node节点加入高可用集群设置
 
