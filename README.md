@@ -22,10 +22,13 @@
 
 ### 目录
 
+### 目录
+
 1. [部署架构](#部署架构)
     1. [概要部署架构](#概要部署架构)
     1. [详细部署架构](#详细部署架构)
     1. [主机节点清单](#主机节点清单)
+    1. [端口清单](#端口清单)
 1. [安装前准备](#安装前准备)
     1. [版本信息](#版本信息)
     1. [所需docker镜像](#所需docker镜像)
@@ -41,15 +44,13 @@
 1. [master集群高可用设置](#master集群高可用设置)
     1. [复制配置](#复制配置)
     1. [其余master节点初始化](#其余master节点初始化)
-    1. [验证高可用安装](#验证高可用安装)
     1. [keepalived安装配置](#keepalived安装配置)
     1. [nginx负载均衡配置](#nginx负载均衡配置)
     1. [kube-proxy配置](#kube-proxy配置)
-    1. [验证master集群高可用](#验证master集群高可用)
 1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
     1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
-    1. [部署应用验证集群](#部署应用验证集群)
     
+
 
 ### 部署架构
 
@@ -92,11 +93,34 @@
 
 #### 主机节点清单
 
- 主机名 | IP地址 | 说明 | 组件 
- :--- | :--- | :--- | :---
- devops-master01 ~ 03 | 192.168.20.27 ~ 29 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster、calico
- 无 | 192.168.20.10 | keepalived虚拟IP | 无
- devops-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet、kube-proxy
+主机名 | IP地址 | 说明 | 组件 
+:--- | :--- | :--- | :---
+devops-master01 ~ 03 | 192.168.20.27 ~ 29 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster、calico
+无 | 192.168.20.10 | keepalived虚拟IP | 无
+devops-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet、kube-proxy
+
+#### 端口清单
+
+- 相关端口（master）
+
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
+TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 2379-2380 | etcd server client API
+TCP | Inbound | 10250     | Kubelet API
+TCP | Inbound | 10251     | kube-scheduler
+TCP | Inbound | 10252     | kube-controller-manager
+TCP | Inbound | 10255     | Read-only Kubelet API
+
+- 相关端口（worker）
+
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 10250       | Kubelet API
+TCP | Inbound | 10255       | Read-only Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services**
+
 
 ---
 
@@ -109,7 +133,7 @@
 * Linux版本：CentOS 7.4.1708
 
 ```
-cat /etc/redhat-release 
+$ cat /etc/redhat-release 
 CentOS Linux release 7.4.1708 (Core) 
 ```
 
@@ -162,7 +186,7 @@ Kubernetes v1.9.1
 
 #### 所需docker镜像
 
-* 在本机MacOSX上pull相关docker镜像
+* 相关docker镜像以及版本
 
 ```
 $ docker pull quay.io/calico/kube-controllers:v2.0.0
@@ -546,9 +570,13 @@ kube-system     kubernetes-dashboard-87497878f-p6nj4        1/1       Running   
 
 * 获取token，把token粘贴到login页面的token中，即可进入dashboard
 
+![dashboard-login](images/dashboard-login.png)
+
 ```
 $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
 ```
+
+![dashboard](images/dashboard.png)
 
 * 在devops-master01上安装heapster
 
@@ -598,6 +626,10 @@ kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi
 
 * 访问dashboard地址，等10分钟，就会显示性能数据
 https://devops-master01:30000/#!/login
+
+![heapster-dashboard](images/heapster-dashboard.png)
+
+![heapster](images/heapster.png)
 
 * 至此，第一台master成功安装，并已经完成flannel、calico、dashboard、heapster的部署
 
