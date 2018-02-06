@@ -302,19 +302,19 @@ $ yum install -y kubelet-1.9.1-0.x86_64 kubeadm-1.9.1-0.x86_64 kubectl-1.9.1-0.x
 $ systemctl enable kubelet && systemctl start kubelet
 ```
 
-* 在所有kubernetes节点上设置kubelet使用cgroupfs，与dockerd保持一致，否则kubelet会启动报错
+* on all kubernetes nodes: set kubelet KUBELET_CGROUP_ARGS parameter the same as docker daemon's settings, here docker daemon and kubelet use cgroupfs as cgroup-driver.
 
 ```
-# 默认kubelet使用的cgroup-driver=systemd，改为cgroup-driver=cgroupfs
+# by default kubelet use cgroup-driver=systemd, modify it as cgroup-driver=cgroupfs
 $ vi /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 #Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=systemd"
 Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"
 
-# 重设kubelet服务，并重启kubelet服务
+# reload then restart kubelet service
 $ systemctl daemon-reload && systemctl restart kubelet
 ```
 
-* 在所有master节点上安装并启动keepalived
+* on all kubernetes nodes: install and start keepalived service
 
 ```
 $ yum install -y keepalived
@@ -325,11 +325,11 @@ $ systemctl enable keepalived && systemctl restart keepalived
 
 [category](#category)
 
-### 配置文件初始化
+### configuration files settings
 
-#### 初始化脚本配置
+#### script files settings
 
-* 在所有master节点上获取代码，并进入代码category
+* on all kubernetes master nodes: get the source code, and change the working directory to the source code directory
 
 ```
 $ git clone https://github.com/cookeem/kubeadm-ha
@@ -337,7 +337,7 @@ $ git clone https://github.com/cookeem/kubeadm-ha
 $ cd kubeadm-ha
 ```
 
-* 在所有master节点上设置初始化脚本配置，每一项配置参见脚本中的配置说明，请务必正确配置。该脚本用于生成相关重要的配置文件
+* on all kubernetes master nodes: set the `create-config.sh` file, this script will create all configuration files, follow the setting comment and make sure you set the parameters correctly.
 
 ```
 $ vi create-config.sh
@@ -395,17 +395,17 @@ export K8SHA_CIDR=10.244.0.0\\/16
 export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 ```
 
-* 在所有master节点上运行配置脚本，创建对应的配置文件，配置文件包括:
+* on all kubernetes master nodes: run the `create-config.sh` script file and create related configuration files:
 
-> etcd集群docker-compose.yaml文件
+> etcd cluster docker-compose.yaml file
 
-> keepalived配置文件
+> keepalived configuration file
 
-> nginx负载均衡集群docker-compose.yaml文件
+> nginx load balancer docker-compose.yaml file
 
-> kubeadm init 配置文件
+> kubeadm init configuration file
 
-> calico配置文件
+> calico configuration file
 
 ```
 $ ./create-config.sh
@@ -420,24 +420,23 @@ set calico deployment config file success: kube-calico/calico.yaml
 
 [category](#category)
 
-#### 独立etcd集群部署
+#### deploy independent etcd cluster
 
-* 在所有master节点上重置并启动etcd集群（非TLS模式）
+* on all kubernetes master nodes: deploy independent etcd cluster (non-TLS mode)
 
 ```
-# 重置kubernetes集群
+# reset kubernetes cluster
 $ kubeadm reset
 
-# 清空etcd集群数据
+# clear etcd cluster data
 $ rm -rf /var/lib/etcd-cluster
 
-# 重置并启动etcd集群
+# reset and start etcd cluster
 $ docker-compose --file etcd/docker-compose.yaml stop
 $ docker-compose --file etcd/docker-compose.yaml rm -f
 $ docker-compose --file etcd/docker-compose.yaml up -d
 
-# 验证etcd集群状态是否正常
-
+# check etcd cluster status
 $ docker exec -ti etcd etcdctl cluster-health
 member 531504c79088f553 is healthy: got healthy result from http://192.168.20.29:2379
 member 56c53113d5e1cfa3 is healthy: got healthy result from http://192.168.20.27:2379
@@ -454,11 +453,11 @@ $ docker exec -ti etcd etcdctl member list
 
 [category](#category)
 
-### 第一台master初始化
+### use kubeadm to init first master
 
-#### kubeadm初始化
+#### kubeadm init
 
-* 在所有master节点上重置网络
+* on all kubernetes master nodes: reset cni and docker network
 
 ```
 $ systemctl stop kubelet
@@ -467,7 +466,6 @@ $ rm -rf /var/lib/cni/
 $ rm -rf /var/lib/kubelet/*
 $ rm -rf /etc/cni/
 
-# 删除遗留的网络接口
 $ ip a | grep -E 'docker|flannel|cni'
 $ ip link del docker0
 $ ip link del flannel.1
