@@ -124,18 +124,18 @@ TCP | Inbound | 30000-32767 | NodePort Services**
 
 [category](#category)
 
-### 安装前准备
+### prerequisites
 
-#### 版本信息
+#### version info
 
-* Linux版本：CentOS 7.4.1708
+* Linux version: CentOS 7.4.1708
 
 ```
 $ cat /etc/redhat-release 
 CentOS Linux release 7.4.1708 (Core) 
 ```
 
-* docker版本：17.12.0-ce-rc2
+* docker version: 17.12.0-ce-rc2
 
 ```
 $ docker version
@@ -158,21 +158,21 @@ Server:
   Experimental: false
 ```
 
-* kubeadm版本：v1.9.1
+* kubeadm version: v1.9.1
 
 ```
 $ kubeadm version
 kubeadm version: &version.Info{Major:"1", Minor:"9", GitVersion:"v1.9.1", GitCommit:"3a1c9449a956b6026f075fa3134ff92f7d55f812", GitTreeState:"clean", BuildDate:"2018-01-04T11:40:06Z", GoVersion:"go1.9.2", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-* kubelet版本：v1.9.1
+* kubelet version: v1.9.1
 
 ```
 $ kubelet --version
 Kubernetes v1.9.1
 ```
 
-* 网络组件
+* networks add-ons
 
 > flannel
 
@@ -182,9 +182,7 @@ Kubernetes v1.9.1
 
 [category](#category)
 
-#### 所需docker镜像
-
-* 相关docker镜像以及版本
+#### required docker images
 
 ```
 $ docker pull quay.io/calico/kube-controllers:v2.0.0
@@ -209,9 +207,9 @@ $ docker pull nginx
 
 [category](#category)
 
-#### 系统设置
+#### system configuration
 
-* 在所有kubernetes节点上增加kubernetes仓库 
+* on all kubernetes nodes: add kubernetes' repository
 
 ```
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -225,19 +223,19 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cl
 EOF
 ```
 
-* 在所有kubernetes节点上进行系统更新
+* on all kubernetes nodes: use yum to update system
 
 ```
 $ yum update -y
 ```
 
-* 在所有kubernetes节点上关闭防火墙
+* on all kubernetes nodes: turn off firewalld service
 
 ```
 $ systemctl disable firewalld && systemctl stop firewalld && systemctl status firewalld
 ```
 
-* 在所有kubernetes节点上设置SELINUX为permissive模式
+* on all kubernetes nodes: set SELINUX to permissive mode
 
 ```
 $ vi /etc/selinux/config
@@ -246,7 +244,7 @@ SELINUX=permissive
 $ setenforce 0
 ```
 
-* 在所有kubernetes节点上设置iptables参数，否则kubeadm init会提示错误
+* on all kubernetes nodes: set iptables parameters
 
 ```
 $ cat <<EOF >  /etc/sysctl.d/k8s.conf
@@ -258,21 +256,21 @@ EOF
 sysctl --system
 ```
 
-* 在所有kubernetes节点上禁用swap
+* on all kubernetes nodes: disable swap
 
 ```
 $ swapoff -a
 
-# 禁用fstab中的swap项目
+# disable swap mount point in /etc/fstab
 $ vi /etc/fstab
 #/dev/mapper/centos-swap swap                    swap    defaults        0 0
 
-# 确认swap已经被禁用
+# check swap is disabled
 $ cat /proc/swaps
 Filename                Type        Size    Used    Priority
 ```
 
-* 在所有kubernetes节点上重启主机
+* on all kubernetes nodes: reboot host
 
 ```
 $ reboot
@@ -282,18 +280,18 @@ $ reboot
 
 [category](#category)
 
-### kubernetes安装
+### kubernetes installation
 
-#### kubernetes相关服务安装
+#### kubernetes and related services installation
 
-* 在所有kubernetes节点上验证SELINUX模式，必须保证SELINUX为permissive模式，否则kubernetes启动会出现各种异常
+* on all kubernetes nodes: check SELINUX mode, it must be permissive mode
 
 ```
 $ getenforce
 Permissive
 ```
 
-* 在所有kubernetes节点上安装并启动kubernetes 
+* on all kubernetes nodes: install kubernetes and related services, then start up kubelet and docker daemon
 
 ```
 $ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
