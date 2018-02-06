@@ -100,9 +100,9 @@ devops-node01 ~ 04 | 192.168.20.17 ~ 20 | worker nodes * 4 | kubelet, kube-proxy
 
 #### ports list
 
-- 相关端口（master）
+- master ports list
 
-协议 | 方向 | 端口 | 说明
+Protocol | Direction | Port | Comment
 :--- | :--- | :--- | :---
 TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
 TCP | Inbound | 6443*     | Kubernetes API server
@@ -112,14 +112,13 @@ TCP | Inbound | 10251     | kube-scheduler
 TCP | Inbound | 10252     | kube-controller-manager
 TCP | Inbound | 10255     | Read-only Kubelet API
 
-- 相关端口（worker）
+- worker ports list
 
-协议 | 方向 | 端口 | 说明
+Protocol | Direction | Port | Comment
 :--- | :--- | :--- | :---
 TCP | Inbound | 10250       | Kubelet API
 TCP | Inbound | 10255       | Read-only Kubelet API
 TCP | Inbound | 30000-32767 | NodePort Services**
-
 
 ---
 
