@@ -568,9 +568,11 @@ kube-system     kubernetes-dashboard-87497878f-p6nj4        1/1       Running   
 
 > https://devops-master01:30000/#!/login
 
-* 获取token，把token粘贴到login页面的token中，即可进入dashboard
+* dashboard登录页面效果如下图
 
 ![dashboard-login](images/dashboard-login.png)
+
+* 获取token，把token粘贴到login页面的token中，即可进入dashboard
 
 ```
 $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
@@ -625,7 +627,8 @@ kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi
 ```
 
 * 访问dashboard地址，等10分钟，就会显示性能数据
-https://devops-master01:30000/#!/login
+
+> https://devops-master01:30000/#!/login
 
 ![heapster-dashboard](images/heapster-dashboard.png)
 
