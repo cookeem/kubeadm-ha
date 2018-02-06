@@ -407,6 +407,8 @@ export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 
 > nginx负载均衡集群docker-compose.yaml文件
 
+> kubeadm init 配置文件
+
 > calico配置文件
 
 ```
@@ -424,7 +426,7 @@ set calico deployment config file success: kube-calico/calico.yaml
 
 #### 独立etcd集群部署
 
-* 在所有master节点上重置并启动etcd集群
+* 在所有master节点上重置并启动etcd集群（非TLS模式）
 
 ```
 # 重置kubernetes集群
@@ -479,7 +481,7 @@ $ systemctl restart docker && systemctl restart kubelet
 $ ip a | grep -E 'docker|flannel|cni'
 ```
 
-* 在devops-master01上进行初始化，注意，务必把执行输出的kubeadm join --token XXX --discovery-token-ca-cert-hash YYY 信息记录下来，后续操作需要用到
+* 在devops-master01上进行初始化，注意，务必把输出的kubeadm join --token XXX --discovery-token-ca-cert-hash YYY 信息记录下来，后续操作需要用到
 
 ```
 $ kubeadm init --config=kubeadm-init.yaml
@@ -644,7 +646,7 @@ kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi
 
 #### 复制配置
 
-* 在devops-master01上复制/etc/kubernetes/pki到devops-master02、devops-master03
+* 在devops-master01上复制目录/etc/kubernetes/pki到devops-master02、devops-master03，从v1.9.x开始，kubeadm会检测pki目录是否有证书，如果已经存在证书则跳过证书生成的步骤
 
 ```
 scp -r /etc/kubernetes/pki devops-master02:/etc/kubernetes/
@@ -868,4 +870,4 @@ kubectl label nodes devops-node03 role=worker
 kubectl label nodes devops-node04 role=worker
 ```
 
-- 至此kubernetes高可用集群完成部署
+- 至此kubernetes高可用集群完成部署😃
