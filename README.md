@@ -90,15 +90,15 @@
 
 [category](#category)
 
-#### 主机节点清单
+#### hosts list
 
-主机名 | IP地址 | 说明 | 组件 
+HostName | IPAddress | Notes | Components 
 :--- | :--- | :--- | :---
-devops-master01 ~ 03 | 192.168.20.27 ~ 29 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster、calico
-无 | 192.168.20.10 | keepalived虚拟IP | 无
-devops-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet、kube-proxy
+devops-master01 ~ 03 | 192.168.20.27 ~ 29 | master nodes * 3 | keepalived, nginx, etcd, kubelet, kube-apiserver, kube-scheduler, kube-proxy, kube-dashboard, heapster, calico
+N/A | 192.168.20.10 | keepalived virtual IP | N/A
+devops-node01 ~ 04 | 192.168.20.17 ~ 20 | worker nodes * 4 | kubelet, kube-proxy
 
-#### 端口清单
+#### ports list
 
 - 相关端口（master）
 
@@ -635,7 +635,7 @@ kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi
 
 ![heapster](images/heapster.png)
 
-* 至此，第一台master成功安装，并已经完成flannel、calico、dashboard、heapster的部署
+* 至此，第一台master成功安装，并已经完成flannel, calico, dashboard, heapster的部署
 
 ---
 
@@ -645,7 +645,7 @@ kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi
 
 #### 复制配置
 
-* 在devops-master01上复制category/etc/kubernetes/pki到devops-master02、devops-master03，从v1.9.x开始，kubeadm会检测pkicategory是否有证书，如果已经存在证书则跳过证书生成的步骤
+* 在devops-master01上复制category/etc/kubernetes/pki到devops-master02, devops-master03，从v1.9.x开始，kubeadm会检测pkicategory是否有证书，如果已经存在证书则跳过证书生成的步骤
 
 ```
 scp -r /etc/kubernetes/pki devops-master02:/etc/kubernetes/
