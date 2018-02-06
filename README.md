@@ -65,7 +65,7 @@
 
 #### 详细部署架构
 
-![k8s ha](images/v1.6-v1.7/devops-ha.png)
+![k8s ha](images/v1.6-v1.7/k8s-ha.png)
 
 * kubernetes组件说明
 
