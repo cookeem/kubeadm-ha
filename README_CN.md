@@ -737,6 +737,7 @@ node "devops-master03" untainted
 ```
 
 * 对基础组件进行多节点scale
+
 ```
 $ kubectl get deploy -n kube-system
 NAME                      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
@@ -834,7 +835,7 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 #### kubeadm加入高可用集群
 
-- 在所有worker节点上进行加入kubernetes集群操作
+- 在所有worker节点上进行加入kubernetes集群操作，这里统一使用devops-master01的apiserver地址来加入集群 
 
 ```
 $ kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.27:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e

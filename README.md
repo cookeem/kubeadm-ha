@@ -475,7 +475,7 @@ $ systemctl restart docker && systemctl restart kubelet
 $ ip a | grep -E 'docker|flannel|cni'
 ```
 
-* 在devops-master01上进行初始化，注意，务必把输出的kubeadm join --token XXX --discovery-token-ca-cert-hash YYY 信息记录下来，后续操作需要用到
+* on devops-master01: use kubeadm to init a kubernetes cluster, notice: you must save the following message: kubeadm join --token XXX --discovery-token-ca-cert-hash YYY , this command will use lately.
 
 ```
 $ kubeadm init --config=kubeadm-init.yaml
@@ -483,7 +483,7 @@ $ kubeadm init --config=kubeadm-init.yaml
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.27:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
-* 在所有master节点上设置kubectl客户端连接
+* on all kubernetes master nodes: set kubectl client environment variable
 
 ```
 $ vi ~/.bashrc
@@ -492,17 +492,17 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 $ source ~/.bashrc
 ```
 
-#### 安装基础组件
+#### basic components installation
 
-* 在devops-master01上安装flannel网络组件
+* on devops-master01: install flannel network add-ons
 
 ```
-# 没有网络组件的情况下，节点状态是不正常的
+# master may not work if no network add-ons
 $ kubectl get node
 NAME              STATUS    ROLES     AGE       VERSION
 devops-master01   NotReady  master    14s       v1.9.1
 
-# 安装flannel网络组件
+# install flannel add-ons
 $ kubectl apply -f kube-flannel/
 clusterrole "flannel" created
 clusterrolebinding "flannel" created
@@ -510,17 +510,17 @@ serviceaccount "flannel" created
 configmap "kube-flannel-cfg" created
 daemonset "kube-flannel-ds" created
 
-# 等待所有pods正常
+# waiting for all pods to be normal status
 $ kubectl get pods --all-namespaces -o wide -w
 ```
 
-* 在devops-master01上安装calico网络组件
+* on devops-master01: install calico network add-ons
 
 ```
-# 设置master节点为schedulable
+# set master node as schedulable
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
 
-# 安装calico网络组件
+# install calico network add-ons
 $ kubectl apply -f kube-calico/
 configmap "calico-config" created
 secret "calico-etcd-secrets" created
@@ -534,7 +534,7 @@ clusterrole "calico-node" created
 clusterrolebinding "calico-node" created
 ```
 
-* 在devops-master01上安装dashboard
+* on devops-master01: install dashboard
 
 ```
 $ kubectl apply -f kube-dashboard/
@@ -560,15 +560,15 @@ kube-system     kube-scheduler-devops-master01              1/1       Running   
 kube-system     kubernetes-dashboard-87497878f-p6nj4        1/1       Running   0          4m
 ```
 
-* 通过浏览器访问dashboard地址
+* use browser to access dashboard
 
 > https://devops-master01:30000/#!/login
 
-* dashboard登录页面效果如下图
+* dashboard login interface
 
 ![dashboard-login](images/dashboard-login.png)
 
-* 获取token，把token粘贴到login页面的token中，即可进入dashboard
+* use command below to get token, copy and paste the token on login interface 
 
 ```
 $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
@@ -576,7 +576,7 @@ $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | g
 
 ![dashboard](images/dashboard.png)
 
-* 在devops-master01上安装heapster
+* on devops-master01: install heapster
 
 ```
 $ kubectl apply -f kube-heapster/influxdb/
@@ -605,7 +605,7 @@ kubernetes-dashboard-87497878f-p6nj4      1/1       Running       0          4h
 monitoring-grafana-5ffb49ff84-xxwzn       1/1       Running       0          1m
 monitoring-influxdb-5b77d47fdd-wd7xm      1/1       Running       0          1m
 
-# 等待5分钟
+# wait for 5 minutes
 kubectl top pod --all-namespaces
 NAMESPACE     NAME                                      CPU(cores)   MEMORY(bytes)   
 kube-system   calico-kube-controllers-d987c6db5-zjxnv   0m           20Mi            
@@ -622,7 +622,7 @@ kube-system   monitoring-grafana-76848b566c-h5998       0m           28Mi
 kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi            
 ```
 
-* 访问dashboard地址，等10分钟，就会显示性能数据
+* heapster performance info will show on dashboard
 
 > https://devops-master01:30000/#!/login
 
@@ -630,17 +630,17 @@ kube-system   monitoring-influxdb-6c4b84d695-whzmp      1m           24Mi
 
 ![heapster](images/heapster.png)
 
-* 至此，第一台master成功安装，并已经完成flannel, calico, dashboard, heapster的部署
+* now flannel, calico, dashboard, heapster had installed on the first master node
 
 ---
 
 [category](#category)
 
-### master集群高可用设置
+### kubernetes masters high avialiability configuration
 
-#### 复制配置
+#### copy configuration files
 
-* 在devops-master01上复制category/etc/kubernetes/pki到devops-master02, devops-master03，从v1.9.x开始，kubeadm会检测pkicategory是否有证书，如果已经存在证书则跳过证书生成的步骤
+* on devops-master01: copy `category/etc/kubernetes/pki` to devops-master02 and devops-master03
 
 ```
 scp -r /etc/kubernetes/pki devops-master02:/etc/kubernetes/
@@ -651,27 +651,27 @@ scp -r /etc/kubernetes/pki devops-master03:/etc/kubernetes/
 ---
 [category](#category)
 
-#### 其余master节点初始化
+#### other master nodes init
 
-* 在devops-master02进行初始化
+* on devops-master02: use kubeadm to init master cluster
 
 ```
-# 输出的token和discovery-token-ca-cert-hash应该与devops-master01上的完全一致
+# you will found that output token and discovery-token-ca-cert-hash are the same with devops-master01
 $ kubeadm init --config=kubeadm-init.yaml
 ...
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.28:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
-* 在devops-master03进行初始化
+* on devops-master03: use kubeadm to init master cluster
 
 ```
-# 输出的token和discovery-token-ca-cert-hash应该与devops-master01上的完全一致
+# you will found that output token and discovery-token-ca-cert-hash are the same with devops-master01
 $ kubeadm init --config=kubeadm-init.yaml
 ...
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.29:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
-* 在devops-master01上检查nodes加入情况
+* on any kubernetes master nodes: check nodes status
 
 ```
 $ kubectl get nodes
@@ -681,17 +681,17 @@ devops-master02   Ready     master    4m        v1.9.1
 devops-master03   Ready     master    4m        v1.9.1
 ```
 
-* 在所有master上增加apiserver的apiserver-count设置
+* on all kubernetes master nodes: add apiserver-count settings in `/etc/kubernetes/manifests/kube-apiserver.yaml` file
 
 ```
 $ vi /etc/kubernetes/manifests/kube-apiserver.yaml
     - --apiserver-count=3
 
-# 重启服务
+# restart service
 $ systemctl restart docker && systemctl restart kubelet
 ```
 
-* 在devops-master01上检查高可用状态
+* on any kubernetes master nodes: check all pod status
 
 ```
 $ kubectl get pods --all-namespaces -o wide
@@ -722,7 +722,7 @@ kube-system   monitoring-grafana-76848b566c-h5998       1/1       Running   2   
 kube-system   monitoring-influxdb-6c4b84d695-whzmp      1/1       Running   2          11m       10.244.172.10   devops-master01
 ```
 
-* 设置所有master的scheduable
+* on any kubernetes master nodes: set all master nodes scheduable
 
 ```
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -730,7 +730,8 @@ node "devops-master02" untainted
 node "devops-master03" untainted
 ```
 
-* 对基础组件进行多节点scale
+* on any kubernetes master nodes: scale the kube-system deployment to all master nodes
+
 ```
 $ kubectl get deploy -n kube-system
 NAME                      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
@@ -741,19 +742,17 @@ kubernetes-dashboard      1         1         1            1           14d
 monitoring-grafana        1         1         1            0           8m
 monitoring-influxdb       1         1         1            0           8m
 
-# calico支持多节点
+# calico scale to all master nodes
 $ kubectl scale --replicas=3 -n kube-system deployment/calico-kube-controllers
 $ kubectl get pods --all-namespaces -o wide| grep calico-kube-controllers
 
-# dns支持多节点
+# dns scale to all master nodes
 $ kubectl scale --replicas=3 -n kube-system deployment/kube-dns
 $ kubectl get pods --all-namespaces -o wide| grep kube-dns
 
-# dashboard支持多节点
+# dashboard scale to all master nodes
 $ kubectl scale --replicas=3 -n kube-system deployment/kubernetes-dashboard
 $ kubectl get pods --all-namespaces -o wide| grep kubernetes-dashboard
-
-# heapster启动多个就会出现问题，请不要启动多个
 ```
 
 ```
@@ -768,9 +767,9 @@ devops-master03   Ready     master    25m       v1.9.1
 
 [category](#category)
 
-#### keepalived安装配置
+#### keepalived installation
 
-* 在master上安装keepalived
+* on all kubernetes master nodes: install keepalived service
 
 ```
 $ systemctl restart keepalived
@@ -782,15 +781,15 @@ $ ping 192.168.20.10
 
 [category](#category)
 
-#### nginx负载均衡配置
+#### nginx load balancer configuration
 
-* 在master上安装并启动nginx作为负载均衡
+* on all kubernetes master nodes: install nginx load balancer
 
 ```
 $ docker-compose -f nginx-lb/docker-compose.yaml up -d
 ```
 
-* 在master上验证负载均衡和keepalived是否成功
+* on all kubernetes master nodes: check nginx load balancer and keepalived
 
 ```
 curl -k 192.168.20.10:16443 | wc -l
@@ -804,15 +803,16 @@ curl -k 192.168.20.10:16443 | wc -l
 
 [category](#category)
 
-#### kube-proxy配置
+#### kube-proxy configuration
 
-- 在devops-master01上设置proxy高可用，设置server指向高可用虚拟IP以及负载均衡的16443端口
+- on any kubernetes master nodes: set kube-proxy server settings, make sure this settings use the keepalived virtual IP and nginx load balancer port (here is: https://192.168.20.10:16443)
+
 ```
 $ kubectl edit -n kube-system configmap/kube-proxy
         server: https://192.168.20.10:16443
 ```
 
-- 在master上重启proxy
+- on any kubernetes master nodes: delete all kube-proxy pod to restart it
 
 ```
 $ kubectl get pods --all-namespaces -o wide | grep proxy
@@ -824,17 +824,17 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 [category](#category)
 
-### node节点加入高可用集群设置
+### all nodes join the kubernetes cluster
 
-#### kubeadm加入高可用集群
+#### use kubeadm to join the cluster
 
-- 在所有worker节点上进行加入kubernetes集群操作
+- on all kubernetes worker nodes: use kubeadm to join the cluster, here we use the devops-master01 apiserver address and port.
 
 ```
 $ kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.27:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
-- 在所有worker节点上修改kubernetes集群设置，更改server为高可用虚拟IP以及负载均衡的16443端口
+- on all kubernetes worker nodes: set the `/etc/kubernetes/bootstrap-kubelet.conf` server settings, make sure this settings use the keepalived virtual IP and nginx load balancer port (here is: https://192.168.20.10:16443)
 
 ```
 sed -e "s/192.168.20.27:6443/192.168.20.10:16443/g" /etc/kubernetes/bootstrap-kubelet.conf > /etc/kubernetes/bootstrap-kubelet.conf
@@ -855,7 +855,7 @@ devops-node03     Ready     <none>    22s       v1.9.1
 devops-node04     Ready     <none>    17s       v1.9.1
 ```
 
-- 设置workers的节点标签
+- on any kubernetes master nodes: set the worker nodes labels
 
 ```
 kubectl label nodes devops-node01 role=worker
@@ -864,4 +864,4 @@ kubectl label nodes devops-node03 role=worker
 kubectl label nodes devops-node04 role=worker
 ```
 
-- 至此kubernetes高可用集群完成部署😃
+- now kubernetes high availiability cluster setup successfully 😃
