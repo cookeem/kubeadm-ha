@@ -47,6 +47,7 @@
     1. [kube-proxy configuration](#kube-proxy-configuration)
 1. [all nodes join the kubernetes cluster](#all-nodes-join-the-kubernetes-cluster)
     1. [use kubeadm to join the cluster](#use-kubeadm-to-join-the-cluster)
+    1. [verify kubernetes cluster high availiablity](#verify-kubernetes-cluster-high-availiablity)
     
 
 ### deployment architecture
@@ -862,6 +863,58 @@ kubectl label nodes devops-node01 role=worker
 kubectl label nodes devops-node02 role=worker
 kubectl label nodes devops-node03 role=worker
 kubectl label nodes devops-node04 role=worker
+```
+
+#### verify kubernetes cluster high availiablity
+
+```
+# create a nginx deployment, replicas=3
+$ kubectl run nginx --image=nginx --replicas=3 --port=80
+deployment "nginx" created
+
+# check nginx pod status
+$ kubectl get pods -l=run=nginx -o wide
+NAME                     READY     STATUS    RESTARTS   AGE       IP              NODE
+nginx-6c7c8978f5-558kd   1/1       Running   0          9m        10.244.77.217   devops-node03
+nginx-6c7c8978f5-ft2z5   1/1       Running   0          9m        10.244.172.67   devops-master01
+nginx-6c7c8978f5-jr29b   1/1       Running   0          9m        10.244.85.165   devops-node04
+
+# create nginx NodePort service
+$ kubectl expose deployment nginx --type=NodePort --port=80
+service "nginx" exposed
+
+# check nginx service status
+$ kubectl get svc -l=run=nginx -o wide
+NAME      TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE       SELECTOR
+nginx     NodePort   10.101.144.192   <none>        80:30847/TCP   10m       run=nginx
+
+# check nginx NodePort service accessibility
+$ curl devops-master01:30847
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
 ```
 
 - now kubernetes high availiability cluster setup successfully 😃

@@ -49,6 +49,7 @@
     1. [kube-proxy配置](#kube-proxy配置)
 1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
     1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
+    1. [验证集群高可用设置](#验证集群高可用设置)
     
 
 
@@ -869,6 +870,58 @@ kubectl label nodes devops-node01 role=worker
 kubectl label nodes devops-node02 role=worker
 kubectl label nodes devops-node03 role=worker
 kubectl label nodes devops-node04 role=worker
+```
+
+#### 验证集群高可用设置
+
+```
+# 创建一个replicas=3的nginx deployment
+$ kubectl run nginx --image=nginx --replicas=3 --port=80
+deployment "nginx" created
+
+# 检查nginx pod的创建情况
+$ kubectl get pods -l=run=nginx -o wide
+NAME                     READY     STATUS    RESTARTS   AGE       IP              NODE
+nginx-6c7c8978f5-558kd   1/1       Running   0          9m        10.244.77.217   devops-node03
+nginx-6c7c8978f5-ft2z5   1/1       Running   0          9m        10.244.172.67   devops-master01
+nginx-6c7c8978f5-jr29b   1/1       Running   0          9m        10.244.85.165   devops-node04
+
+# 创建nginx的NodePort service
+$ kubectl expose deployment nginx --type=NodePort --port=80
+service "nginx" exposed
+
+# 检查nginx service的创建情况
+$ kubectl get svc -l=run=nginx -o wide
+NAME      TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE       SELECTOR
+nginx     NodePort   10.101.144.192   <none>        80:30847/TCP   10m       run=nginx
+
+# 检查nginx NodePort service是否正常提供服务
+$ curl devops-master01:30847
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
 ```
 
 - 至此kubernetes高可用集群完成部署😃
