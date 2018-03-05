@@ -221,12 +221,6 @@ EOF
 $ yum update -y
 ```
 
-* on all kubernetes nodes: turn off firewalld service
-
-```
-$ systemctl disable firewalld && systemctl stop firewalld && systemctl status firewalld
-```
-
 * on all kubernetes nodes: set SELINUX to permissive mode
 
 ```

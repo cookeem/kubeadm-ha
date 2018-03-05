@@ -225,12 +225,6 @@ EOF
 $ yum update -y
 ```
 
-* 在所有kubernetes节点上关闭防火墙
-
-```
-$ systemctl disable firewalld && systemctl stop firewalld && systemctl status firewalld
-```
-
 * 在所有kubernetes节点上设置SELINUX为permissive模式
 
 ```
