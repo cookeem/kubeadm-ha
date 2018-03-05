@@ -28,12 +28,12 @@
     1. [概要部署架构](#概要部署架构)
     1. [详细部署架构](#详细部署架构)
     1. [主机节点清单](#主机节点清单)
-    1. [端口清单](#端口清单)
 1. [安装前准备](#安装前准备)
     1. [版本信息](#版本信息)
     1. [所需docker镜像](#所需docker镜像)
     1. [系统设置](#系统设置)
 1. [kubernetes安装](#kubernetes安装)
+    1. [firewalld和iptables相关端口设置](#firewalld和iptables相关端口设置)
     1. [kubernetes相关服务安装](#kubernetes相关服务安装)
 1. [配置文件初始化](#配置文件初始化)
     1. [初始化脚本配置](#初始化脚本配置) 
@@ -99,29 +99,6 @@
 devops-master01 ~ 03 | 192.168.20.27 ~ 29 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster、calico
 无 | 192.168.20.10 | keepalived虚拟IP | 无
 devops-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet、kube-proxy
-
-#### 端口清单
-
-- 相关端口（master）
-
-协议 | 方向 | 端口 | 说明
-:--- | :--- | :--- | :---
-TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
-TCP | Inbound | 6443*     | Kubernetes API server
-TCP | Inbound | 2379-2380 | etcd server client API
-TCP | Inbound | 10250     | Kubelet API
-TCP | Inbound | 10251     | kube-scheduler
-TCP | Inbound | 10252     | kube-controller-manager
-TCP | Inbound | 10255     | Read-only Kubelet API
-
-- 相关端口（worker）
-
-协议 | 方向 | 端口 | 说明
-:--- | :--- | :--- | :---
-TCP | Inbound | 10250       | Kubelet API
-TCP | Inbound | 10255       | Read-only Kubelet API
-TCP | Inbound | 30000-32767 | NodePort Services**
-
 
 ---
 
@@ -286,6 +263,32 @@ $ reboot
 [返回目录](#目录)
 
 ### kubernetes安装
+
+#### firewalld和iptables相关端口设置
+
+- 相关端口（master）
+
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
+TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 2379-2380 | etcd server client API
+TCP | Inbound | 10250     | Kubelet API
+TCP | Inbound | 10251     | kube-scheduler
+TCP | Inbound | 10252     | kube-controller-manager
+TCP | Inbound | 10255     | Read-only Kubelet API
+
+- 相关端口（worker）
+
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 10250       | Kubelet API
+TCP | Inbound | 10255       | Read-only Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services**
+
+---
+
+[返回目录](#目录)
 
 #### kubernetes相关服务安装
 

@@ -26,12 +26,12 @@
     1. [deployment architecture summary](#deployment-architecture-summary)
     1. [detail deployment architecture](#detail-deployment-architecture)
     1. [hosts list](#hosts-list)
-    1. [ports list](#ports-list)
 1. [prerequisites](#prerequisites)
     1. [version info](#version-info)
     1. [required docker images](#required-docker-images)
     1. [system configuration](#system-configuration)
 1. [kubernetes installation](#kubernetes-installation)
+    1. [firewalld and iptables settings](#firewalld-and-iptables-settings)
     1. [kubernetes and related services installation](#kubernetes-and-related-services-installation)
 1. [configuration files settings](#configuration-files-settings)
     1. [script files settings](#script-files-settings) 
@@ -98,28 +98,6 @@ HostName | IPAddress | Notes | Components
 devops-master01 ~ 03 | 192.168.20.27 ~ 29 | master nodes * 3 | keepalived, nginx, etcd, kubelet, kube-apiserver, kube-scheduler, kube-proxy, kube-dashboard, heapster, calico
 N/A | 192.168.20.10 | keepalived virtual IP | N/A
 devops-node01 ~ 04 | 192.168.20.17 ~ 20 | worker nodes * 4 | kubelet, kube-proxy
-
-#### ports list
-
-- master ports list
-
-Protocol | Direction | Port | Comment
-:--- | :--- | :--- | :---
-TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
-TCP | Inbound | 6443*     | Kubernetes API server
-TCP | Inbound | 2379-2380 | etcd server client API
-TCP | Inbound | 10250     | Kubelet API
-TCP | Inbound | 10251     | kube-scheduler
-TCP | Inbound | 10252     | kube-controller-manager
-TCP | Inbound | 10255     | Read-only Kubelet API
-
-- worker ports list
-
-Protocol | Direction | Port | Comment
-:--- | :--- | :--- | :---
-TCP | Inbound | 10250       | Kubelet API
-TCP | Inbound | 10255       | Read-only Kubelet API
-TCP | Inbound | 30000-32767 | NodePort Services**
 
 ---
 
@@ -282,6 +260,32 @@ $ reboot
 [category](#category)
 
 ### kubernetes installation
+
+#### firewalld and iptables settings
+
+- master ports list
+
+Protocol | Direction | Port | Comment
+:--- | :--- | :--- | :---
+TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
+TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 2379-2380 | etcd server client API
+TCP | Inbound | 10250     | Kubelet API
+TCP | Inbound | 10251     | kube-scheduler
+TCP | Inbound | 10252     | kube-controller-manager
+TCP | Inbound | 10255     | Read-only Kubelet API
+
+- worker ports list
+
+Protocol | Direction | Port | Comment
+:--- | :--- | :--- | :---
+TCP | Inbound | 10250       | Kubelet API
+TCP | Inbound | 10255       | Read-only Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services**
+
+---
+
+[category](#category)
 
 #### kubernetes and related services installation
 
