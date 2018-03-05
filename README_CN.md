@@ -280,11 +280,46 @@ $ reboot
 :--- | :--- | :--- | :---
 TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
 TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 4001      | etcd listen client port
 TCP | Inbound | 2379-2380 | etcd server client API
 TCP | Inbound | 10250     | Kubelet API
 TCP | Inbound | 10251     | kube-scheduler
 TCP | Inbound | 10252     | kube-controller-manager
 TCP | Inbound | 10255     | Read-only Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services
+
+- 在所有master节点上开放相关firewalld端口（因为以上服务基于docker部署，如果docker版本为17.x，可以不进行以下设置，因为docker会自动修改iptables添加相关端口）
+
+```
+$ systemctl status firewalld
+
+$ firewall-cmd --zone=public --add-port=16443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=6443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=4001/tcp --permanent
+$ firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10251/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10252/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10255/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+
+$ firewall-cmd --reload
+
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources: 
+  services: ssh dhcpv6-client
+  ports: 4001/tcp 6443/tcp 2379-2380/tcp 10250/tcp 10251/tcp 10252/tcp 10255/tcp 30000-32767/tcp
+  protocols: 
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
+```
 
 - 相关端口（worker）
 
@@ -292,7 +327,34 @@ TCP | Inbound | 10255     | Read-only Kubelet API
 :--- | :--- | :--- | :---
 TCP | Inbound | 10250       | Kubelet API
 TCP | Inbound | 10255       | Read-only Kubelet API
-TCP | Inbound | 30000-32767 | NodePort Services**
+TCP | Inbound | 30000-32767 | NodePort Services
+
+- 在所有worker节点上开放相关firewalld端口（因为以上服务基于docker部署，如果docker版本为17.x，可以不进行以下设置，因为docker会自动修改iptables添加相关端口）
+
+```
+$ systemctl status firewalld
+
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10255/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+
+$ firewall-cmd --reload
+
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources: 
+  services: ssh dhcpv6-client
+  ports: 10250/tcp 10255/tcp 30000-32767/tcp
+  protocols: 
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
+```
 
 ---
 

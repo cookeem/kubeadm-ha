@@ -276,11 +276,46 @@ Protocol | Direction | Port | Comment
 :--- | :--- | :--- | :---
 TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
 TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 4001      | etcd listen client port
 TCP | Inbound | 2379-2380 | etcd server client API
 TCP | Inbound | 10250     | Kubelet API
 TCP | Inbound | 10251     | kube-scheduler
 TCP | Inbound | 10252     | kube-controller-manager
 TCP | Inbound | 10255     | Read-only Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services
+
+- on all kubernetes master nodes: enable relative ports on firewalld (because all these services are deploy by docker, if your docker version is 17.x, is not necessary to set firewalld by commands below, because docker will set iptables automatically and enable relative ports)
+
+```
+$ systemctl status firewalld
+
+$ firewall-cmd --zone=public --add-port=16443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=6443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=4001/tcp --permanent
+$ firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10251/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10252/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10255/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+
+$ firewall-cmd --reload
+
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources: 
+  services: ssh dhcpv6-client
+  ports: 4001/tcp 6443/tcp 2379-2380/tcp 10250/tcp 10251/tcp 10252/tcp 10255/tcp 30000-32767/tcp
+  protocols: 
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
+```
 
 - worker ports list
 
@@ -289,6 +324,34 @@ Protocol | Direction | Port | Comment
 TCP | Inbound | 10250       | Kubelet API
 TCP | Inbound | 10255       | Read-only Kubelet API
 TCP | Inbound | 30000-32767 | NodePort Services**
+
+- on all kubernetes worker nodes: enable relative ports on firewalld (because all these services are deploy by docker, if your docker version is 17.x, is not necessary to set firewalld by commands below, because docker will set iptables automatically and enable relative ports)
+
+```
+$ systemctl status firewalld
+
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10255/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+
+$ firewall-cmd --reload
+
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources: 
+  services: ssh dhcpv6-client
+  ports: 10250/tcp 10255/tcp 30000-32767/tcp
+  protocols: 
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
+```
+
 
 ---
 
