@@ -109,10 +109,15 @@ devops-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet、kube-proxy
 #### 版本信息
 
 * Linux版本：CentOS 7.4.1708
+* 内核版本: 4.6.4-1.el7.elrepo.x86_64
+
 
 ```
 $ cat /etc/redhat-release 
 CentOS Linux release 7.4.1708 (Core) 
+
+$ uname -r
+4.6.4-1.el7.elrepo.x86_64
 ```
 
 * docker版本：17.12.0-ce-rc2

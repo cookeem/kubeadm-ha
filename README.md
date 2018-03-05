@@ -108,10 +108,14 @@ devops-node01 ~ 04 | 192.168.20.17 ~ 20 | worker nodes * 4 | kubelet, kube-proxy
 #### version info
 
 * Linux version: CentOS 7.4.1708
+* Core version: 4.6.4-1.el7.elrepo.x86_64
 
 ```
 $ cat /etc/redhat-release 
 CentOS Linux release 7.4.1708 (Core) 
+
+$ uname -r
+4.6.4-1.el7.elrepo.x86_64
 ```
 
 * docker version: 17.12.0-ce-rc2
