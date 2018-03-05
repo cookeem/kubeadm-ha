@@ -4,7 +4,7 @@
 err=0
 for k in $(seq 1 12)
 do
-    check_code=$(curl localhost:6443 | wc -l)
+    check_code=$(ps -ef | grep kube-apiserver | grep -v color | grep -v grep | wc -l)
     if [[ $check_code == "0" ]]; then
         err=$(expr $err + 1)
         sleep 5

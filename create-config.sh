@@ -49,6 +49,9 @@ export K8SHA_TOKEN=7f276c.0741d82a5337f526
 # kubernetes CIDR pod subnet, if CIDR pod subnet is "10.244.0.0/16" please set to "10.244.0.0\\/16"
 export K8SHA_CIDR=10.244.0.0\\/16
 
+# kubernetes CIDR service subnet, if CIDR service subnet is "10.96.0.0/12" please set to "10.96.0.0\\/12"
+export K8SHA_SVC_CIDR=10.96.0.0\\/12
+
 # calico network settings, set a reachable ip address for the cluster network interface, for example you can use the gateway ip address
 export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 
@@ -103,17 +106,16 @@ sed \
 -e "s/K8SHA_IPVIRTUAL/$K8SHA_IPVIRTUAL/g" \
 -e "s/K8SHA_TOKEN/$K8SHA_TOKEN/g" \
 -e "s/K8SHA_CIDR/$K8SHA_CIDR/g" \
+-e "s/K8SHA_SVC_CIDR/$K8SHA_SVC_CIDR/g" \
 kubeadm-init.yaml.tpl > kubeadm-init.yaml
 
 echo 'set kubeadm init config file success: kubeadm-init.yaml'
 
-# set calico deployment config file
-export K8SHA_ETCDS=http:\\/\\/${K8SHA_IP1}:2379,http:\\/\\/${K8SHA_IP2}:2379,http:\\/\\/${K8SHA_IP3}:2379
+# set canal deployment config file
 
 sed \
--e "s/K8SHA_ETCDS/$K8SHA_ETCDS/g" \
 -e "s/K8SHA_CIDR/$K8SHA_CIDR/g" \
 -e "s/K8SHA_CALICO_REACHABLE_IP/$K8SHA_CALICO_REACHABLE_IP/g" \
-kube-calico/calico.yaml.tpl > kube-calico/calico.yaml
+kube-canal/canal.yaml.tpl > kube-canal/canal.yaml
 
-echo 'set calico deployment config file success: kube-calico/calico.yaml'
+echo 'set canal deployment config file success: kube-canal/canal.yaml'
