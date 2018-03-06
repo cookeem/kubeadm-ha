@@ -944,6 +944,8 @@ kubectl label nodes devops-node04 role=worker
 
 #### 验证集群高可用设置
 
+- NodePort测试
+
 ```
 # 创建一个replicas=3的nginx deployment
 $ kubectl run nginx --image=nginx --replicas=3 --port=80
@@ -992,6 +994,52 @@ Commercial support is available at
 <p><em>Thank you for using nginx.</em></p>
 </body>
 </html>
+
+$ kubectl delete deploy,svc nginx
+```
+
+- pod之间互访测试
+
+```
+$ kubectl run nginx-server --image=nginx --port=80
+$ kubectl expose deployment nginx-server --port=80
+$ kubectl get pods -o wide -l=run=nginx-server
+NAME                            READY     STATUS    RESTARTS   AGE       IP           NODE
+nginx-server-6d64689779-lfcxc   1/1       Running   0          2m        10.244.5.7   devops-node03
+
+$ kubectl run nginx-client -ti --rm --image=alpine -- ash
+/ # wget nginx-server
+Connecting to nginx-server (10.102.101.78:80)
+index.html           100% |*****************************************|   612   0:00:00 ETA
+/ # cat index.html 
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+
+$ kubectl delete deploy,svc nginx-server
 ```
 
 - 至此kubernetes高可用集群完成部署😃
