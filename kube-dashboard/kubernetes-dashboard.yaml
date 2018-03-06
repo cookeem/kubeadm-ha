@@ -17,33 +17,6 @@
 #
 # Example usage: kubectl create -f <this_file>
 
-# ------------------- Dashboard Service Account: admin-user ------------------- #
-
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: admin-user
-  namespace: kube-system
-
----
-
-# ------------------- admin-user Role & Role Binding ------------------- #
-
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: admin-user
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: admin-user
-  namespace: kube-system
-
----  
-
 # ------------------- Dashboard Secret ------------------- #
 
 apiVersion: v1
@@ -143,7 +116,7 @@ spec:
         node-role.kubernetes.io/master: ""
       containers:
       - name: kubernetes-dashboard
-        image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.1
+        image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.3
         ports:
         - containerPort: 8443
           protocol: TCP
@@ -191,8 +164,29 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 443
-    targetPort: 8443
-    nodePort: 30000
+    - port: 443
+      targetPort: 8443
+      nodePort: 30000
   selector:
     k8s-app: kubernetes-dashboard
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kube-system

@@ -1,7 +1,7 @@
 version: '2'
 services:
   etcd:
-    image: nginx
+    image: nginx:latest
     container_name: nginx-lb
     hostname: nginx-lb
     volumes:

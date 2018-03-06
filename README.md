@@ -178,7 +178,7 @@ docker pull gcr.io/google_containers/etcd-amd64:3.1.10
 docker pull gcr.io/google_containers/pause-amd64:3.0
 
 # kubernetes networks add ons
-docker pull quay.io/coreos/flannel:v0.10.0-amd64
+docker pull quay.io/coreos/flannel:v0.9.1-amd64
 docker pull quay.io/calico/node:v3.0.3
 docker pull quay.io/calico/kube-controllers:v2.0.1
 docker pull quay.io/calico/cni:v2.0.1
