@@ -356,6 +356,28 @@ public (active)
   rich rules: 
 ```
 
+* 在所有kubernetes节点上允许kube-proxy的forward
+
+```
+$ firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
+$ firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment "docker subnet"
+$ firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -i flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
+$ firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
+$ firewall-cmd --reload
+
+$ firewall-cmd --direct --get-all-rules
+ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment 'kube-proxy redirects'
+ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment 'docker subnet'
+ipv4 filter FORWARD 1 -i flannel.1 -j ACCEPT -m comment --comment 'flannel subnet'
+ipv4 filter FORWARD 1 -o flannel.1 -j ACCEPT -m comment --comment 'flannel subnet'
+```
+
+- 在所有kubernetes节点上，删除iptables的设置，解决kube-proxy无法启用nodePort。（注意：每次重启firewalld必须执行以下命令）
+
+```
+iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
+```
+
 ---
 
 [返回目录](#目录)
@@ -468,6 +490,9 @@ export K8SHA_TOKEN=7f276c.0741d82a5337f526
 
 # kubernetes CIDR pod subnet, if CIDR pod subnet is "10.244.0.0/16" please set to "10.244.0.0\\/16"
 export K8SHA_CIDR=10.244.0.0\\/16
+
+# kubernetes CIDR service subnet, if CIDR service subnet is "10.96.0.0/12" please set to "10.96.0.0\\/12"
+export K8SHA_SVC_CIDR=10.96.0.0\\/12
 
 # calico network settings, set a reachable ip address for the cluster network interface, for example you can use the gateway ip address
 export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
