@@ -1043,3 +1043,4 @@ $ kubectl delete deploy,svc nginx-server
 ```
 
 - 至此kubernetes高可用集群完成部署😃
+
