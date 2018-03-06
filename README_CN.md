@@ -398,7 +398,7 @@ $ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
 $ yum install -y docker-compose-1.9.0-5.el7.noarch
 $ systemctl enable docker && systemctl start docker
 
-$ yum install -y kubelet-1.9.1-0.x86_64 kubeadm-1.9.1-0.x86_64 kubectl-1.9.1-0.x86_64
+$ yum install -y kubelet-1.9.3-0.x86_64 kubeadm-1.9.3-0.x86_64 kubectl-1.9.3-0.x86_64
 $ systemctl enable kubelet && systemctl start kubelet
 ```
 
@@ -508,7 +508,7 @@ export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 
 > kubeadm init 配置文件
 
-> calico配置文件
+> canal配置文件
 
 ```
 $ ./create-config.sh
@@ -516,7 +516,7 @@ set etcd cluster docker-compose.yaml file success: etcd/docker-compose.yaml
 set keepalived config file success: /etc/keepalived/keepalived.conf
 set nginx load balancer config file success: nginx-lb/nginx-lb.conf
 set kubeadm init config file success: kubeadm-init.yaml
-set calico deployment config file success: kube-calico/calico.yaml
+set canal deployment config file success: kube-canal/canal.yaml
 ```
 
 ---
@@ -607,41 +607,39 @@ $ kubectl get node
 NAME              STATUS    ROLES     AGE       VERSION
 devops-master01   NotReady  master    14s       v1.9.1
 
-# 安装flannel网络组件
-$ kubectl apply -f kube-flannel/
+# 安装canal网络组件
+$ kubectl apply -f kube-canal/
+configmap "canal-config" created
+daemonset "canal" created
+customresourcedefinition "felixconfigurations.crd.projectcalico.org" created
+customresourcedefinition "bgpconfigurations.crd.projectcalico.org" created
+customresourcedefinition "ippools.crd.projectcalico.org" created
+customresourcedefinition "clusterinformations.crd.projectcalico.org" created
+customresourcedefinition "globalnetworkpolicies.crd.projectcalico.org" created
+customresourcedefinition "networkpolicies.crd.projectcalico.org" created
+serviceaccount "canal" created
+clusterrole "calico" created
 clusterrole "flannel" created
-clusterrolebinding "flannel" created
-serviceaccount "flannel" created
-configmap "kube-flannel-cfg" created
-daemonset "kube-flannel-ds" created
+clusterrolebinding "canal-flannel" created
+clusterrolebinding "canal-calico" created
 
 # 等待所有pods正常
-$ kubectl get pods --all-namespaces -o wide -w
-```
-
-* 在devops-master01上安装calico网络组件
-
-```
-# 设置master节点为schedulable
-$ kubectl taint nodes --all node-role.kubernetes.io/master-
-
-# 安装calico网络组件
-$ kubectl apply -f kube-calico/
-configmap "calico-config" created
-secret "calico-etcd-secrets" created
-daemonset "calico-node" created
-deployment "calico-kube-controllers" created
-serviceaccount "calico-kube-controllers" created
-serviceaccount "calico-node" created
-clusterrole "calico-kube-controllers" created
-clusterrolebinding "calico-kube-controllers" created
-clusterrole "calico-node" created
-clusterrolebinding "calico-node" created
+$ kubectl get pods --all-namespaces -o wide
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE       IP              NODE
+kube-system   canal-hpn82                               3/3       Running   0          1m        192.168.20.27   devops-master01
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          1m        192.168.20.27   devops-master01
+kube-system   kube-controller-manager-devops-master01   1/1       Running   0          50s       192.168.20.27   devops-master01
+kube-system   kube-dns-6f4fd4bdf-vwbk8                  3/3       Running   0          1m        10.244.0.2      devops-master01
+kube-system   kube-proxy-mr6l8                          1/1       Running   0          1m        192.168.20.27   devops-master01
+kube-system   kube-scheduler-devops-master01            1/1       Running   0          57s       192.168.20.27   devops-master01
 ```
 
 * 在devops-master01上安装dashboard
 
 ```
+# 设置master节点为schedulable
+$ kubectl taint nodes --all node-role.kubernetes.io/master-
+
 $ kubectl apply -f kube-dashboard/
 serviceaccount "admin-user" created
 clusterrolebinding "admin-user" created
@@ -651,18 +649,6 @@ role "kubernetes-dashboard-minimal" created
 rolebinding "kubernetes-dashboard-minimal" created
 deployment "kubernetes-dashboard" created
 service "kubernetes-dashboard" created
-
-$ kubectl get pods --all-namespaces
-NAMESPACE       NAME                                        READY     STATUS    RESTARTS   AGE
-kube-system     calico-kube-controllers-7749c84f4-p8c4d     1/1       Running   0          3m
-kube-system     calico-node-2jlwj                           2/2       Running   6          13m
-kube-system     kube-apiserver-devops-master01              1/1       Running   6          5m
-kube-system     kube-controller-manager-devops-master01     1/1       Running   8          5m
-kube-system     kube-dns-6f4fd4bdf-8jnpc                    3/3       Running   3          4m
-kube-system     kube-flannel-ds-2fgsw                       1/1       Running   8          14m
-kube-system     kube-proxy-7rh8x                            1/1       Running   3          13m
-kube-system     kube-scheduler-devops-master01              1/1       Running   8          5m
-kube-system     kubernetes-dashboard-87497878f-p6nj4        1/1       Running   0          4m
 ```
 
 * 通过浏览器访问dashboard地址
@@ -696,19 +682,18 @@ $ kubectl apply -f kube-heapster/rbac/
 clusterrolebinding "heapster" created
 
 $ kubectl get pods --all-namespaces 
-NAME                                      READY     STATUS        RESTARTS   AGE
-calico-kube-controllers-7749c84f4-p8c4d   1/1       Running       0          8m
-calico-node-2jlwj                         2/2       Running       6          13d
-heapster-698c5f45bd-wnv6x                 1/1       Running       0          1m
-kube-apiserver-devops-master01            1/1       Running       6          5d
-kube-controller-manager-devops-master01   1/1       Running       8          5d
-kube-dns-6f4fd4bdf-8jnpc                  3/3       Running       3          4h
-kube-flannel-ds-2fgsw                     1/1       Running       8          14d
-kube-proxy-7rh8x                          1/1       Running       3          13d
-kube-scheduler-devops-master01            1/1       Running       8          5d
-kubernetes-dashboard-87497878f-p6nj4      1/1       Running       0          4h
-monitoring-grafana-5ffb49ff84-xxwzn       1/1       Running       0          1m
-monitoring-influxdb-5b77d47fdd-wd7xm      1/1       Running       0          1m
+NAMESPACE     NAME                                      READY     STATUS    RESTARTS   AGE
+kube-system   canal-hpn82                               3/3       Running   0          6m
+kube-system   heapster-65c5499476-gg2tk                 1/1       Running   0          2m
+kube-system   kube-apiserver-devops-master01            1/1       Running   0          6m
+kube-system   kube-controller-manager-devops-master01   1/1       Running   0          5m
+kube-system   kube-dns-6f4fd4bdf-vwbk8                  3/3       Running   0          6m
+kube-system   kube-proxy-mr6l8                          1/1       Running   0          6m
+kube-system   kube-scheduler-devops-master01            1/1       Running   0          6m
+kube-system   kubernetes-dashboard-7c7bfdd855-2slp2     1/1       Running   0          4m
+kube-system   monitoring-grafana-6774f65b56-mwdjv       1/1       Running   0          2m
+kube-system   monitoring-influxdb-59d57d4d58-xmrxk      1/1       Running   0          2m
+
 
 # 等待5分钟
 kubectl top pod --all-namespaces

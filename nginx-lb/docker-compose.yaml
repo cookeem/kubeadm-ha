@@ -5,7 +5,7 @@ services:
     container_name: nginx-lb
     hostname: nginx-lb
     volumes:
-    - ./nginx-lb/nginx-lb.conf:/etc/nginx/nginx.conf
+    - ./nginx-lb.conf:/etc/nginx/nginx.conf
     ports:
     - 16443:16443
     restart: always
