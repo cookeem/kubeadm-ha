@@ -726,7 +726,7 @@ scp -r /etc/kubernetes/pki devops-master03:/etc/kubernetes/
 
 #### other master nodes init
 
-* on devops-master02: use kubeadm to init master cluster
+* on devops-master02: use kubeadm to init master cluster, make sure pod kube-apiserver-{current-node-name} is in running status
 
 ```
 # you will found that output token and discovery-token-ca-cert-hash are the same with devops-master01
@@ -735,7 +735,7 @@ $ kubeadm init --config=kubeadm-init.yaml
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.28:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
-* on devops-master03: use kubeadm to init master cluster
+* on devops-master03: use kubeadm to init master cluster, make sure pod kube-apiserver-{current-node-name} is in running status
 
 ```
 # you will found that output token and discovery-token-ca-cert-hash are the same with devops-master01
@@ -752,16 +752,6 @@ NAME              STATUS    ROLES     AGE       VERSION
 devops-master01   Ready     master    19m       v1.9.3
 devops-master02   Ready     master    4m        v1.9.3
 devops-master03   Ready     master    4m        v1.9.3
-```
-
-* on all kubernetes master nodes: add apiserver-count settings in `/etc/kubernetes/manifests/kube-apiserver.yaml` file
-
-```
-$ vi /etc/kubernetes/manifests/kube-apiserver.yaml
-    - --apiserver-count=3
-
-# restart service
-$ systemctl restart docker && systemctl restart kubelet
 ```
 
 * on any kubernetes master nodes: check all pod status

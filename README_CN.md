@@ -732,7 +732,7 @@ scp -r /etc/kubernetes/pki devops-master03:/etc/kubernetes/
 
 #### 其余master节点初始化
 
-* 在devops-master02进行初始化
+* 在devops-master02进行初始化，等待所有pods正常启动后再进行下一个master初始化，特别要保证kube-apiserver-{current-node-name}处于running状态
 
 ```
 # 输出的token和discovery-token-ca-cert-hash应该与devops-master01上的完全一致
@@ -741,7 +741,7 @@ $ kubeadm init --config=kubeadm-init.yaml
   kubeadm join --token 7f276c.0741d82a5337f526 192.168.20.28:6443 --discovery-token-ca-cert-hash sha256:a4a1eaf725a0fc67c3028b3063b92e6af7f2eb0f4ae028f12b3415a6fd2d2a5e
 ```
 
-* 在devops-master03进行初始化
+* 在devops-master03进行初始化，等待所有pods正常启动后再进行下一个master初始化，特别要保证kube-apiserver-{current-node-name}处于running状态
 
 ```
 # 输出的token和discovery-token-ca-cert-hash应该与devops-master01上的完全一致
@@ -758,16 +758,6 @@ NAME              STATUS    ROLES     AGE       VERSION
 devops-master01   Ready     master    19m       v1.9.3
 devops-master02   Ready     master    4m        v1.9.3
 devops-master03   Ready     master    4m        v1.9.3
-```
-
-* 在所有master上增加apiserver的apiserver-count设置
-
-```
-$ vi /etc/kubernetes/manifests/kube-apiserver.yaml
-    - --apiserver-count=3
-
-# 重启服务
-$ systemctl restart docker && systemctl restart kubelet
 ```
 
 * 在devops-master01上检查高可用状态
