@@ -3,6 +3,7 @@ kind: MasterConfiguration
 kubernetesVersion: v1.9.1
 networking:
   podSubnet: K8SHA_CIDR
+  serviceSubnet: K8SHA_SVC_CIDR
 apiServerCertSANs:
 - K8SHA_HOSTNAME1
 - K8SHA_HOSTNAME2
