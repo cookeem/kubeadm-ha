@@ -21,7 +21,7 @@ vrrp_instance VI_1 {
         auth_pass K8SHA_KA_AUTH
     }
     virtual_ipaddress {
-        K8SHA_VIP
+        K8SHA_IPVIRTUAL
     }
     track_script {
        chk_apiserver

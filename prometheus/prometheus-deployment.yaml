@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      containers:
+        - name: prometheus
+          image: devops-reg.io/public/prometheus:v2.3.1
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus/"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: kube-system-pvc
+              mountPath: /prometheus/
+              subPath: prometheus
+            - name: timezone
+              mountPath: "/etc/timezone"
+            - name: localtime
+              mountPath: "/etc/localtime"
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            defaultMode: 420
+            name: prometheus-server-conf
+        - name: kube-system-pvc
+          persistentVolumeClaim:
+            claimName: kube-system-pvc
+        - name: timezone
+          hostPath:
+            path: /etc/timezone
+            type: File
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+            type: File

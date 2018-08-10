@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana-headless
+  namespace: kube-system
+  labels:
+    app: kibana
+spec:
+  clusterIP: None
+  selector:
+    app: kibana
+  ports:
+  - name: port-5601
+    port: 5601

@@ -1,0 +1,23 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-jenkins
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    # ingress.kubernetes.io/auth-type: "basic"
+    # ingress.kubernetes.io/auth-secret: "traefik"
+    # traefik.frontend.rule.type: AddPrefix
+    # traefik.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: k8s-master-lb
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: jenkins
+          servicePort: 8080
+  # tls:
+  # - secretName: traefik-jenkins-tls-cert

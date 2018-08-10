@@ -1,0 +1,59 @@
+version: '2'
+services:
+  es-0:
+    image: devops-reg.io/public/elasticsearch-oss:6.2.4
+    container_name: es-0
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=es-0"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./es-0:/usr/share/elasticsearch/data
+    ports:
+      - 19200:9200
+    networks:
+      - esnet
+  es-1:
+    image: devops-reg.io/public/elasticsearch-oss:6.2.4
+    container_name: es-1
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=es-0"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./es-1:/usr/share/elasticsearch/data
+    ports:
+      - 19201:9200
+    networks:
+      - esnet
+  es-2:
+    image: devops-reg.io/public/elasticsearch-oss:6.2.4
+    container_name: es-2
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=es-0"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 19202:9200
+    volumes:
+      - ./es-2:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+
+networks:
+  esnet:
