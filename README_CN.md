@@ -270,7 +270,7 @@ net.bridge.bridge-nf-call-iptables = 1
 net.ipv4.ip_forward = 1
 EOF
 
-sysctl --system
+$ sysctl --system
 ```
 
 * 在所有kubernetes节点上禁用swap
@@ -297,8 +297,6 @@ $ reboot
 
 [返回目录](#目录)
 
-
-* 在所有kubernetes节点上增加kubernetes仓库
 
 - k8s master firewall需要开放相关端口（master）
 
@@ -367,30 +365,6 @@ crontab -e
 0,5,10,15,20,25,30,35,40,45,50,55 * * * * /usr/sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
 ```
 
-- 所有节点设置enforce
-
-```
-$ vi /etc/selinux/config
-SELINUX=permissive
-
-$ setenforce 0
-
-$ getenforce
-Permissive
-```
-
-- 所有节点设置sysctl
-
-```
-cat <<EOF >  /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-net.ipv4.ip_forward = 1
-EOF
-
-sysctl --system
-```
-
 - 所有节点安装并启动组件
 
 ```
@@ -402,28 +376,11 @@ yum install -y kubelet-1.11.1-0.x86_64 kubeadm-1.11.1-0.x86_64 kubectl-1.11.1-0.
 systemctl enable kubelet && systemctl start kubelet
 ```
 
-- 所有节点安装ceph组件，用于连接cephfs
-
-```
-yum -y install ceph-common
-```
-
 - 在master节点安装并启动keepalived
 
 ```
 yum install -y keepalived
 systemctl enable keepalived && systemctl restart keepalived
-```
-
-- 所有节点禁用swap
-
-```
-swapoff -a
-
-vi /etc/fstab
-#/dev/mapper/centos-swap swap          swap  defaults    0 0
-
-cat /proc/swaps
 ```
 
 # 所有master节点执行
