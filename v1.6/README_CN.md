@@ -4,12 +4,12 @@
 
 - [中文文档(for v1.11.x版本)](../README_CN.md)
 - [English document(for v1.11.x version)](../README.md)
-- [中文文档(for v1.9.x版本)](../v1.9/README_v1.9.x_CN.md)
-- [English document(for v1.9.x version)](../v1.9/README_v1.9.x.md)
-- [中文文档(for v1.7.x版本)](../v1.6-v1.7/README_v1.7.x_CN.md)
-- [English document(for v1.7.x version)](../v1.6-v1.7/README_v1.7.x.md)
-- [中文文档(for v1.6.x版本)](../v1.6-v1.7/README_v1.6.x_CN.md)
-- [English document(for v1.6.x version)](../v1.6-v1.7/README_v1.6.x.md)
+- [中文文档(for v1.9.x版本)](../v1.9/README_CN.md)
+- [English document(for v1.9.x version)](../v1.9/README.md)
+- [中文文档(for v1.7.x版本)](../v1.7/README_CN.md)
+- [English document(for v1.7.x version)](../v1.7/README.md)
+- [中文文档(for v1.6.x版本)](../v1.6/README_CN.md)
+- [English document(for v1.6.x version)](../v1.6/README.md)
 
 ---
 
