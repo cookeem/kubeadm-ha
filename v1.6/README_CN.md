@@ -1,4 +1,4 @@
-# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.9.x和v1.7.x版本以及v1.6.x版本
+# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.11.x v1.9.x v1.7.x v1.6.x版本
 
 ![k8s logo](images/Kubernetes.png)
 
