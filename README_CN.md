@@ -396,7 +396,6 @@ ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment 'docker subnet'
 $ systemctl restart firewalld
 ```
 
-```
 - 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令，在所有节点设置定时任务
 
 ```
