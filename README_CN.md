@@ -408,18 +408,20 @@ $ crontab -e
 [返回目录](#目录)
 
 
-- 所有节点安装并启动组件
+#### kubernetes相关服务安装
+
+* 在所有kubernetes节点上安装并启动kubernetes 
 
 ```
-yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
-yum install -y docker-compose-1.9.0-5.el7.noarch
-systemctl enable docker && systemctl start docker
+$ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
+$ yum install -y docker-compose-1.9.0-5.el7.noarch
+$ systemctl enable docker && systemctl start docker
 
-yum install -y kubelet-1.11.1-0.x86_64 kubeadm-1.11.1-0.x86_64 kubectl-1.11.1-0.x86_64
-systemctl enable kubelet && systemctl start kubelet
+$ yum install -y kubelet-1.11.1-0.x86_64 kubeadm-1.11.1-0.x86_64 kubectl-1.11.1-0.x86_64
+$ systemctl enable kubelet && systemctl start kubelet
 ```
 
-- 在master节点安装并启动keepalived
+- 在所有master节点安装并启动keepalived
 
 ```
 yum install -y keepalived
