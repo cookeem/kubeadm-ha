@@ -1,4 +1,206 @@
-# kubernetes 高可用 master 安装
+# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.11.x v1.9.x v1.7.x v1.6.x版本
+
+![k8s logo](images/Kubernetes.png)
+
+- [中文文档(for v1.11.x版本)](README_CN.md)
+- [English document(for v1.11.x version)](README.md)
+- [中文文档(for v1.9.x版本)](v1.9/README_CN.md)
+- [English document(for v1.9.x version)](v1.9/README.md)
+- [中文文档(for v1.7.x版本)](v1.7/README_CN.md)
+- [English document(for v1.7.x version)](v1.7/README.md)
+- [中文文档(for v1.6.x版本)](v1.6/README_CN.md)
+- [English document(for v1.6.x version)](v1.6/README.md)
+
+---
+
+- [GitHub项目地址](https://github.com/cookeem/kubeadm-ha/)
+- [OSChina项目地址](https://git.oschina.net/cookeem/kubeadm-ha/)
+
+---
+
+- 该指引适用于v1.11.x版本的kubernetes集群
+
+> v1.11.x版本支持在control plane上启动TLS的etcd高可用集群。
+
+### 目录
+
+1. [部署架构](#部署架构)
+    1. [概要部署架构](#概要部署架构)
+    1. [详细部署架构](#详细部署架构)
+    1. [主机节点清单](#主机节点清单)
+1. [安装前准备](#安装前准备)
+    1. [版本信息](#版本信息)
+    1. [所需docker镜像](#所需docker镜像)
+    1. [系统设置](#系统设置)
+1. [kubernetes安装](#kubernetes安装)
+    1. [firewalld和iptables相关端口设置](#firewalld和iptables相关端口设置)
+    1. [kubernetes相关服务安装](#kubernetes相关服务安装)
+    1. [master节点互信设置](#master节点互信设置)
+1. [配置文件初始化](#配置文件初始化)
+    1. [初始化脚本配置](#初始化脚本配置)
+1. [master高可用安装](#master高可用安装)
+    1. [kubeadm初始化](#kubeadm初始化)
+    1. [kube-proxy配置](#kube-proxy配置)
+    1. [安装基础组件](#安装基础组件)
+1. [master集群高可用设置](#master集群高可用设置)
+    1. [keepalived安装配置](#keepalived安装配置)
+    1. [nginx负载均衡配置](#nginx负载均衡配置)
+1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
+    1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
+    1. [验证集群高可用设置](#验证集群高可用设置)
+
+
+
+### 部署架构
+
+#### 概要部署架构
+
+![ha logo](images/ha.png)
+
+* kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
+
+---
+[返回目录](#目录)
+
+#### 详细部署架构
+
+![k8s ha](images/k8s-ha.png)
+
+* kubernetes组件说明
+
+> kube-apiserver：集群核心，集群API接口、集群各个组件通信的中枢；集群安全控制；
+
+> etcd：集群的数据中心，用于存放集群的配置以及状态信息，非常重要，如果数据丢失那么集群将无法恢复；因此高可用集群部署首先就是etcd是高可用集群；
+
+> kube-scheduler：集群Pod的调度中心；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-scheduler处于活跃状态；
+
+> kube-controller-manager：集群状态管理器，当集群状态与期望不同时，kcm会努力让集群恢复期望状态，比如：当一个pod死掉，kcm会努力新建一个pod来恢复对应replicas set期望的状态；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-controller-manager处于活跃状态；
+
+> kubelet: kubernetes node agent，负责与node上的docker engine打交道；
+
+> kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
+
+* 负载均衡
+
+> keepalived集群设置一个虚拟ip地址，虚拟ip地址指向k8s-master01、k8s-master02、k8s-master03。
+
+> nginx用于k8s-master01、k8s-master02、k8s-master03的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.20.10)以及nginx端口(16443)访问master集群的apiserver。
+
+---
+
+[返回目录](#目录)
+
+#### 主机节点清单
+
+主机名 | IP地址 | 说明 | 组件
+:--- | :--- | :--- | :---
+k8s-master01 ~ 03 | 192.168.20.27 ~ 29 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster、calico
+无 | 192.168.20.10 | keepalived虚拟IP | 无
+k8s-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet、kube-proxy
+
+---
+
+[返回目录](#目录)
+
+### 安装前准备
+
+#### 版本信息
+
+* Linux版本：CentOS 7.4.1708
+* 内核版本: 4.6.4-1.el7.elrepo.x86_64
+
+
+```
+$ cat /etc/redhat-release
+CentOS Linux release 7.4.1708 (Core)
+
+$ uname -r
+4.6.4-1.el7.elrepo.x86_64
+```
+
+* docker版本：17.12.0-ce-rc2
+
+```
+$ docker version
+Client:
+ Version:   17.12.0-ce-rc2
+ API version:   1.35
+ Go version:    go1.9.2
+ Git commit:    f9cde63
+ Built: Tue Dec 12 06:42:20 2017
+ OS/Arch:   linux/amd64
+
+Server:
+ Engine:
+  Version:  17.12.0-ce-rc2
+  API version:  1.35 (minimum version 1.12)
+  Go version:   go1.9.2
+  Git commit:   f9cde63
+  Built:    Tue Dec 12 06:44:50 2017
+  OS/Arch:  linux/amd64
+  Experimental: false
+```
+
+* kubeadm版本：v1.9.3
+
+```
+$ kubeadm version
+kubeadm version: &version.Info{Major:"1", Minor:"9", GitVersion:"v1.9.3", GitCommit:"d2835416544f298c919e2ead3be3d0864b52323b", GitTreeState:"clean", BuildDate:"2018-02-07T11:55:20Z", GoVersion:"go1.9.2", Compiler:"gc", Platform:"linux/amd64"}
+```
+
+* kubelet版本：v1.9.3
+
+```
+$ kubelet --version
+Kubernetes v1.9.3
+```
+
+* 网络组件
+
+> canal (flannel + calico)
+
+---
+
+[返回目录](#目录)
+
+#### 所需docker镜像
+
+* 相关docker镜像以及版本
+
+```
+# kuberentes basic components
+docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.9.3
+docker pull gcr.io/google_containers/kube-proxy-amd64:v1.9.3
+docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.9.3
+docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
+docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.7
+docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
+docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
+docker pull gcr.io/google_containers/etcd-amd64:3.1.10
+docker pull gcr.io/google_containers/pause-amd64:3.0
+
+# kubernetes networks add ons
+docker pull quay.io/coreos/flannel:v0.9.1-amd64
+docker pull quay.io/calico/node:v3.0.3
+docker pull quay.io/calico/kube-controllers:v2.0.1
+docker pull quay.io/calico/cni:v2.0.1
+
+# kubernetes dashboard
+docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.3
+
+# kubernetes heapster
+docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.3.3
+docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.4.3
+docker pull gcr.io/google_containers/heapster-amd64:v1.4.2
+
+# kubernetes apiserver load balancer
+docker pull nginx:latest
+```
+
+---
+
+[返回目录](#目录)
+
 
 - k8s master firewall需要开放相关端口（master）
 
@@ -118,9 +320,9 @@ systemctl enable keepalived && systemctl restart keepalived
 - 所有节点设置harbor的registry
 
 ```
-mkdir -p /etc/docker/certs.d/devops-reg.io
+mkdir -p /etc/docker/certs.d/k8s-reg.io
 
-cat <<EOF > /etc/docker/certs.d/devops-reg.io/devops-reg.io.crt
+cat <<EOF > /etc/docker/certs.d/k8s-reg.io/k8s-reg.io.crt
 -----BEGIN CERTIFICATE-----
 MIIFvzCCA6egAwIBAgIJAN9MRxf7YGQeMA0GCSqGSIb3DQEBCwUAMIGJMQswCQYD
 VQQGEwJDTjESMBAGA1UECAwJZ3Vhbmdkb25nMRIwEAYDVQQHDAlndWFuZ3pob3Ux
@@ -156,7 +358,7 @@ et2CIhi2ykpxNqOEWmH1isv7SvCZymslzhqjdpuWOFF/7xE=
 -----END CERTIFICATE-----
 EOF
 
-docker login devops-reg.io
+docker login k8s-reg.io
 ```
 
 - 所有节点加载相关docker images
@@ -487,7 +689,7 @@ kubectl label nodes k8s-node08 store=localstorage
 
 ```
 # 创建一个replicas=3的nginx deployment
-$ kubectl run nginx --image=devops-reg.io/public/nginx --replicas=3 --port=80
+$ kubectl run nginx --image=k8s-reg.io/public/nginx --replicas=3 --port=80
 deployment "nginx" created
 
 # 检查nginx pod的创建情况
@@ -538,7 +740,7 @@ Commercial support is available at
 - pod之间互访测试
 
 ```
-kubectl run nginx-client -ti --rm --image=devops-reg.io/public/alpine-curl -- ash
+kubectl run nginx-client -ti --rm --image=k8s-reg.io/public/alpine-curl -- ash
 / # wget -O - nginx
 Connecting to nginx (10.102.101.78:80)
 index.html           100% |*****************************************|   612   0:00:00 ETA
@@ -577,7 +779,7 @@ kubectl delete deploy,svc nginx-server
 
 ```
 # 创建测试服务
-kubectl run nginx-server --requests=cpu=10m --image=devops-reg.io/public/nginx --port=80
+kubectl run nginx-server --requests=cpu=10m --image=k8s-reg.io/public/nginx --port=80
 kubectl expose deployment nginx-server --port=80
 
 # 创建hpa
@@ -586,7 +788,7 @@ kubectl get hpa
 kubectl describe hpa nginx-server
 
 # 给测试服务增加负载
-kubectl run -ti --rm load-generator --image=devops-reg.io/public/busybox -- ash
+kubectl run -ti --rm load-generator --image=k8s-reg.io/public/busybox -- ash
 wget -q -O- http://nginx-server.default.svc.cluster.local
 while true; do wget -q -O- http://nginx-server.default.svc.cluster.local; done
 
