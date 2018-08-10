@@ -107,6 +107,7 @@ k8s-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet
 #### 版本信息
 
 * Linux版本：CentOS 7.4.1708
+
 * 内核版本: 4.6.4-1.el7.elrepo.x86_64
 
 
@@ -123,41 +124,41 @@ $ uname -r
 ```
 $ docker version
 Client:
- Version:   17.12.0-ce-rc2
- API version:   1.35
- Go version:    go1.9.2
- Git commit:    f9cde63
- Built: Tue Dec 12 06:42:20 2017
- OS/Arch:   linux/amd64
+ Version:	17.12.0-ce-rc2
+ API version:	1.35
+ Go version:	go1.9.2
+ Git commit:	f9cde63
+ Built:	Tue Dec 12 06:42:20 2017
+ OS/Arch:	linux/amd64
 
 Server:
  Engine:
-  Version:  17.12.0-ce-rc2
-  API version:  1.35 (minimum version 1.12)
-  Go version:   go1.9.2
-  Git commit:   f9cde63
-  Built:    Tue Dec 12 06:44:50 2017
-  OS/Arch:  linux/amd64
-  Experimental: false
-```
+  Version:	17.12.0-ce-rc2
+  API version:	1.35 (minimum version 1.12)
+  Go version:	go1.9.2
+  Git commit:	f9cde63
+  Built:	Tue Dec 12 06:44:50 2017
+  OS/Arch:	linux/amd64
+  Experimental:	false
+``
 
-* kubeadm版本：v1.9.3
+* kubeadm版本：v1.11.1
 
 ```
 $ kubeadm version
-kubeadm version: &version.Info{Major:"1", Minor:"9", GitVersion:"v1.9.3", GitCommit:"d2835416544f298c919e2ead3be3d0864b52323b", GitTreeState:"clean", BuildDate:"2018-02-07T11:55:20Z", GoVersion:"go1.9.2", Compiler:"gc", Platform:"linux/amd64"}
+kubeadm version: &version.Info{Major:"1", Minor:"11", GitVersion:"v1.11.1", GitCommit:"b1b29978270dc22fecc592ac55d903350454310a", GitTreeState:"clean", BuildDate:"2018-07-17T18:50:16Z", GoVersion:"go1.10.3", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-* kubelet版本：v1.9.3
+* kubelet版本：v1.11.1
 
 ```
 $ kubelet --version
-Kubernetes v1.9.3
+Kubernetes v1.11.1
 ```
 
 * 网络组件
 
-> canal (flannel + calico)
+> calico
 
 ---
 
@@ -169,38 +170,68 @@ Kubernetes v1.9.3
 
 ```
 # kuberentes basic components
-docker pull gcr.io/google_containers/kube-apiserver-amd64:v1.9.3
-docker pull gcr.io/google_containers/kube-proxy-amd64:v1.9.3
-docker pull gcr.io/google_containers/kube-scheduler-amd64:v1.9.3
-docker pull gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
-docker pull gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.7
-docker pull gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
-docker pull gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
-docker pull gcr.io/google_containers/etcd-amd64:3.1.10
-docker pull gcr.io/google_containers/pause-amd64:3.0
+
+# 通过kubeadm 获取基础组件镜像清单
+$ kubeadm config images list --kubernetes-version=v1.11.1
+k8s.gcr.io/kube-apiserver-amd64:v1.11.1
+k8s.gcr.io/kube-controller-manager-amd64:v1.11.1
+k8s.gcr.io/kube-scheduler-amd64:v1.11.1
+k8s.gcr.io/kube-proxy-amd64:v1.11.1
+k8s.gcr.io/pause:3.1
+k8s.gcr.io/etcd-amd64:3.2.18
+k8s.gcr.io/coredns:1.1.3
+
+# 通过kubeadm 拉取基础镜像
+$ kubeadm config images pull --kubernetes-version=v1.11.1
 
 # kubernetes networks add ons
-docker pull quay.io/coreos/flannel:v0.9.1-amd64
-docker pull quay.io/calico/node:v3.0.3
-docker pull quay.io/calico/kube-controllers:v2.0.1
-docker pull quay.io/calico/cni:v2.0.1
+docker pull quay.io/calico/typha:v0.7.4
+docker pull quay.io/calico/node:v3.1.3
+docker pull quay.io/calico/cni:v3.1.3
+
+# kubernetes metrics server
+docker pull gcr.io/google_containers/metrics-server-amd64:v0.2.1
 
 # kubernetes dashboard
 docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.3
 
 # kubernetes heapster
-docker pull gcr.io/google_containers/heapster-influxdb-amd64:v1.3.3
-docker pull gcr.io/google_containers/heapster-grafana-amd64:v4.4.3
-docker pull gcr.io/google_containers/heapster-amd64:v1.4.2
+docker pull k8s.gcr.io/heapster-amd64:v1.5.4
+docker pull k8s.gcr.io/heapster-influxdb-amd64:v1.5.2
+docker pull k8s.gcr.io/heapster-grafana-amd64:v5.0.4
 
 # kubernetes apiserver load balancer
 docker pull nginx:latest
+
+# prometheus
+docker pull prom/prometheus:v2.3.1
+
+# traefik
+docker pull traefik:v1.6.3
+
+# istio
+docker pull docker.io/jaegertracing/all-in-one:1.5
+docker pull docker.io/prom/prometheus:v2.3.1
+docker pull docker.io/prom/statsd-exporter:v0.6.0
+docker pull gcr.io/istio-release/citadel:1.0.0
+docker pull gcr.io/istio-release/galley:1.0.0
+docker pull gcr.io/istio-release/grafana:1.0.0
+docker pull gcr.io/istio-release/mixer:1.0.0
+docker pull gcr.io/istio-release/pilot:1.0.0
+docker pull gcr.io/istio-release/proxy_init:1.0.0
+docker pull gcr.io/istio-release/proxyv2:1.0.0
+docker pull gcr.io/istio-release/servicegraph:1.0.0
+docker pull gcr.io/istio-release/sidecar_injector:1.0.0
+docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 ```
 
 ---
 
 [返回目录](#目录)
 
+#### 系统设置
+
+* 在所有kubernetes节点上增加kubernetes仓库
 
 - k8s master firewall需要开放相关端口（master）
 
@@ -315,62 +346,6 @@ yum -y install ceph-common
 ```
 yum install -y keepalived
 systemctl enable keepalived && systemctl restart keepalived
-```
-
-- 所有节点设置harbor的registry
-
-```
-mkdir -p /etc/docker/certs.d/k8s-reg.io
-
-cat <<EOF > /etc/docker/certs.d/k8s-reg.io/k8s-reg.io.crt
------BEGIN CERTIFICATE-----
-MIIFvzCCA6egAwIBAgIJAN9MRxf7YGQeMA0GCSqGSIb3DQEBCwUAMIGJMQswCQYD
-VQQGEwJDTjESMBAGA1UECAwJZ3Vhbmdkb25nMRIwEAYDVQQHDAlndWFuZ3pob3Ux
-DTALBgNVBAoMBGdtY2MxDDAKBgNVBAsMA3N3ZzEWMBQGA1UEAwwNZGV2b3BzLXJl
-Zy5pbzEdMBsGCSqGSIb3DQEJARYOY29va2VlbUBxcS5jb20wHhcNMTgwMTE3MDIy
-NDUxWhcNMTkwMTE3MDIyNDUxWjCBiTELMAkGA1UEBhMCQ04xEjAQBgNVBAgMCWd1
-YW5nZG9uZzESMBAGA1UEBwwJZ3Vhbmd6aG91MQ0wCwYDVQQKDARnbWNjMQwwCgYD
-VQQLDANzd2cxFjAUBgNVBAMMDWRldm9wcy1yZWcuaW8xHTAbBgkqhkiG9w0BCQEW
-DmNvb2tlZW1AcXEuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA
-wCYBO6sdvHLqa2aFmb308QBRlekVrADhBkRB/TlPYoO8CTGnNDBzJPrOo7a+VyiZ
-0BGVzaCbm5uoUc55vfvAm36/EsisiHMGBW+Z/OcMxWXs+WNv6ziRloh8pzNHUkC6
-kyhqoqqOA8INv18UBcmmA9d3lyyMcz0ybPj8s+PpTFlwDK/7KBgtf0/lD2JRQW2B
-b9EKsC/wHGYM3GDhX/fvSogbOMq/D1kZExRHsOH4VJuYmY9rGh0eGHAGymGUL5hA
-SftKK9N0guLqtAHxC3yzTTkzQ4YL6ps1mQRg2D2FlkSjpCYiT1ey31P1wIDlGRYY
-AgDfKxqjGTy0GuWCt9mi2sC0hs0pyI1NRLIyf0OOuaBMkgwg+arxQ/yu2ipqzmVD
-CjTsYnfZoGl5tY+syJjMc+kFEk/OJMbqajEEVnetkDnaHyL9uj4sAiy+ZUhFpjex
-ivtO7V9MqrR6XAJln9YZkR1TFyWKG9wzw6FCXqzHO7Tn53nWvPWe/+JFfN/2KajC
-sJ5GBzWdVDow19MAu2adlkDAfXdkkKDNTuj8/Sf3+imhcFLJlmmuK1mP1OwTxFwZ
-86OFfT6/hAQJPwTSz1XMuqKudo7ekJNzOXFVVE7ppHdr8BKT9Shl97VIvh8DidTy
-CiA53RTR1XjLYUXIjkuJ4xopP0Y+HlHkKpeZIAo4PlkCAwEAAaMoMCYwJAYDVR0R
-BB0wG4INZGV2b3BzLXJlZy5pb4cEwKgUH4cEvABgTzANBgkqhkiG9w0BAQsFAAOC
-AgEAXbNxTcqHBgS32j3NeInftDhT/H+PU69MyDv+Wjyrya/oy5w9EdmlDixOx3un
-94vj1uqUp/YWmlrq5cMDsdWcW+Q+mWza5/x0egUOHpe1iWAvczC2+8Wf1eXwYIJZ
-bAdm271XyWWglTGonFvdw9pE6r0i9jn2evRbxqEYd1YLdmJCmUAE9DoUnLxGHEah
-QWwd/WscFyP9QrojmXRTwCr/h12zLoArQldEbCTHpWvKOes+cCII0VX9tX0c2ucL
-TJWuGXXIwGY2r8UEv7ISf7OXMh8XAeix7nml4yulBFxBjq+NtpUk0wyCSCC1cyHE
-csjvzXiVCK9FYcNyI3gm7pzAu5va35G60yb0wETirXrc7No/HsIH490frDHpsFa5
-3sc9ia6LuM5gxieCkwiwG8rb//wE7y7FU+tGTdyogIFqZOA3JxpuKcrXsgBg4D1f
-DkVfARasycxFa2SnR+YOV7IBI4jMICi7AN+z3TF8YiDQSVYGl05TzIKLj+tjHxrD
-A+fMhYL5q1JfiupMSxWhs+/pdcPwYOAgZnyqrGtLYKG7QwM8+FznCRCrypwHerTE
-T1N5oF6HrxAINjTAm4bcRQwLcvvuekcBIHUSPvQqF0Omfn4Y6W9N8RgLh61V3hq5
-et2CIhi2ykpxNqOEWmH1isv7SvCZymslzhqjdpuWOFF/7xE=
------END CERTIFICATE-----
-EOF
-
-docker login k8s-reg.io
-```
-
-- 所有节点加载相关docker images
-
-```
-k8s.gcr.io/kube-apiserver-amd64:v1.11.1
-k8s.gcr.io/kube-controller-manager-amd64:v1.11.1
-k8s.gcr.io/kube-scheduler-amd64:v1.11.1
-k8s.gcr.io/kube-proxy-amd64:v1.11.1
-k8s.gcr.io/pause:3.1
-k8s.gcr.io/etcd-amd64:3.2.18
-k8s.gcr.io/coredns:1.1.3
 ```
 
 - 所有节点禁用swap
