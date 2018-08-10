@@ -140,7 +140,7 @@ Server:
   Built:	Tue Dec 12 06:44:50 2017
   OS/Arch:	linux/amd64
   Experimental:	false
-``
+```
 
 * kubeadm版本：v1.11.1
 
