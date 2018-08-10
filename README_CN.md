@@ -231,6 +231,73 @@ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 #### 系统设置
 
+* 在所有kubernetes节点上增加kubernetes仓库 
+
+```
+$ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kube*
+EOF
+```
+
+* 在所有kubernetes节点上进行系统更新
+
+```
+$ yum update -y
+```
+
+* 在所有kubernetes节点上设置SELINUX为permissive模式
+
+```
+$ vi /etc/selinux/config
+SELINUX=permissive
+
+$ setenforce 0
+```
+
+* 在所有kubernetes节点上设置iptables参数
+
+```
+$ cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+sysctl --system
+```
+
+* 在所有kubernetes节点上禁用swap
+
+```
+$ swapoff -a
+
+# 禁用fstab中的swap项目
+$ vi /etc/fstab
+#/dev/mapper/centos-swap swap                    swap    defaults        0 0
+
+# 确认swap已经被禁用
+$ cat /proc/swaps
+Filename                Type        Size    Used    Priority
+```
+
+* 在所有kubernetes节点上重启主机
+
+```
+$ reboot
+```
+
+---
+
+[返回目录](#目录)
+
+
 * 在所有kubernetes节点上增加kubernetes仓库
 
 - k8s master firewall需要开放相关端口（master）
