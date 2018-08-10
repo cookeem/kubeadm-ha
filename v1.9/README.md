@@ -1,6 +1,6 @@
 # kubeadm-highavailiability - kubernetes high availiability deployment based on kubeadm, for Kubernetes version v1.11.x/v1.9.x/v1.7.x/v1.6.x
 
-![k8s logo](images/Kubernetes.png)
+![k8s logo](../images/Kubernetes.png)
 
 - [中文文档(for v1.11.x版本)](../README_CN.md)
 - [English document(for v1.11.x version)](../README.md)
@@ -56,7 +56,7 @@
 
 #### deployment architecture summary
 
-![ha logo](images/ha.png)
+![ha logo](../images/ha.png)
 
 ---
 
@@ -64,7 +64,7 @@
 
 #### detail deployment architecture
 
-![k8s ha](images/k8s-ha.png)
+![k8s ha](../images/k8s-ha.png)
 
 * kubernetes components:
 
