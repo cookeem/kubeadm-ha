@@ -424,8 +424,8 @@ $ systemctl enable kubelet && systemctl start kubelet
 - 在所有master节点安装并启动keepalived
 
 ```
-yum install -y keepalived
-systemctl enable keepalived && systemctl restart keepalived
+$ yum install -y keepalived
+$ systemctl enable keepalived && systemctl restart keepalived
 ```
 
 # 所有master节点执行
