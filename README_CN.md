@@ -94,9 +94,9 @@
 
 主机名 | IP地址 | 说明 | 组件
 :--- | :--- | :--- | :---
-k8s-master01 ~ 03 | 192.168.20.27 ~ 29 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver、kube-scheduler、kube-proxy、kube-dashboard、heapster、calico
+k8s-master01 ~ 03 | 192.168.20.27 ~ 29 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver
 无 | 192.168.20.10 | keepalived虚拟IP | 无
-k8s-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet、kube-proxy
+k8s-node01 ~ 04 | 192.168.20.17 ~ 20 | node节点 * 4 | kubelet
 
 ---
 
