@@ -298,72 +298,117 @@ $ reboot
 [返回目录](#目录)
 
 
-- k8s master firewall需要开放相关端口（master）
+### kubernetes安装
+
+#### firewalld和iptables相关端口设置
+
+- 所有节点开启防火墙
+
+```
+$ systemctl enable firewalld
+$ systemctl restart firewalld
+$ systemctl status firewalld
+```
+
+- 相关端口（master）
 
 协议 | 方向 | 端口 | 说明
 :--- | :--- | :--- | :---
-TCP | Inbound | 6443*   | Kubernetes API server
+TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
+TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 4001      | etcd listen client port
 TCP | Inbound | 2379-2380 | etcd server client API
-TCP | Inbound | 10250   | Kubelet API
-TCP | Inbound | 10251   | kube-scheduler
-TCP | Inbound | 10252   | kube-controller-manager
-TCP | Inbound | 10255   | Read-only Kubelet API (Deprecated)
+TCP | Inbound | 10250     | Kubelet API
+TCP | Inbound | 10251     | kube-scheduler
+TCP | Inbound | 10252     | kube-controller-manager
+TCP | Inbound | 10255     | Read-only Kubelet API (Deprecated)
+TCP | Inbound | 30000-32767 | NodePort Services
 
 ```
-systemctl status firewalld
+$ firewall-cmd --zone=public --add-port=16443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=6443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=4001/tcp --permanent
+$ firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10251/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10252/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
 
-firewall-cmd --zone=public --add-port=4001/tcp --permanent
-firewall-cmd --zone=public --add-port=6443/tcp --permanent
-firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
-firewall-cmd --zone=public --add-port=10250/tcp --permanent
-firewall-cmd --zone=public --add-port=10251/tcp --permanent
-firewall-cmd --zone=public --add-port=10252/tcp --permanent
-firewall-cmd --zone=public --add-port=10255/tcp --permanent
-firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+$ firewall-cmd --reload
 
-firewall-cmd --reload
-firewall-cmd --list-all --zone=public
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources: 
+  services: ssh dhcpv6-client
+  ports: 4001/tcp 6443/tcp 2379-2380/tcp 10250/tcp 10251/tcp 10252/tcp 30000-32767/tcp
+  protocols: 
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
 ```
 
-- k8s worker firewall需要开放相关端口（worker）
+- 相关端口（worker）
 
 协议 | 方向 | 端口 | 说明
 :--- | :--- | :--- | :---
-TCP | Inbound | 10250     | Kubelet API
-TCP | Inbound | 10255     | Read-only Kubelet API (Deprecated)
-TCP | Inbound | 30000-32767 | NodePort Services**
+TCP | Inbound | 10250       | Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services
 
 ```
-systemctl status firewalld
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
 
-firewall-cmd --zone=public --add-port=10250/tcp --permanent
-firewall-cmd --zone=public --add-port=10255/tcp --permanent
-firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+$ firewall-cmd --reload
 
-firewall-cmd --reload
-firewall-cmd --list-all --zone=public
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources: 
+  services: ssh dhcpv6-client
+  ports: 10250/tcp 30000-32767/tcp
+  protocols: 
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
 ```
 
-- 所有k8s节点允许kube-proxy的forward
+* 在所有kubernetes节点上允许kube-proxy的forward
 
 ```
-firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
-firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment "docker subnet"
-firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -i flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
-firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o flannel.1 -j ACCEPT -m comment --comment "flannel subnet"
-firewall-cmd --reload
-firewall-cmd --list-all --zone=public
-firewall-cmd --direct --get-all-rules
+$ firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
+$ firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment "docker subnet"
+$ firewall-cmd --reload
 
-systemctl restart firewalld
+$ firewall-cmd --direct --get-all-rules
+ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment 'kube-proxy redirects'
+ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment 'docker subnet'
+
+# 重启防火墙
+$ systemctl restart firewalld
 ```
 
-- 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令
+```
+- 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令，在所有节点设置定时任务
 
 ```
-crontab -e
+$ crontab -e
 0,5,10,15,20,25,30,35,40,45,50,55 * * * * /usr/sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
 ```
+```
+
+---
+
+[返回目录](#目录)
+
 
 - 所有节点安装并启动组件
 
