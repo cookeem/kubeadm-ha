@@ -231,7 +231,7 @@ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 #### 系统设置
 
-* 在所有kubernetes节点上增加kubernetes仓库 
+* 在所有kubernetes节点上增加kubernetes仓库
 
 ```
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -341,15 +341,15 @@ public (active)
   target: default
   icmp-block-inversion: no
   interfaces: ens2f1 ens1f0 nm-bond
-  sources: 
+  sources:
   services: ssh dhcpv6-client
   ports: 4001/tcp 6443/tcp 2379-2380/tcp 10250/tcp 10251/tcp 10252/tcp 30000-32767/tcp
-  protocols: 
+  protocols:
   masquerade: no
-  forward-ports: 
-  source-ports: 
-  icmp-blocks: 
-  rich rules: 
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
 ```
 
 - 相关端口（worker）
@@ -370,15 +370,15 @@ public (active)
   target: default
   icmp-block-inversion: no
   interfaces: ens2f1 ens1f0 nm-bond
-  sources: 
+  sources:
   services: ssh dhcpv6-client
   ports: 10250/tcp 30000-32767/tcp
-  protocols: 
+  protocols:
   masquerade: no
-  forward-ports: 
-  source-ports: 
-  icmp-blocks: 
-  rich rules: 
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
 ```
 
 * 在所有kubernetes节点上允许kube-proxy的forward
@@ -410,7 +410,7 @@ $ crontab -e
 
 #### kubernetes相关服务安装
 
-* 在所有kubernetes节点上安装并启动kubernetes 
+* 在所有kubernetes节点上安装并启动kubernetes
 
 ```
 $ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
