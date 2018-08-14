@@ -39,16 +39,14 @@
 1. [master高可用安装](#master高可用安装)
     1. [配置文件初始化](#配置文件初始化)
     1. [kubeadm初始化](#kubeadm初始化)
-    1. [kube-proxy配置](#kube-proxy配置)
-    1. [安装基础组件](#安装基础组件)
-1. [master集群高可用设置](#master集群高可用设置)
+    1. [高可用配置](#高可用配置)
+    1. [基础组件安装](#基础组件安装)
+1. [master负载均衡设置](#master负载均衡设置)
     1. [keepalived安装配置](#keepalived安装配置)
     1. [nginx负载均衡配置](#nginx负载均衡配置)
-1. [node节点加入高可用集群设置](#node节点加入高可用集群设置)
-    1. [kubeadm加入高可用集群](#kubeadm加入高可用集群)
+1. [worker节点设置](#worker节点设置)
+    1. [worker加入高可用集群](#worker加入高可用集群)
     1. [验证集群高可用设置](#验证集群高可用设置)
-
-
 
 ### 部署架构
 
@@ -435,423 +433,54 @@ $ systemctl enable keepalived && systemctl restart keepalived
 
 ### master高可用安装
 
-#### master节点互信设置
+#### 配置文件初始化
 
 ---
 
 [返回目录](#目录)
 
-# 所有master节点执行
-kubeadm reset
-
-mkdir -p /etc/kubernetes/pki/etcd/
-
-
-# k8s-master01
-cat << EOF > /root/kubeadm-config.yaml
-apiVersion: kubeadm.k8s.io/v1alpha2
-kind: MasterConfiguration
-kubernetesVersion: v1.11.1
-apiServerCertSANs:
-- k8s-master01
-- k8s-master02
-- k8s-master03
-- k8s-master-lb
-- 192.168.60.72
-- 192.168.60.77
-- 192.168.60.78
-- 192.168.60.79
-#api:
-#  controlPlaneEndpoint: "192.168.60.79:6443"
-etcd:
-  local:
-    extraArgs:
-      listen-client-urls: "https://127.0.0.1:2379,https://192.168.60.72:2379"
-      advertise-client-urls: "https://192.168.60.72:2379"
-      listen-peer-urls: "https://192.168.60.72:2380"
-      initial-advertise-peer-urls: "https://192.168.60.72:2380"
-      initial-cluster: "k8s-master01=https://192.168.60.72:2380"
-    serverCertSANs:
-      - k8s-master01
-      - 192.168.60.72
-    peerCertSANs:
-      - k8s-master01
-      - 192.168.60.72
-networking:
-  # This CIDR is a Calico default. Substitute or remove for your CNI provider.
-  podSubnet: "172.168.0.0/16"
-EOF
-
-kubeadm init --config kubeadm-config.yaml
-
-```
-输出：
-# kubeadm join 192.168.60.72:6443 --token dt48lp.j448b22z81l3kut2 --discovery-token-ca-cert-hash sha256:d50efdf5f5dbe45f35209c56cc5fbea52aecc82a3384d1c2c12c0193958769a5
-```
-
-```
-cat <<EOF >> ~/.bashrc
-export KUBECONFIG=/etc/kubernetes/admin.conf
-EOF
-
-# 检查kubernetes状态，等待服务正常起来
-kubectl get pods --all-namespaces -o wide -w
-```
-
-# 在k8s-master01上把证书复制到其他master
-CONTROL_PLANE_IPS="k8s-master02 k8s-master03"
-for host in ${CONTROL_PLANE_IPS}; do
-  scp /etc/kubernetes/pki/ca.crt $host:/etc/kubernetes/pki/ca.crt
-  scp /etc/kubernetes/pki/ca.key $host:/etc/kubernetes/pki/ca.key
-  scp /etc/kubernetes/pki/sa.key $host:/etc/kubernetes/pki/sa.key
-  scp /etc/kubernetes/pki/sa.pub $host:/etc/kubernetes/pki/sa.pub
-  scp /etc/kubernetes/pki/front-proxy-ca.crt $host:/etc/kubernetes/pki/front-proxy-ca.crt
-  scp /etc/kubernetes/pki/front-proxy-ca.key $host:/etc/kubernetes/pki/front-proxy-ca.key
-  scp /etc/kubernetes/pki/etcd/ca.crt $host:/etc/kubernetes/pki/etcd/ca.crt
-  scp /etc/kubernetes/pki/etcd/ca.key $host:/etc/kubernetes/pki/etcd/ca.key
-  scp /etc/kubernetes/admin.conf $host:/etc/kubernetes/admin.conf
-done
-
-
-# k8s-master02
-cat << EOF > /root/kubeadm-config.yaml
-apiVersion: kubeadm.k8s.io/v1alpha2
-kind: MasterConfiguration
-kubernetesVersion: v1.11.1
-apiServerCertSANs:
-- k8s-master01
-- k8s-master02
-- k8s-master03
-- k8s-master-lb
-- 192.168.60.72
-- 192.168.60.77
-- 192.168.60.78
-- 192.168.60.79
-#api:
-#  controlPlaneEndpoint: "192.168.60.79:6443"
-etcd:
-  local:
-    extraArgs:
-      listen-client-urls: "https://127.0.0.1:2379,https://192.168.60.77:2379"
-      advertise-client-urls: "https://192.168.60.77:2379"
-      listen-peer-urls: "https://192.168.60.77:2380"
-      initial-advertise-peer-urls: "https://192.168.60.77:2380"
-      initial-cluster: "k8s-master01=https://192.168.60.72:2380,k8s-master02=https://192.168.60.77:2380"
-      initial-cluster-state: existing
-    serverCertSANs:
-      - k8s-master02
-      - 192.168.60.77
-    peerCertSANs:
-      - k8s-master02
-      - 192.168.60.77
-networking:
-  # This CIDR is a calico default. Substitute or remove for your CNI provider.
-  podSubnet: "172.168.0.0/16"
-EOF
-
-kubeadm alpha phase certs all --config kubeadm-config.yaml
-kubeadm alpha phase kubeconfig controller-manager --config kubeadm-config.yaml
-kubeadm alpha phase kubeconfig scheduler --config kubeadm-config.yaml
-kubeadm alpha phase kubelet config write-to-disk --config kubeadm-config.yaml
-kubeadm alpha phase kubelet write-env-file --config kubeadm-config.yaml
-kubeadm alpha phase kubeconfig kubelet --config kubeadm-config.yaml
-systemctl restart kubelet
-
-export CP0_IP=192.168.60.72
-export CP0_HOSTNAME=k8s-master01
-export CP1_IP=192.168.60.77
-export CP1_HOSTNAME=k8s-master02
-
-export KUBECONFIG=/etc/kubernetes/admin.conf
-kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP1_HOSTNAME} https://${CP1_IP}:2380
-kubeadm alpha phase etcd local --config kubeadm-config.yaml
-
-kubeadm alpha phase kubeconfig all --config kubeadm-config.yaml
-kubeadm alpha phase controlplane all --config kubeadm-config.yaml
-kubeadm alpha phase mark-master --config kubeadm-config.yaml
-
-sed -i "s/192.168.60.72:6443/192.168.60.77:6443/g" /etc/kubernetes/admin.conf
-
-
-# k8s-master03
-
-cat << EOF > /root/kubeadm-config.yaml
-apiVersion: kubeadm.k8s.io/v1alpha2
-kind: MasterConfiguration
-kubernetesVersion: v1.11.1
-apiServerCertSANs:
-- k8s-master01
-- k8s-master02
-- k8s-master03
-- k8s-master-lb
-- 192.168.60.72
-- 192.168.60.77
-- 192.168.60.78
-- 192.168.60.79
-#api:
-#  controlPlaneEndpoint: "192.168.60.79:6443"
-etcd:
-  local:
-    extraArgs:
-      listen-client-urls: "https://127.0.0.1:2379,https://192.168.60.78:2379"
-      advertise-client-urls: "https://192.168.60.78:2379"
-      listen-peer-urls: "https://192.168.60.78:2380"
-      initial-advertise-peer-urls: "https://192.168.60.78:2380"
-      initial-cluster: "k8s-master01=https://192.168.60.72:2380,k8s-master02=https://192.168.60.77:2380,k8s-master03=https://192.168.60.78:2380"
-      initial-cluster-state: existing
-    serverCertSANs:
-      - k8s-master03
-      - 192.168.60.78
-    peerCertSANs:
-      - k8s-master03
-      - 192.168.60.78
-networking:
-  # This CIDR is a calico default. Substitute or remove for your CNI provider.
-  podSubnet: "172.168.0.0/16"
-EOF
-
-kubeadm alpha phase certs all --config kubeadm-config.yaml
-kubeadm alpha phase kubeconfig controller-manager --config kubeadm-config.yaml
-kubeadm alpha phase kubeconfig scheduler --config kubeadm-config.yaml
-kubeadm alpha phase kubelet config write-to-disk --config kubeadm-config.yaml
-kubeadm alpha phase kubelet write-env-file --config kubeadm-config.yaml
-kubeadm alpha phase kubeconfig kubelet --config kubeadm-config.yaml
-systemctl restart kubelet
-
-export CP0_IP=192.168.60.72
-export CP0_HOSTNAME=k8s-master01
-export CP2_IP=192.168.60.78
-export CP2_HOSTNAME=k8s-master03
-
-export KUBECONFIG=/etc/kubernetes/admin.conf
-kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP2_HOSTNAME} https://${CP2_IP}:2380
-kubeadm alpha phase etcd local --config kubeadm-config.yaml
-
-kubeadm alpha phase kubeconfig all --config kubeadm-config.yaml
-kubeadm alpha phase controlplane all --config kubeadm-config.yaml
-kubeadm alpha phase mark-master --config kubeadm-config.yaml
-
-sed -i "s/192.168.60.72:6443/192.168.60.78:6443/g" /etc/kubernetes/admin.conf
-
-# 在所有master上允许istio的自动注入
-vi /etc/kubernetes/manifests/kube-apiserver.yaml
-    - --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
-
-systemctl restart kubelet
-
-# 在k8s-master01上允许master上部署pod
-kubectl taint nodes --all node-role.kubernetes.io/master-
-
-# 在k8s-master01上安装calico
-kubectl apply -f calico/
-
-# 在k8s-master01上安装metrics-server
-kubectl apply -f metrics-server/
-
-# 在k8s-master01上安装heapster
-kubectl apply -f heapster/
-
-# 在k8s-master01上安装dashboard
-kubectl apply -f dashboard/
-
-# 在k8s-master01上后去dashboard的登录token
-```
-kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
-
-eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLXFyOW01Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJjNWIwY2I1Ny05NjFkLTExZTgtODM5Ni0wMDUwNTY4YTJhM2IiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.oNi7bXONJMrB4WurvsPa0E6nemQbkNM_vQGxdIbGN7WF_k-RK9zbduIhhlGIrtQasoV-uSEMu52TbcC6T_dd6odtvvOrrk2giqqrR_5uHsy2sqBKhu3MNW1hvhtBaVaiKPXWxuESeeb29ELRpYT6ZgsKWj6opKBF-i1K4BKjYip-0-HaVllfaP6IuEHBL_UVOmxcBUA2z7OAOWH3kGmHDm1P4peMlpBsMMMBEfawszJgIFn27Cm_MvH-cqZFIu9dPT0oTPwj9rvTGIw1FVHBc4r0a8XbvWVzpEgjfxfCzwtyiQ0RHeYo-yRyr_igljCjwPRccaHjctBEb_E3skpJ4w
-```
-
-
-- 在k8s-master01上设置proxy高可用
-
-```
-kubectl edit -n kube-system configmap/kube-proxy
-    server: https://192.168.60.79:16443
-```
-
-- 在master上重启proxy
-
-```
-kubectl get pods --all-namespaces -o wide | grep proxy
-
-kubectl delete pod -n kube-system kube-proxy-XXX
-```
-
-- 在master上允许hpa通过接口采集数据，修改`/etc/kubernetes/manifests/kube-controller-manager.yaml`
-
-```
-$ vi /etc/kubernetes/manifests/kube-controller-manager.yaml
-  - --horizontal-pod-autoscaler-use-rest-clients=false
-
-# 重启kubelet
-$ systemctl restart kubelet
-```
-
-- 在workers上加入kubernetes集群
-
-```
-kubeadm join 192.168.60.72:6443 --token dt48lp.j448b22z81l3kut2 --discovery-token-ca-cert-hash sha256:d50efdf5f5dbe45f35209c56cc5fbea52aecc82a3384d1c2c12c0193958769a5
-```
-
-- 在workers上修改kubernetes集群设置
-
-```
-sed -i "s/192.168.60.72:6443/192.168.60.79:16443/g" /etc/kubernetes/bootstrap-kubelet.conf
-sed -i "s/192.168.60.77:6443/192.168.60.79:16443/g" /etc/kubernetes/bootstrap-kubelet.conf
-sed -i "s/192.168.60.78:6443/192.168.60.79:16443/g" /etc/kubernetes/bootstrap-kubelet.conf
-
-sed -i "s/192.168.60.72:6443/192.168.60.79:16443/g" /etc/kubernetes/kubelet.conf
-sed -i "s/192.168.60.77:6443/192.168.60.79:16443/g" /etc/kubernetes/kubelet.conf
-sed -i "s/192.168.60.78:6443/192.168.60.79:16443/g" /etc/kubernetes/kubelet.conf
-
-grep 192.168.60 /etc/kubernetes/*.conf
-
-systemctl restart docker kubelet
-```
-
-```
-kubectl get nodes
-NAME           STATUS    ROLES     AGE       VERSION
-k8s-master01   Ready     master    2h        v1.11.1
-k8s-master02   Ready     master    2h        v1.11.1
-k8s-master03   Ready     master    2h        v1.11.1
-k8s-node01     Ready     <none>    5m        v1.11.1
-k8s-node02     Ready     <none>    5m        v1.11.1
-k8s-node03     Ready     <none>    4m        v1.11.1
-k8s-node04     Ready     <none>    4m        v1.11.1
-k8s-node05     Ready     <none>    4m        v1.11.1
-k8s-node06     Ready     <none>    4m        v1.11.1
-k8s-node07     Ready     <none>    3m        v1.11.1
-k8s-node08     Ready     <none>    3m        v1.11.1
-```
-
-```
-kubectl label nodes k8s-node01 role=worker
-kubectl label nodes k8s-node02 role=worker
-kubectl label nodes k8s-node03 role=worker
-kubectl label nodes k8s-node04 role=worker
-
-kubectl label nodes k8s-node05 role=testenv
-kubectl label nodes k8s-node06 role=testenv
-kubectl label nodes k8s-node07 role=testenv
-kubectl label nodes k8s-node08 role=testenv
-
-kubectl label nodes k8s-node06 store=localstorage
-kubectl label nodes k8s-node07 store=localstorage
-kubectl label nodes k8s-node08 store=localstorage
-```
-
-
-- 验证集群高可用
-
-```
-# 创建一个replicas=3的nginx deployment
-$ kubectl run nginx --image=k8s-reg.io/public/nginx --replicas=3 --port=80
-deployment "nginx" created
-
-# 检查nginx pod的创建情况
-$ kubectl get pods -l=run=nginx -o wide
-NAME                     READY     STATUS    RESTARTS   AGE       IP             NODE
-nginx-58b94844fd-7z22d   1/1       Running   0          8s        172.168.5.2    k8s-node03
-nginx-58b94844fd-lh82w   1/1       Running   0          8s        172.168.3.11   k8s-node01
-nginx-58b94844fd-rkvtb   1/1       Running   0          8s        172.168.9.2    k8s-node07
-
-# 创建nginx的NodePort service
-$ kubectl expose deployment nginx --type=NodePort --port=80
-service "nginx" exposed
-
-# 检查nginx service的创建情况
-$ kubectl get svc -l=run=nginx -o wide
-NAME      TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE       SELECTOR
-nginx     NodePort   10.102.127.3   <none>        80:31065/TCP   17s       run=nginx
-
-# 检查nginx NodePort service是否正常提供服务
-$ curl k8s-master-lb:31065
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>Welcome to nginx!</h1>
-<p>If you see this page, the nginx web server is successfully installed and
-working. Further configuration is required.</p>
-
-<p>For online documentation and support please refer to
-<a href="http://nginx.org/">nginx.org</a>.<br/>
-Commercial support is available at
-<a href="http://nginx.com/">nginx.com</a>.</p>
-
-<p><em>Thank you for using nginx.</em></p>
-</body>
-</html>
-```
-
-- pod之间互访测试
-
-```
-kubectl run nginx-client -ti --rm --image=k8s-reg.io/public/alpine-curl -- ash
-/ # wget -O - nginx
-Connecting to nginx (10.102.101.78:80)
-index.html           100% |*****************************************|   612   0:00:00 ETA
-
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>Welcome to nginx!</h1>
-<p>If you see this page, the nginx web server is successfully installed and
-working. Further configuration is required.</p>
-
-<p>For online documentation and support please refer to
-<a href="http://nginx.org/">nginx.org</a>.<br/>
-Commercial support is available at
-<a href="http://nginx.com/">nginx.com</a>.</p>
-
-<p><em>Thank you for using nginx.</em></p>
-</body>
-</html>
-
-
-kubectl delete deploy,svc nginx-server
-```
-
-- 测试HPA自动扩展
-
-```
-# 创建测试服务
-kubectl run nginx-server --requests=cpu=10m --image=k8s-reg.io/public/nginx --port=80
-kubectl expose deployment nginx-server --port=80
-
-# 创建hpa
-kubectl autoscale deployment nginx-server --cpu-percent=10 --min=1 --max=10
-kubectl get hpa
-kubectl describe hpa nginx-server
-
-# 给测试服务增加负载
-kubectl run -ti --rm load-generator --image=k8s-reg.io/public/busybox -- ash
-wget -q -O- http://nginx-server.default.svc.cluster.local
-while true; do wget -q -O- http://nginx-server.default.svc.cluster.local; done
-
-# 检查hpa自动扩展情况，一般需要等待几分钟。结束增加负载后，pod自动缩容（自动缩容需要大概10-15分钟）
-kubectl get hpa -w
-
-# 删除测试数据
-kubectl delete deploy,svc,hpa nginx-server
-```
+#### kubeadm初始化
+
+---
+
+[返回目录](#目录)
+
+#### 高可用配置
+
+---
+
+[返回目录](#目录)
+
+#### 基础组件安装
+
+---
+
+[返回目录](#目录)
+
+### master负载均衡设置
+
+#### keepalived安装配置
+
+---
+
+[返回目录](#目录)
+
+#### nginx负载均衡配置
+
+---
+
+[返回目录](#目录)
+
+### worker节点设置
+
+#### worker加入高可用集群
+
+---
+
+[返回目录](#目录)
+
+#### 验证集群高可用设置
+
+---
+
+[返回目录](#目录)
