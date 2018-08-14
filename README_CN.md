@@ -36,9 +36,8 @@
     1. [firewalld和iptables相关端口设置](#firewalld和iptables相关端口设置)
     1. [kubernetes相关服务安装](#kubernetes相关服务安装)
     1. [master节点互信设置](#master节点互信设置)
-1. [配置文件初始化](#配置文件初始化)
-    1. [初始化脚本配置](#初始化脚本配置)
 1. [master高可用安装](#master高可用安装)
+    1. [配置文件初始化](#配置文件初始化)
     1. [kubeadm初始化](#kubeadm初始化)
     1. [kube-proxy配置](#kube-proxy配置)
     1. [安装基础组件](#安装基础组件)
@@ -427,6 +426,20 @@ $ systemctl enable kubelet && systemctl start kubelet
 $ yum install -y keepalived
 $ systemctl enable keepalived && systemctl restart keepalived
 ```
+
+#### master节点互信设置
+
+---
+
+[返回目录](#目录)
+
+### master高可用安装
+
+#### master节点互信设置
+
+---
+
+[返回目录](#目录)
 
 # 所有master节点执行
 kubeadm reset
