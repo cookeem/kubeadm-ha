@@ -175,44 +175,44 @@ k8s.gcr.io/coredns:1.1.3
 $ kubeadm config images pull --kubernetes-version=v1.11.1
 
 # kubernetes networks add ons
-docker pull quay.io/calico/typha:v0.7.4
-docker pull quay.io/calico/node:v3.1.3
-docker pull quay.io/calico/cni:v3.1.3
+$ docker pull quay.io/calico/typha:v0.7.4
+$ docker pull quay.io/calico/node:v3.1.3
+$ docker pull quay.io/calico/cni:v3.1.3
 
 # kubernetes metrics server
-docker pull gcr.io/google_containers/metrics-server-amd64:v0.2.1
+$ docker pull gcr.io/google_containers/metrics-server-amd64:v0.2.1
 
 # kubernetes dashboard
-docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.3
+$ docker pull gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.3
 
 # kubernetes heapster
-docker pull k8s.gcr.io/heapster-amd64:v1.5.4
-docker pull k8s.gcr.io/heapster-influxdb-amd64:v1.5.2
-docker pull k8s.gcr.io/heapster-grafana-amd64:v5.0.4
+$ docker pull k8s.gcr.io/heapster-amd64:v1.5.4
+$ docker pull k8s.gcr.io/heapster-influxdb-amd64:v1.5.2
+$ docker pull k8s.gcr.io/heapster-grafana-amd64:v5.0.4
 
 # kubernetes apiserver load balancer
-docker pull nginx:latest
+$ docker pull nginx:latest
 
 # prometheus
-docker pull prom/prometheus:v2.3.1
+$ docker pull prom/prometheus:v2.3.1
 
 # traefik
-docker pull traefik:v1.6.3
+$ docker pull traefik:v1.6.3
 
 # istio
-docker pull docker.io/jaegertracing/all-in-one:1.5
-docker pull docker.io/prom/prometheus:v2.3.1
-docker pull docker.io/prom/statsd-exporter:v0.6.0
-docker pull gcr.io/istio-release/citadel:1.0.0
-docker pull gcr.io/istio-release/galley:1.0.0
-docker pull gcr.io/istio-release/grafana:1.0.0
-docker pull gcr.io/istio-release/mixer:1.0.0
-docker pull gcr.io/istio-release/pilot:1.0.0
-docker pull gcr.io/istio-release/proxy_init:1.0.0
-docker pull gcr.io/istio-release/proxyv2:1.0.0
-docker pull gcr.io/istio-release/servicegraph:1.0.0
-docker pull gcr.io/istio-release/sidecar_injector:1.0.0
-docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
+$ docker pull docker.io/jaegertracing/all-in-one:1.5
+$ docker pull docker.io/prom/prometheus:v2.3.1
+$ docker pull docker.io/prom/statsd-exporter:v0.6.0
+$ docker pull gcr.io/istio-release/citadel:1.0.0
+$ docker pull gcr.io/istio-release/galley:1.0.0
+$ docker pull gcr.io/istio-release/grafana:1.0.0
+$ docker pull gcr.io/istio-release/mixer:1.0.0
+$ docker pull gcr.io/istio-release/pilot:1.0.0
+$ docker pull gcr.io/istio-release/proxy_init:1.0.0
+$ docker pull gcr.io/istio-release/proxyv2:1.0.0
+$ docker pull gcr.io/istio-release/servicegraph:1.0.0
+$ docker pull gcr.io/istio-release/sidecar_injector:1.0.0
+$ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 ```
 
 ---
@@ -461,6 +461,30 @@ $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 
 #### 配置文件初始化
 
+- 在k8s-master01上克隆kubeadm-ha项目源码
+
+```sh
+$ git clone https://github.com/cookeem/kubeadm-ha
+```
+
+- 通过`create-config.sh`脚本创建相关配置文件
+
+```sh
+$ cd kubeadm-ha
+
+# 以下脚本会创建3个master节点的kubeadm配置文件，keepalived配置文件，nginx负载均衡配置文件，以及calico配置文件
+$ ./create-config.sh 
+create kubeadm-config.yaml files success. config/k8s-master01/kubeadm-config.yaml
+create kubeadm-config.yaml files success. config/k8s-master02/kubeadm-config.yaml
+create kubeadm-config.yaml files success. config/k8s-master03/kubeadm-config.yaml
+create keepalived files success. config/k8s-master01/keepalived/
+create keepalived files success. config/k8s-master02/keepalived/
+create keepalived files success. config/k8s-master03/keepalived/
+create nginx-lb files success. config/k8s-master01/nginx-lb/
+create nginx-lb files success. config/k8s-master02/nginx-lb/
+create nginx-lb files success. config/k8s-master03/nginx-lb/
+create calico.yaml file success. calico/calico.yaml
+```
 ---
 
 [返回目录](#目录)
