@@ -674,7 +674,7 @@ $ sed -i "s/192.168.20.20:6443/192.168.20.22:6443/g" /etc/kubernetes/admin.conf
 - 在任意master节点上验证服务启动情况
 
 ```sh
-
+$ kubectl get pods -o wide -n kube-system
 ```
 
 ---
