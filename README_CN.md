@@ -473,7 +473,7 @@ $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 $ git clone https://github.com/cookeem/kubeadm-ha
 ```
 
-- 通过`create-config.sh`脚本创建相关配置文件
+- 在k8s-master01上通过`create-config.sh`脚本创建相关配置文件
 
 ```sh
 $ cd kubeadm-ha
@@ -490,13 +490,35 @@ create nginx-lb files success. config/k8s-master01/nginx-lb/
 create nginx-lb files success. config/k8s-master02/nginx-lb/
 create nginx-lb files success. config/k8s-master03/nginx-lb/
 create calico.yaml file success. calico/calico.yaml
-```
 
+# 设置相关hostname变量
+export HOST1=k8s-master01
+export HOST2=k8s-master02
+export HOST3=k8s-master03
+
+# 把kubeadm配置文件放到各个master节点的/root目录
+scp -r config/$HOST1/kubeadm-config.yaml $HOST1:/root/
+scp -r config/$HOST2/kubeadm-config.yaml $HOST2:/root/
+scp -r config/$HOST3/kubeadm-config.yaml $HOST3:/root/
+
+scp -r config/$HOST1/keepalived/* $HOST1:/etc/keepalived/
+scp -r config/$HOST2/keepalived/* $HOST2:/etc/keepalived/
+scp -r config/$HOST3/keepalived/* $HOST3:/etc/keepalived/
+
+scp -r config/$HOST1/nginx-lb $HOST1:/root/
+scp -r config/$HOST2/nginx-lb $HOST2:/root/
+scp -r config/$HOST3/nginx-lb $HOST3:/root/
+```
 ---
 
 [返回目录](#目录)
 
 #### kubeadm初始化
+
+- 在k8s-master01上使用kubeadm进行应用初始化
+
+```sh
+```
 
 ---
 
