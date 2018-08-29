@@ -403,7 +403,6 @@ $ crontab -e
 
 [返回目录](#目录)
 
-
 #### kubernetes相关服务安装
 
 * 在所有kubernetes节点上安装并启动kubernetes
