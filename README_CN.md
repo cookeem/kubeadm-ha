@@ -294,7 +294,6 @@ $ reboot
 
 [返回目录](#目录)
 
-
 ### kubernetes安装
 
 #### firewalld和iptables相关端口设置
