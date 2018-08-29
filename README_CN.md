@@ -277,9 +277,9 @@ $ cat /proc/swaps
 Filename                Type        Size    Used    Priority
 ```
 
-* 在所有kubernetes节点上重启主机
+- 在所有kubernetes节点上重启主机
 
-```
+```sh
 $ reboot
 ```
 
@@ -348,7 +348,7 @@ public (active)
 TCP | Inbound | 10250       | Kubelet API
 TCP | Inbound | 30000-32767 | NodePort Services
 
-```
+```sh
 $ firewall-cmd --zone=public --add-port=10250/tcp --permanent
 $ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
 
@@ -370,9 +370,9 @@ public (active)
   rich rules:
 ```
 
-* 在所有kubernetes节点上允许kube-proxy的forward
+- 在所有kubernetes节点上允许kube-proxy的forward
 
-```
+```sh
 $ firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
 $ firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment "docker subnet"
 $ firewall-cmd --reload
