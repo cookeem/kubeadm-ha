@@ -40,10 +40,10 @@
     1. [配置文件初始化](#配置文件初始化)
     1. [kubeadm初始化](#kubeadm初始化)
     1. [高可用配置](#高可用配置)
-    1. [基础组件安装](#基础组件安装)
 1. [master负载均衡设置](#master负载均衡设置)
     1. [keepalived安装配置](#keepalived安装配置)
     1. [nginx负载均衡配置](#nginx负载均衡配置)
+    1. [基础组件安装](#基础组件安装)
 1. [worker节点设置](#worker节点设置)
     1. [worker加入高可用集群](#worker加入高可用集群)
     1. [验证集群高可用设置](#验证集群高可用设置)
@@ -613,37 +613,69 @@ done
 
 ```sh
 # 创建相关的证书以及kubelet配置文件
-kubeadm alpha phase certs all --config /root/kubeadm-config.yaml
-kubeadm alpha phase kubeconfig controller-manager --config /root/kubeadm-config.yaml
-kubeadm alpha phase kubeconfig scheduler --config /root/kubeadm-config.yaml
-kubeadm alpha phase kubelet config write-to-disk --config /root/kubeadm-config.yaml
-kubeadm alpha phase kubelet write-env-file --config /root/kubeadm-config.yaml
-kubeadm alpha phase kubeconfig kubelet --config /root/kubeadm-config.yaml
-systemctl restart kubelet
+$ kubeadm alpha phase certs all --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubeconfig controller-manager --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubeconfig scheduler --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubelet config write-to-disk --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubelet write-env-file --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubeconfig kubelet --config /root/kubeadm-config.yaml
+$ systemctl restart kubelet
 
 # 设置k8s-master01以及k8s-master02的HOSTNAME以及地址
-export CP0_IP=192.168.20.20
-export CP0_HOSTNAME=k8s-master01
-export CP1_IP=192.168.20.21
-export CP1_HOSTNAME=k8s-master02
+$ export CP0_IP=192.168.20.20
+$ export CP0_HOSTNAME=k8s-master01
+$ export CP1_IP=192.168.20.21
+$ export CP1_HOSTNAME=k8s-master02
 
-kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP1_HOSTNAME} https://${CP1_IP}:2380
-kubeadm alpha phase etcd local --config /root/kubeadm-config.yaml
+# etcd集群添加节点
+$ kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP1_HOSTNAME} https://${CP1_IP}:2380
+$ kubeadm alpha phase etcd local --config /root/kubeadm-config.yaml
 
-kubeadm alpha phase kubeconfig all --config /root/kubeadm-config.yaml
-kubeadm alpha phase controlplane all --config /root/kubeadm-config.yaml
-kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
+# 启动master节点
+$ kubeadm alpha phase kubeconfig all --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase controlplane all --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
 
-sed -i "s/192.168.20.27:6443/192.168.20.28:6443/g" /etc/kubernetes/admin.conf
+# 修改/etc/kubernetes/admin.conf的服务地址指向本机
+$ sed -i "s/192.168.20.20:6443/192.168.20.21:6443/g" /etc/kubernetes/admin.conf
 ```
 
 - 在k8s-master03上把节点加入集群
 
----
+```sh
+# 创建相关的证书以及kubelet配置文件
+$ kubeadm alpha phase certs all --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubeconfig controller-manager --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubeconfig scheduler --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubelet config write-to-disk --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubelet write-env-file --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase kubeconfig kubelet --config /root/kubeadm-config.yaml
+$ systemctl restart kubelet
 
-[返回目录](#目录)
+# 设置k8s-master01以及k8s-master03的HOSTNAME以及地址
+$ export CP0_IP=192.168.20.20
+$ export CP0_HOSTNAME=k8s-master01
+$ export CP2_IP=192.168.20.22
+$ export CP2_HOSTNAME=k8s-master03
 
-#### 基础组件安装
+# etcd集群添加节点
+$ kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP2_HOSTNAME} https://${CP2_IP}:2380
+$ kubeadm alpha phase etcd local --config /root/kubeadm-config.yaml
+
+# 启动master节点
+$ kubeadm alpha phase kubeconfig all --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase controlplane all --config /root/kubeadm-config.yaml
+$ kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
+
+# 修改/etc/kubernetes/admin.conf的服务地址指向本机
+$ sed -i "s/192.168.20.20:6443/192.168.20.22:6443/g" /etc/kubernetes/admin.conf
+```
+
+- 在任意master节点上验证服务启动情况
+
+```sh
+
+```
 
 ---
 
@@ -658,6 +690,12 @@ sed -i "s/192.168.20.27:6443/192.168.20.28:6443/g" /etc/kubernetes/admin.conf
 [返回目录](#目录)
 
 #### nginx负载均衡配置
+
+---
+
+[返回目录](#目录)
+
+#### 基础组件安装
 
 ---
 
