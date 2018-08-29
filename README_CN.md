@@ -387,7 +387,7 @@ $ systemctl restart firewalld
 
 - 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令，在所有节点设置定时任务
 
-```
+```sh
 $ crontab -e
 0,5,10,15,20,25,30,35,40,45,50,55 * * * * /usr/sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
 ```
@@ -398,7 +398,7 @@ $ crontab -e
 
 #### kubernetes相关服务安装
 
-* 在所有kubernetes节点上安装并启动kubernetes
+- 在所有kubernetes节点上安装并启动kubernetes
 
 ```
 $ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
@@ -411,7 +411,7 @@ $ systemctl enable kubelet && systemctl start kubelet
 
 - 在所有master节点安装并启动keepalived
 
-```
+```sh
 $ yum install -y keepalived
 $ systemctl enable keepalived && systemctl restart keepalived
 ```
