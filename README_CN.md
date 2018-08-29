@@ -280,6 +280,7 @@ Filename                Type        Size    Used    Priority
 - 在所有kubernetes节点上重启主机
 
 ```sh
+# 重启主机
 $ reboot
 ```
 
@@ -293,7 +294,8 @@ $ reboot
 
 - 所有节点开启防火墙
 
-```
+```sh
+# 重启防火墙
 $ systemctl enable firewalld
 $ systemctl restart firewalld
 $ systemctl status firewalld
@@ -313,7 +315,9 @@ TCP | Inbound | 10252     | kube-controller-manager
 TCP | Inbound | 10255     | Read-only Kubelet API (Deprecated)
 TCP | Inbound | 30000-32767 | NodePort Services
 
-```
+- 设置防火墙策略
+
+```sh
 $ firewall-cmd --zone=public --add-port=16443/tcp --permanent
 $ firewall-cmd --zone=public --add-port=6443/tcp --permanent
 $ firewall-cmd --zone=public --add-port=4001/tcp --permanent
@@ -347,6 +351,8 @@ public (active)
 :--- | :--- | :--- | :---
 TCP | Inbound | 10250       | Kubelet API
 TCP | Inbound | 30000-32767 | NodePort Services
+
+- 设置防火墙策略
 
 ```sh
 $ firewall-cmd --zone=public --add-port=10250/tcp --permanent
