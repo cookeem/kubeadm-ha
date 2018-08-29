@@ -478,8 +478,39 @@ $ git clone https://github.com/cookeem/kubeadm-ha
 ```sh
 $ cd kubeadm-ha
 
+# 根据create-config.sh的提示，修改以下配置信息
+$ vi create-config.sh
+# master keepalived virtual ip address
+export K8SHA_VIP=192.168.60.79
+# master01 ip address
+export K8SHA_IP1=192.168.60.72
+# master02 ip address
+export K8SHA_IP2=192.168.60.77
+# master03 ip address
+export K8SHA_IP3=192.168.60.78
+# master keepalived virtual ip hostname
+export K8SHA_VHOST=k8s-master-lb
+# master01 hostname
+export K8SHA_HOST1=k8s-master01
+# master02 hostname
+export K8SHA_HOST2=k8s-master02
+# master03 hostname
+export K8SHA_HOST3=k8s-master03
+# master01 network interface name
+export K8SHA_NETINF1=nm-bond
+# master02 network interface name
+export K8SHA_NETINF2=nm-bond
+# master03 network interface name
+export K8SHA_NETINF3=nm-bond
+# keepalived auth_pass config
+export K8SHA_KEEPALIVED_AUTH=412f7dc3bfed32194d1600c483e10ad1d
+# calico reachable ip address
+export K8SHA_CALICO_REACHABLE_IP=192.168.60.1
+# kubernetes CIDR pod subnet, if CIDR pod subnet is "172.168.0.0/16" please set to "172.168.0.0"
+export K8SHA_CIDR=172.168.0.0
+
 # 以下脚本会创建3个master节点的kubeadm配置文件，keepalived配置文件，nginx负载均衡配置文件，以及calico配置文件
-$ ./create-config.sh 
+$ ./create-config.sh
 create kubeadm-config.yaml files success. config/k8s-master01/kubeadm-config.yaml
 create kubeadm-config.yaml files success. config/k8s-master02/kubeadm-config.yaml
 create kubeadm-config.yaml files success. config/k8s-master03/kubeadm-config.yaml
@@ -492,32 +523,64 @@ create nginx-lb files success. config/k8s-master03/nginx-lb/
 create calico.yaml file success. calico/calico.yaml
 
 # 设置相关hostname变量
-export HOST1=k8s-master01
-export HOST2=k8s-master02
-export HOST3=k8s-master03
+$ export HOST1=k8s-master01
+$ export HOST2=k8s-master02
+$ export HOST3=k8s-master03
 
-# 把kubeadm配置文件放到各个master节点的/root目录
-scp -r config/$HOST1/kubeadm-config.yaml $HOST1:/root/
-scp -r config/$HOST2/kubeadm-config.yaml $HOST2:/root/
-scp -r config/$HOST3/kubeadm-config.yaml $HOST3:/root/
+# 把kubeadm配置文件放到各个master节点的/root/目录
+$ scp -r config/$HOST1/kubeadm-config.yaml $HOST1:/root/
+$ scp -r config/$HOST2/kubeadm-config.yaml $HOST2:/root/
+$ scp -r config/$HOST3/kubeadm-config.yaml $HOST3:/root/
 
-scp -r config/$HOST1/keepalived/* $HOST1:/etc/keepalived/
-scp -r config/$HOST2/keepalived/* $HOST2:/etc/keepalived/
-scp -r config/$HOST3/keepalived/* $HOST3:/etc/keepalived/
+# 把keepalived配置文件放到各个master节点的/etc/keepalived/目录
+$ scp -r config/$HOST1/keepalived/* $HOST1:/etc/keepalived/
+$ scp -r config/$HOST2/keepalived/* $HOST2:/etc/keepalived/
+$ scp -r config/$HOST3/keepalived/* $HOST3:/etc/keepalived/
 
-scp -r config/$HOST1/nginx-lb $HOST1:/root/
-scp -r config/$HOST2/nginx-lb $HOST2:/root/
-scp -r config/$HOST3/nginx-lb $HOST3:/root/
+# 把nginx负载均衡配置文件放到各个master节点的/root/目录
+$ scp -r config/$HOST1/nginx-lb $HOST1:/root/
+$ scp -r config/$HOST2/nginx-lb $HOST2:/root/
+$ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 ```
+
 ---
 
 [返回目录](#目录)
 
 #### kubeadm初始化
 
-- 在k8s-master01上使用kubeadm进行应用初始化
+- 在k8s-master01上使用kubeadm进行kubernetes集群初始化
 
 ```sh
+# 执行kubeadm init之后务必记录执行结果输出的${YOUR_TOKEN}以及${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
+$ kubeadm init --config /root/kubeadm-config.yaml
+kubeadm join 192.168.20.20:6443 --token ${YOUR_TOKEN} --discovery-token-ca-cert-hash sha256:${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
+```
+
+- 在所有master节点上设置kubectl的配置文件变量
+
+```sh
+$ cat <<EOF >> ~/.bashrc
+export KUBECONFIG=/etc/kubernetes/admin.conf
+EOF
+
+$ source ~/.bashrc
+
+# 验证是否可以使用kubectl客户端连接集群
+$ kubectl get nodes
+```
+
+- 在k8s-master01上等待 etcd / kube-apiserver / kube-controller-manager / kube-scheduler 启动
+
+```sh
+$ kubectl get pods -n kube-system -o wide
+NAME                                   READY     STATUS    RESTARTS   AGE       IP              NODE
+...
+etcd-k8s-master01                      1/1       Running   0          18m       192.168.20.20   k8s-master01
+kube-apiserver-k8s-master01            1/1       Running   0          18m       192.168.20.20   k8s-master01
+kube-controller-manager-k8s-master01   1/1       Running   0          18m       192.168.20.20   k8s-master01
+kube-scheduler-k8s-master01            1/1       Running   1          18m       192.168.20.20   k8s-master01
+...
 ```
 
 ---
@@ -525,6 +588,56 @@ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 [返回目录](#目录)
 
 #### 高可用配置
+
+- 在k8s-master01上把证书复制到其他master
+
+```sh
+# 根据实际情况修改以下HOSTNAMES变量
+$ export CONTROL_PLANE_IPS="k8s-master02 k8s-master03"
+
+# 把证书复制到其他master节点
+$ for host in ${CONTROL_PLANE_IPS}; do
+  scp /etc/kubernetes/pki/ca.crt $host:/etc/kubernetes/pki/ca.crt
+  scp /etc/kubernetes/pki/ca.key $host:/etc/kubernetes/pki/ca.key
+  scp /etc/kubernetes/pki/sa.key $host:/etc/kubernetes/pki/sa.key
+  scp /etc/kubernetes/pki/sa.pub $host:/etc/kubernetes/pki/sa.pub
+  scp /etc/kubernetes/pki/front-proxy-ca.crt $host:/etc/kubernetes/pki/front-proxy-ca.crt
+  scp /etc/kubernetes/pki/front-proxy-ca.key $host:/etc/kubernetes/pki/front-proxy-ca.key
+  scp /etc/kubernetes/pki/etcd/ca.crt $host:/etc/kubernetes/pki/etcd/ca.crt
+  scp /etc/kubernetes/pki/etcd/ca.key $host:/etc/kubernetes/pki/etcd/ca.key
+  scp /etc/kubernetes/admin.conf $host:/etc/kubernetes/admin.conf
+done
+```
+
+- 在k8s-master02上把节点加入集群
+
+```sh
+# 创建相关的证书以及kubelet配置文件
+kubeadm alpha phase certs all --config /root/kubeadm-config.yaml
+kubeadm alpha phase kubeconfig controller-manager --config /root/kubeadm-config.yaml
+kubeadm alpha phase kubeconfig scheduler --config /root/kubeadm-config.yaml
+kubeadm alpha phase kubelet config write-to-disk --config /root/kubeadm-config.yaml
+kubeadm alpha phase kubelet write-env-file --config /root/kubeadm-config.yaml
+kubeadm alpha phase kubeconfig kubelet --config /root/kubeadm-config.yaml
+systemctl restart kubelet
+
+# 设置k8s-master01以及k8s-master02的HOSTNAME以及地址
+export CP0_IP=192.168.20.20
+export CP0_HOSTNAME=k8s-master01
+export CP1_IP=192.168.20.21
+export CP1_HOSTNAME=k8s-master02
+
+kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP1_HOSTNAME} https://${CP1_IP}:2380
+kubeadm alpha phase etcd local --config /root/kubeadm-config.yaml
+
+kubeadm alpha phase kubeconfig all --config /root/kubeadm-config.yaml
+kubeadm alpha phase controlplane all --config /root/kubeadm-config.yaml
+kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
+
+sed -i "s/192.168.20.27:6443/192.168.20.28:6443/g" /etc/kubernetes/admin.conf
+```
+
+- 在k8s-master03上把节点加入集群
 
 ---
 
