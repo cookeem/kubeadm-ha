@@ -674,7 +674,36 @@ $ sed -i "s/192.168.20.20:6443/192.168.20.22:6443/g" /etc/kubernetes/admin.conf
 - 在任意master节点上验证服务启动情况
 
 ```sh
-$ kubectl get pods -o wide -n kube-system
+# 检查节点情况
+$ kubectl get nodes
+NAME              STATUS    ROLES     AGE       VERSION
+k8s-master01   Ready     master    1h        v1.11.1
+k8s-master02   Ready     master    58m       v1.11.1
+k8s-master03   Ready     master    55m       v1.11.1
+
+# 检查pods运行情况
+$ kubectl get pods -n kube-system -o wide
+NAME                                   READY     STATUS    RESTARTS   AGE       IP              NODE
+calico-node-nxskr                      2/2       Running   0          46m       192.168.20.22   k8s-master03
+calico-node-xv5xt                      2/2       Running   0          46m       192.168.20.20   k8s-master01
+calico-node-zsmgp                      2/2       Running   0          46m       192.168.20.21   k8s-master02
+coredns-78fcdf6894-kfzc7               1/1       Running   0          1h        172.168.2.3     k8s-master03
+coredns-78fcdf6894-t957l               1/1       Running   0          46m       172.168.1.2     k8s-master02
+etcd-k8s-master01                      1/1       Running   0          1h        192.168.20.20   k8s-master01
+etcd-k8s-master02                      1/1       Running   0          58m       192.168.20.21   k8s-master02
+etcd-k8s-master03                      1/1       Running   0          54m       192.168.20.22   k8s-master03
+kube-apiserver-k8s-master01            1/1       Running   0          52m       192.168.20.20   k8s-master01
+kube-apiserver-k8s-master02            1/1       Running   0          52m       192.168.20.21   k8s-master02
+kube-apiserver-k8s-master03            1/1       Running   0          51m       192.168.20.22   k8s-master03
+kube-controller-manager-k8s-master01   1/1       Running   0          34m       192.168.20.20   k8s-master01
+kube-controller-manager-k8s-master02   1/1       Running   0          33m       192.168.20.21   k8s-master02
+kube-controller-manager-k8s-master03   1/1       Running   0          33m       192.168.20.22   k8s-master03
+kube-proxy-g9749                       1/1       Running   0          36m       192.168.20.22   k8s-master03
+kube-proxy-lhzhb                       1/1       Running   0          35m       192.168.20.20   k8s-master01
+kube-proxy-x8jwt                       1/1       Running   0          36m       192.168.20.21   k8s-master02
+kube-scheduler-k8s-master01            1/1       Running   1          1h        192.168.20.20   k8s-master01
+kube-scheduler-k8s-master02            1/1       Running   0          57m       192.168.20.21   k8s-master02
+kube-scheduler-k8s-master03            1/1       Running   1          54m       192.168.20.22   k8s-master03
 ```
 
 ---
