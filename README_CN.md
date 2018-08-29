@@ -54,7 +54,7 @@
 
 ![ha logo](images/ha.png)
 
-* kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
+- kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
 
 ---
 [返回目录](#目录)
@@ -63,24 +63,18 @@
 
 ![k8s ha](images/k8s-ha.png)
 
-* kubernetes组件说明
+- kubernetes组件说明
 
 > kube-apiserver：集群核心，集群API接口、集群各个组件通信的中枢；集群安全控制；
-
 > etcd：集群的数据中心，用于存放集群的配置以及状态信息，非常重要，如果数据丢失那么集群将无法恢复；因此高可用集群部署首先就是etcd是高可用集群；
-
 > kube-scheduler：集群Pod的调度中心；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-scheduler处于活跃状态；
-
 > kube-controller-manager：集群状态管理器，当集群状态与期望不同时，kcm会努力让集群恢复期望状态，比如：当一个pod死掉，kcm会努力新建一个pod来恢复对应replicas set期望的状态；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-controller-manager处于活跃状态；
-
 > kubelet: kubernetes node agent，负责与node上的docker engine打交道；
-
 > kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
 
-* 负载均衡
+- 负载均衡
 
 > keepalived集群设置一个虚拟ip地址，虚拟ip地址指向k8s-master01、k8s-master02、k8s-master03。
-
 > nginx用于k8s-master01、k8s-master02、k8s-master03的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.20.10)以及nginx端口(16443)访问master集群的apiserver。
 
 ---
@@ -103,12 +97,11 @@ k8s-node01 ~ 08   | 192.168.20.30 ~ 37 | worker节点 * 8 | kubelet
 
 #### 版本信息
 
-* Linux版本：CentOS 7.4.1708
+- Linux版本：CentOS 7.4.1708
 
-* 内核版本: 4.6.4-1.el7.elrepo.x86_64
+- 内核版本: 4.6.4-1.el7.elrepo.x86_64
 
-
-```
+```sh
 $ cat /etc/redhat-release
 CentOS Linux release 7.4.1708 (Core)
 
@@ -116,9 +109,9 @@ $ uname -r
 4.6.4-1.el7.elrepo.x86_64
 ```
 
-* docker版本：17.12.0-ce-rc2
+- docker版本：17.12.0-ce-rc2
 
-```
+```sh
 $ docker version
 Client:
  Version:	17.12.0-ce-rc2
@@ -139,21 +132,21 @@ Server:
   Experimental:	false
 ```
 
-* kubeadm版本：v1.11.1
+- kubeadm版本：v1.11.1
 
-```
+```sh
 $ kubeadm version
 kubeadm version: &version.Info{Major:"1", Minor:"11", GitVersion:"v1.11.1", GitCommit:"b1b29978270dc22fecc592ac55d903350454310a", GitTreeState:"clean", BuildDate:"2018-07-17T18:50:16Z", GoVersion:"go1.10.3", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-* kubelet版本：v1.11.1
+- kubelet版本：v1.11.1
 
-```
+```sh
 $ kubelet --version
 Kubernetes v1.11.1
 ```
 
-* 网络组件
+- 网络组件
 
 > calico
 
@@ -163,9 +156,9 @@ Kubernetes v1.11.1
 
 #### 所需docker镜像
 
-* 相关docker镜像以及版本
+- 相关docker镜像以及版本
 
-```
+```sh
 # kuberentes basic components
 
 # 通过kubeadm 获取基础组件镜像清单
@@ -228,9 +221,9 @@ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 #### 系统设置
 
-* 在所有kubernetes节点上增加kubernetes仓库
+- 在所有kubernetes节点上增加kubernetes仓库
 
-```
+```sh
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
@@ -243,15 +236,15 @@ exclude=kube*
 EOF
 ```
 
-* 在所有kubernetes节点上进行系统更新
+- 在所有kubernetes节点上进行系统更新
 
-```
+```sh
 $ yum update -y
 ```
 
-* 在所有kubernetes节点上设置SELINUX为permissive模式
+- 在所有kubernetes节点上设置SELINUX为permissive模式
 
-```
+```sh
 $ vi /etc/selinux/config
 SELINUX=permissive
 
