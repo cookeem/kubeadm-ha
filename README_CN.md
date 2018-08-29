@@ -400,7 +400,7 @@ $ crontab -e
 
 - 在所有kubernetes节点上安装并启动kubernetes
 
-```
+```sh
 $ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
 $ yum install -y docker-compose-1.9.0-5.el7.noarch
 $ systemctl enable docker && systemctl start docker
@@ -417,6 +417,41 @@ $ systemctl enable keepalived && systemctl restart keepalived
 ```
 
 #### master节点互信设置
+
+- 在k8s-master01节点上设置节点互信
+
+```sh
+$ rm -rf /root/.ssh/*
+$ ssh k8s-master01 pwd
+$ ssh k8s-master02 rm -rf /root/.ssh/*
+$ ssh k8s-master03 rm -rf /root/.ssh/*
+$ ssh k8s-master02 mkdir -p /root/.ssh/
+$ ssh k8s-master03 mkdir -p /root/.ssh/
+
+$ scp /root/.ssh/known_hosts root@k8s-master02:/root/.ssh/
+$ scp /root/.ssh/known_hosts root@k8s-master03:/root/.ssh/
+
+$ ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa
+$ cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+$ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
+```
+
+- 在k8s-master02节点上设置节点互信
+
+```sh
+$ ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa
+$ cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+$ scp /root/.ssh/authorized_keys root@k8s-master03:/root/.ssh/
+```
+
+- 在k8s-master03节点上设置节点互信
+
+```sh
+$ ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa
+$ cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+$ scp /root/.ssh/authorized_keys root@k8s-master01:/root/.ssh/
+$ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
+```
 
 ---
 
