@@ -251,9 +251,9 @@ SELINUX=permissive
 $ setenforce 0
 ```
 
-* 在所有kubernetes节点上设置iptables参数
+- 在所有kubernetes节点上设置iptables参数
 
-```
+```sh
 $ cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -263,9 +263,9 @@ EOF
 $ sysctl --system
 ```
 
-* 在所有kubernetes节点上禁用swap
+- 在所有kubernetes节点上禁用swap
 
-```
+```sh
 $ swapoff -a
 
 # 禁用fstab中的swap项目
