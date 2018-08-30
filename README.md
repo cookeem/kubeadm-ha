@@ -51,9 +51,9 @@
 1. [verify kubernetes cluster installation](#verify-kubernetes-cluster-installation)
     1. [verify kubernetes cluster high availiablity installation](#verify-kubernetes-cluster-high-availiablity-installation)
 
-### 部署架构
+### deployment architecture
 
-#### 概要部署架构
+#### deployment architecture summary
 
 ![ha logo](images/ha.png)
 
@@ -62,7 +62,7 @@
 ---
 [category](#category)
 
-#### 详细部署架构
+#### detail deployment architecture
 
 ![k8s ha](images/k8s-ha.png)
 
@@ -84,7 +84,7 @@
 
 [category](#category)
 
-#### 主机节点清单
+#### hosts list
 
 主机名 | IP地址 | 说明 | 组件
 :--- | :--- | :--- | :---
@@ -96,9 +96,9 @@ k8s-node01 ~ 08   | 192.168.20.30 ~ 37 | worker节点 * 8 | kubelet
 
 [category](#category)
 
-### 安装前准备
+### prerequisites
 
-#### 版本信息
+#### version info
 
 - Linux版本：CentOS 7.4.1708
 
@@ -157,7 +157,7 @@ Kubernetes v1.11.1
 
 [category](#category)
 
-#### 所需docker镜像
+#### required docker images
 
 - 相关docker镜像以及版本
 
@@ -222,7 +222,7 @@ $ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 [category](#category)
 
-#### 系统设置
+#### system configuration
 
 - 在所有kubernetes节点上增加kubernetes仓库
 
@@ -291,9 +291,9 @@ $ reboot
 
 [category](#category)
 
-### kubernetes安装
+### kubernetes installation
 
-#### firewalld和iptables相关端口设置
+#### firewalld and iptables settings
 
 - 所有节点开启防火墙
 
@@ -405,7 +405,7 @@ $ crontab -e
 
 [category](#category)
 
-#### kubernetes相关服务安装
+#### kubernetes and related services installation
 
 - 在所有kubernetes节点上安装并启动kubernetes
 
@@ -425,7 +425,7 @@ $ yum install -y keepalived
 $ systemctl enable keepalived && systemctl restart keepalived
 ```
 
-#### master节点互信设置
+#### master hosts mutual trust
 
 - 在k8s-master01节点上设置节点互信
 
@@ -466,9 +466,9 @@ $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 
 [category](#category)
 
-### master高可用安装
+### masters high availiability installation
 
-#### 配置文件初始化
+#### create configuration files
 
 - 在k8s-master01上克隆kubeadm-ha项目源码
 
@@ -550,7 +550,7 @@ $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 
 [category](#category)
 
-#### kubeadm初始化
+#### kubeadm initialization
 
 - 在k8s-master01节点上使用kubeadm进行kubernetes集群初始化
 
@@ -590,7 +590,7 @@ kube-scheduler-k8s-master01            1/1       Running   1          18m       
 
 [category](#category)
 
-#### 高可用配置
+#### high availiability configuration
 
 - 在k8s-master01上把证书复制到其他master
 
@@ -695,9 +695,9 @@ systemctl restart kubelet
 
 [category](#category)
 
-### master负载均衡设置
+### masters load balance settings
 
-#### keepalived安装配置
+#### keepalived installation
 
 - 在所有master节点上重启keepalived
 
@@ -713,7 +713,7 @@ $ curl -k https://k8s-master-lb:6443
 
 [category](#category)
 
-#### nginx负载均衡配置
+#### nginx load balance settings
 
 - 在所有master节点上启动nginx-lb
 
@@ -730,7 +730,7 @@ $ curl -k https://k8s-master-lb:16443
 
 [category](#category)
 
-#### kube-proxy高可用设置
+#### kube-proxy HA settings
 
 - 在任意master节点上设置kube-proxy高可用
 
@@ -754,7 +754,7 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 [category](#category)
 
-#### 验证高可用状态
+#### high availiability verify
 
 - 在任意master节点上验证服务启动情况
 
@@ -795,7 +795,7 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 
 [category](#category)
 
-#### 基础组件安装
+#### kubernetes addons installation
 
 - 在任意master节点上允许master上部署pod
 
@@ -947,9 +947,9 @@ $ kubectl apply -f prometheus/
 
 [category](#category)
 
-### worker节点设置
+### workers join kubernetes cluster
 
-#### worker加入高可用集群
+#### workers join HA cluster
 
 - 在所有workers节点上，使用kubeadm join加入kubernetes集群
 
@@ -991,9 +991,9 @@ k8s-node08     Ready     <none>    10m       v1.11.1
 
 [category](#category)
 
-### 集群验证
+### verify kubernetes cluster installation
 
-#### 验证集群高可用设置
+#### verify kubernetes cluster high availiablity installation
 
 - 验证集群高可用
 

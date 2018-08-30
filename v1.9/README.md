@@ -50,7 +50,6 @@
 1. [all nodes join the kubernetes cluster](#all-nodes-join-the-kubernetes-cluster)
     1. [use kubeadm to join the cluster](#use-kubeadm-to-join-the-cluster)
     1. [verify kubernetes cluster high availiablity](#verify-kubernetes-cluster-high-availiablity)
-    
 
 ### deployment architecture
 
