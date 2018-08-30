@@ -75,7 +75,7 @@
 
 - load balancer
 
-> keepalived cluster config a virtual IP address (192.168.20.10), this virtual IP address point to k8s-master01, k8s-master02, k8s-master03. 
+> keepalived cluster config a virtual IP address (192.168.20.10), this virtual IP address point to k8s-master01, k8s-master02, k8s-master03.
 > nginx service as the load balancer of k8s-master01, k8s-master02, k8s-master03's apiserver. The other nodes kubernetes services connect the keepalived virtual ip address (192.168.20.10) and nginx exposed port (16443) to communicate with the master cluster's apiservers.
 
 ---
@@ -84,11 +84,11 @@
 
 #### hosts list
 
-主机名 | IP地址 | 说明 | 组件
+HostName | IPAddress | Notes | Components
 :--- | :--- | :--- | :---
-k8s-master01 ~ 03 | 192.168.20.20 ~ 22 | master节点 * 3 | keepalived、nginx、etcd、kubelet、kube-apiserver
-k8s-master-lb     | 192.168.20.10 | keepalived虚拟IP | 无
-k8s-node01 ~ 08   | 192.168.20.30 ~ 37 | worker节点 * 8 | kubelet
+k8s-master01 ~ 03 | 192.168.20.20 ~ 22 | master nodes * 3 | keepalived, nginx, etcd, kubelet, kube-apiserver
+k8s-master-lb     | 192.168.20.10 | keepalived virtual IP | N/A
+k8s-node01 ~ 08   | 192.168.20.30 ~ 37 | worker nodes * 8 | kubelet
 
 ---
 
@@ -98,9 +98,9 @@ k8s-node01 ~ 08   | 192.168.20.30 ~ 37 | worker节点 * 8 | kubelet
 
 #### version info
 
-- Linux版本：CentOS 7.4.1708
+- Linux version: CentOS 7.4.1708
 
-- 内核版本: 4.6.4-1.el7.elrepo.x86_64
+- Core version: 4.6.4-1.el7.elrepo.x86_64
 
 ```sh
 $ cat /etc/redhat-release
@@ -110,7 +110,7 @@ $ uname -r
 4.6.4-1.el7.elrepo.x86_64
 ```
 
-- docker版本：17.12.0-ce-rc2
+- docker version: 17.12.0-ce-rc2
 
 ```sh
 $ docker version
@@ -133,21 +133,21 @@ Server:
   Experimental:	false
 ```
 
-- kubeadm版本：v1.11.1
+- kubeadm version: v1.11.1
 
 ```sh
 $ kubeadm version
 kubeadm version: &version.Info{Major:"1", Minor:"11", GitVersion:"v1.11.1", GitCommit:"b1b29978270dc22fecc592ac55d903350454310a", GitTreeState:"clean", BuildDate:"2018-07-17T18:50:16Z", GoVersion:"go1.10.3", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-- kubelet版本：v1.11.1
+- kubelet version: v1.11.1
 
 ```sh
 $ kubelet --version
 Kubernetes v1.11.1
 ```
 
-- 网络组件
+- networks addons
 
 > calico
 
@@ -162,7 +162,7 @@ Kubernetes v1.11.1
 ```sh
 # kuberentes basic components
 
-# 通过kubeadm 获取基础组件镜像清单
+# use kubeadm to list all required docker images
 $ kubeadm config images list --kubernetes-version=v1.11.1
 k8s.gcr.io/kube-apiserver-amd64:v1.11.1
 k8s.gcr.io/kube-controller-manager-amd64:v1.11.1
@@ -172,10 +172,10 @@ k8s.gcr.io/pause:3.1
 k8s.gcr.io/etcd-amd64:3.2.18
 k8s.gcr.io/coredns:1.1.3
 
-# 通过kubeadm 拉取基础镜像
+# use kubeadm to pull all required docker images
 $ kubeadm config images pull --kubernetes-version=v1.11.1
 
-# kubernetes networks add ons
+# kubernetes networks addons
 $ docker pull quay.io/calico/typha:v0.7.4
 $ docker pull quay.io/calico/node:v3.1.3
 $ docker pull quay.io/calico/cni:v3.1.3
@@ -222,7 +222,7 @@ $ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 #### system configuration
 
-- on all kubernetes nodes: 增加kubernetes仓库
+- on all kubernetes nodes: add kubernetes' repository
 
 ```sh
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -237,13 +237,13 @@ exclude=kube*
 EOF
 ```
 
-- on all kubernetes nodes: 进行系统更新
+- on all kubernetes nodes: update system
 
 ```sh
 $ yum update -y
 ```
 
-- on all kubernetes nodes: 设置SELINUX为permissive模式
+- on all kubernetes nodes: set SELINUX to permissive mode
 
 ```sh
 $ vi /etc/selinux/config
@@ -252,7 +252,7 @@ SELINUX=permissive
 $ setenforce 0
 ```
 
-- on all kubernetes nodes: 设置iptables参数
+- on all kubernetes nodes: set iptables parameters
 
 ```sh
 $ cat <<EOF >  /etc/sysctl.d/k8s.conf
@@ -264,24 +264,24 @@ EOF
 $ sysctl --system
 ```
 
-- on all kubernetes nodes: 禁用swap
+- on all kubernetes nodes: disable swap
 
 ```sh
 $ swapoff -a
 
-# 禁用fstab中的swap项目
+# disable swap mount point in /etc/fstab
 $ vi /etc/fstab
 #/dev/mapper/centos-swap swap                    swap    defaults        0 0
 
-# 确认swap已经被禁用
+# check swap is disabled
 $ cat /proc/swaps
 Filename                Type        Size    Used    Priority
 ```
 
-- on all kubernetes nodes: 重启主机
+- on all kubernetes nodes: reboot hosts
 
 ```sh
-# 重启主机
+# reboot hosts
 $ reboot
 ```
 
@@ -293,18 +293,18 @@ $ reboot
 
 #### firewalld and iptables settings
 
-- on all kubernetes nodes: 开启防火墙
+- on all kubernetes nodes: enable firewalld
 
 ```sh
-# 重启防火墙
+# restart firewalld service
 $ systemctl enable firewalld
 $ systemctl restart firewalld
 $ systemctl status firewalld
 ```
 
-- 相关端口（master）
+- master ports list
 
-协议 | 方向 | 端口 | 说明
+Protocol | Direction | Port | Comment
 :--- | :--- | :--- | :---
 TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
 TCP | Inbound | 6443*     | Kubernetes API server
@@ -316,7 +316,7 @@ TCP | Inbound | 10252     | kube-controller-manager
 TCP | Inbound | 10255     | Read-only Kubelet API (Deprecated)
 TCP | Inbound | 30000-32767 | NodePort Services
 
-- on all master nodes: 设置防火墙策略
+- on all master nodes: set firewalld policy
 
 ```sh
 $ firewall-cmd --zone=public --add-port=16443/tcp --permanent
@@ -346,14 +346,14 @@ public (active)
   rich rules:
 ```
 
-- 相关端口（worker）
+- worker ports list
 
-协议 | 方向 | 端口 | 说明
+Protocol | Direction | Port | Comment
 :--- | :--- | :--- | :---
 TCP | Inbound | 10250       | Kubelet API
 TCP | Inbound | 30000-32767 | NodePort Services
 
-- on all worker nodes: 设置防火墙策略
+- on all worker nodes: set firewalld policy
 
 ```sh
 $ firewall-cmd --zone=public --add-port=10250/tcp --permanent
@@ -377,7 +377,7 @@ public (active)
   rich rules:
 ```
 
-- on all kubernetes nodes: 允许kube-proxy的forward
+- on all kubernetes nodes: set firewalld to enable kube-proxy port forward
 
 ```sh
 $ firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
@@ -388,11 +388,11 @@ $ firewall-cmd --direct --get-all-rules
 ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment 'kube-proxy redirects'
 ipv4 filter FORWARD 1 -o docker0 -j ACCEPT -m comment --comment 'docker subnet'
 
-# 重启防火墙
+# restart firewalld service
 $ systemctl restart firewalld
 ```
 
-- 解决kube-proxy无法启用nodePort，重启firewalld必须执行以下命令，在所有节点设置定时任务
+- on all kubernetes nodes: remove this iptables chains, this settings will prevent kube-proxy node port forward. ( Notice: please run this command each time you restart firewalld ) Let's set the crontab.
 
 ```sh
 $ crontab -e
@@ -405,7 +405,7 @@ $ crontab -e
 
 #### kubernetes and related services installation
 
-- on all kubernetes nodes: 安装并启动kubernetes
+- on all kubernetes nodes: install kubernetes and related services, then start up kubelet and docker daemon
 
 ```sh
 $ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
@@ -416,7 +416,7 @@ $ yum install -y kubelet-1.11.1-0.x86_64 kubeadm-1.11.1-0.x86_64 kubectl-1.11.1-
 $ systemctl enable kubelet && systemctl start kubelet
 ```
 
-- on all master nodes: 安装并启动keepalived
+- on all master nodes: install and start keepalived service
 
 ```sh
 $ yum install -y keepalived
@@ -425,7 +425,7 @@ $ systemctl enable keepalived && systemctl restart keepalived
 
 #### master hosts mutual trust
 
-- on k8s-master01: 设置节点互信
+- on k8s-master01: set hosts mutual trust
 
 ```sh
 $ rm -rf /root/.ssh/*
@@ -443,7 +443,7 @@ $ cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 ```
 
-- on k8s-master02: 设置节点互信
+- on k8s-master02: set hosts mutual trust
 
 ```sh
 $ ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa
@@ -451,7 +451,7 @@ $ cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 $ scp /root/.ssh/authorized_keys root@k8s-master03:/root/.ssh/
 ```
 
-- on k8s-master03: 设置节点互信
+- on k8s-master03: set hosts mutual trust
 
 ```sh
 $ ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa
@@ -949,7 +949,7 @@ $ kubectl apply -f prometheus/
 
 #### workers join HA cluster
 
-- 在所有workers节点上，使用kubeadm join加入kubernetes集群
+- on all worker nodes: 使用kubeadm join加入kubernetes集群
 
 ```sh
 # 清理节点上的kubernetes配置信息
