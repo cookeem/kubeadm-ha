@@ -1,4 +1,4 @@
-# kubeadm-highavailiability - 基于kubeadm的kubernetes高可用集群部署，支持v1.11.x v1.9.x v1.7.x v1.6.x版本
+# kubeadm-highavailiability - kubernetes high availiability deployment based on kubeadm, for Kubernetes version v1.11.x/v1.9.x/v1.7.x/v1.6.x
 
 ![k8s logo](images/Kubernetes.png)
 
@@ -13,12 +13,12 @@
 
 ---
 
-- [GitHub项目地址](https://github.com/cookeem/kubeadm-ha/)
-- [OSChina项目地址](https://git.oschina.net/cookeem/kubeadm-ha/)
+- [GitHub project URL](https://github.com/cookeem/kubeadm-ha/)
+- [OSChina project URL](https://git.oschina.net/cookeem/kubeadm-ha/)
 
 ---
 
-- 该指引适用于v1.11.x版本的kubernetes集群
+- This operation instruction is for version v1.11.x kubernetes cluster
 
 > v1.11.x版本支持在control plane上启动TLS的etcd高可用集群。
 
