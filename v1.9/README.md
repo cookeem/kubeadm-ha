@@ -1026,4 +1026,3 @@ $ kubectl delete deploy,svc nginx-server
 ```
 
 - now kubernetes high availiability cluster setup successfully 😃
-
