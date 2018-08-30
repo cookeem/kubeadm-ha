@@ -971,6 +971,123 @@ k8s-node08     Ready     <none>    10m       v1.11.1
 
 #### 验证集群高可用设置
 
+- 验证集群高可用
+
+```sh
+# 创建一个replicas=3的nginx deployment
+$ kubectl run nginx --image=nginx --replicas=3 --port=80
+deployment "nginx" created
+
+# 检查nginx pod的创建情况
+$ kubectl get pods -l=run=nginx -o wide
+NAME                     READY     STATUS    RESTARTS   AGE       IP             NODE
+nginx-58b94844fd-jvlqh   1/1       Running   0          9s        172.168.7.2    k8s-node05
+nginx-58b94844fd-mkt72   1/1       Running   0          9s        172.168.9.2    k8s-node07
+nginx-58b94844fd-xhb8x   1/1       Running   0          9s        172.168.11.2   k8s-node09
+
+# 创建nginx的NodePort service
+$ kubectl expose deployment nginx --type=NodePort --port=80
+service "nginx" exposed
+
+# 检查nginx service的创建情况
+$ kubectl get svc -l=run=nginx -o wide
+NAME      TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE       SELECTOR
+nginx     NodePort   10.106.129.121   <none>        80:31443/TCP   7s        run=nginx
+
+# 检查nginx NodePort service是否正常提供服务
+$ curl k8s-master-lb:31443
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
+
+- pod之间互访测试
+
+```sh
+# 启动一个client测试nginx是否可以访问
+kubectl run nginx-client -ti --rm --image=alpine -- ash
+/ # wget -O - nginx
+Connecting to nginx (10.102.101.78:80)
+index.html           100% |*****************************************|   612   0:00:00 ETA
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+# 清除nginx的deployment以及service
+kubectl delete deploy,svc nginx
+```
+
+- 测试HPA自动扩展
+
+```sh
+# 创建测试服务
+kubectl run nginx-server --requests=cpu=10m --image=nginx --port=80
+kubectl expose deployment nginx-server --port=80
+
+# 创建hpa
+kubectl autoscale deployment nginx-server --cpu-percent=10 --min=1 --max=10
+kubectl get hpa
+kubectl describe hpa nginx-server
+
+# 给测试服务增加负载
+kubectl run -ti --rm load-generator --image=busybox -- ash
+wget -q -O- http://nginx-server.default.svc.cluster.local > /dev/null
+while true; do wget -q -O- http://nginx-server.default.svc.cluster.local > /dev/null; done
+
+# 检查hpa自动扩展情况，一般需要等待几分钟。结束增加负载后，pod自动缩容（自动缩容需要大概10-15分钟）
+kubectl get hpa -w
+
+# 删除测试数据
+kubectl delete deploy,svc,hpa nginx-server
+```
+
 ---
 
 [返回目录](#目录)
+
+- 至此kubernetes高可用集群完成部署，并测试通过 😃
