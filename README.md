@@ -20,9 +20,9 @@
 
 - This operation instruction is for version v1.11.x kubernetes cluster
 
-> v1.11.x版本支持在control plane上启动TLS的etcd高可用集群。
+> v1.11.x version now support deploy tls etcd cluster in control plane
 
-### 目录
+### category
 
 1. [部署架构](#部署架构)
     1. [概要部署架构](#概要部署架构)
@@ -60,7 +60,7 @@
 - kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
 
 ---
-[返回目录](#目录)
+[返回category](#category)
 
 #### 详细部署架构
 
@@ -82,7 +82,7 @@
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### 主机节点清单
 
@@ -94,7 +94,7 @@ k8s-node01 ~ 08   | 192.168.20.30 ~ 37 | worker节点 * 8 | kubelet
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 ### 安装前准备
 
@@ -155,7 +155,7 @@ Kubernetes v1.11.1
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### 所需docker镜像
 
@@ -220,7 +220,7 @@ $ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### 系统设置
 
@@ -289,7 +289,7 @@ $ reboot
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 ### kubernetes安装
 
@@ -403,7 +403,7 @@ $ crontab -e
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### kubernetes相关服务安装
 
@@ -464,7 +464,7 @@ $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 ### master高可用安装
 
@@ -530,17 +530,17 @@ $ export HOST1=k8s-master01
 $ export HOST2=k8s-master02
 $ export HOST3=k8s-master03
 
-# 把kubeadm配置文件放到各个master节点的/root/目录
+# 把kubeadm配置文件放到各个master节点的/root/category
 $ scp -r config/$HOST1/kubeadm-config.yaml $HOST1:/root/
 $ scp -r config/$HOST2/kubeadm-config.yaml $HOST2:/root/
 $ scp -r config/$HOST3/kubeadm-config.yaml $HOST3:/root/
 
-# 把keepalived配置文件放到各个master节点的/etc/keepalived/目录
+# 把keepalived配置文件放到各个master节点的/etc/keepalived/category
 $ scp -r config/$HOST1/keepalived/* $HOST1:/etc/keepalived/
 $ scp -r config/$HOST2/keepalived/* $HOST2:/etc/keepalived/
 $ scp -r config/$HOST3/keepalived/* $HOST3:/etc/keepalived/
 
-# 把nginx负载均衡配置文件放到各个master节点的/root/目录
+# 把nginx负载均衡配置文件放到各个master节点的/root/category
 $ scp -r config/$HOST1/nginx-lb $HOST1:/root/
 $ scp -r config/$HOST2/nginx-lb $HOST2:/root/
 $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
@@ -548,7 +548,7 @@ $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### kubeadm初始化
 
@@ -588,7 +588,7 @@ kube-scheduler-k8s-master01            1/1       Running   1          18m       
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### 高可用配置
 
@@ -693,7 +693,7 @@ systemctl restart kubelet
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 ### master负载均衡设置
 
@@ -711,7 +711,7 @@ $ curl -k https://k8s-master-lb:6443
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### nginx负载均衡配置
 
@@ -728,7 +728,7 @@ $ curl -k https://k8s-master-lb:16443
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### kube-proxy高可用设置
 
@@ -752,7 +752,7 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### 验证高可用状态
 
@@ -793,7 +793,7 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 #### 基础组件安装
 
@@ -933,7 +933,7 @@ $ kubectl apply -f prometheus/
 
 ![grafana-datasource](images/grafana-datasource.png)
 
-> 进入导入dashboard界面: http://k8s-master-lb:30006/dashboard/import 导入`heapster/grafana-dashboard`目录下的dashboard `Kubernetes App Metrics`和`Kubernetes cluster monitoring (via Prometheus)`
+> 进入导入dashboard界面: http://k8s-master-lb:30006/dashboard/import 导入`heapster/grafana-dashboard`category下的dashboard `Kubernetes App Metrics`和`Kubernetes cluster monitoring (via Prometheus)`
 
 ![grafana-import](images/grafana-import.png)
 
@@ -945,7 +945,7 @@ $ kubectl apply -f prometheus/
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 ### worker节点设置
 
@@ -989,7 +989,7 @@ k8s-node08     Ready     <none>    10m       v1.11.1
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 ### 集群验证
 
@@ -1112,6 +1112,6 @@ kubectl delete deploy,svc,hpa nginx-server
 
 ---
 
-[返回目录](#目录)
+[返回category](#category)
 
 - 至此kubernetes高可用集群完成部署，并测试通过 😃
