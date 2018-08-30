@@ -865,7 +865,52 @@ $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | g
 
 ![dashboard](images/dashboard.png)
 
-- 在任意master节点上安装dashboard
+- 在任意master节点上安装traefik
+
+```sh
+# 安装traefik
+$ kubectl apply -f traefik/
+```
+
+> 成功安装后访问以下网址打开traefik管理界面: http://k8s-master-lb:30011/
+
+![traefik](images/traefik.png)
+
+- 在任意master节点上安装istio
+
+```sh
+# 安装istio
+$ kubectl apply -f istio/
+
+# 检查istio服务相关pods
+$ kubectl get pods -n istio-system
+NAME                                        READY     STATUS      RESTARTS   AGE
+grafana-69c856fc69-jbx49                    1/1       Running     1          21m
+istio-citadel-7c4fc8957b-vdbhp              1/1       Running     1          21m
+istio-cleanup-secrets-5g95n                 0/1       Completed   0          21m
+istio-egressgateway-64674bd988-44fg8        1/1       Running     0          18m
+istio-egressgateway-64674bd988-dgvfm        1/1       Running     1          16m
+istio-egressgateway-64674bd988-fprtc        1/1       Running     0          18m
+istio-egressgateway-64674bd988-kl6pw        1/1       Running     3          16m
+istio-egressgateway-64674bd988-nphpk        1/1       Running     3          16m
+istio-galley-595b94cddf-c5ctw               1/1       Running     70         21m
+istio-grafana-post-install-nhs47            0/1       Completed   0          21m
+istio-ingressgateway-4vtk5                  1/1       Running     2          21m
+istio-ingressgateway-5rscp                  1/1       Running     3          21m
+istio-ingressgateway-6z95f                  1/1       Running     3          21m
+istio-policy-589977bff5-jx5fd               2/2       Running     3          21m
+istio-policy-589977bff5-n74q8               2/2       Running     3          21m
+istio-sidecar-injector-86c4d57d56-mfnbp     1/1       Running     39         21m
+istio-statsd-prom-bridge-5698d5798c-xdpp6   1/1       Running     1          21m
+istio-telemetry-85d6475bfd-8lvsm            2/2       Running     2          21m
+istio-telemetry-85d6475bfd-bfjsn            2/2       Running     2          21m
+istio-telemetry-85d6475bfd-d9ld9            2/2       Running     2          21m
+istio-tracing-bd5765b5b-cmszp               1/1       Running     1          21m
+prometheus-77c5fc7cd-zf7zr                  1/1       Running     1          21m
+servicegraph-6b99c87849-l6zm6               1/1       Running     1          21m
+```
+
+- 在任意master节点上安装prometheus
 
 ```sh
 # 安装prometheus
