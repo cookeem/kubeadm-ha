@@ -1,7 +1,7 @@
 version: '2'
 services:
   etcd:
-    image: devops-reg.io/k8s/nginx:latest
+    image: nginx:latest
     container_name: nginx-lb
     hostname: nginx-lb
     volumes:

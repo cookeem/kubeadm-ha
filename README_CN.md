@@ -869,6 +869,12 @@ $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | g
 - 在任意master节点上安装traefik
 
 ```sh
+# 创建k8s-master-lb域名的证书
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=k8s-master-lb"
+
+# 把证书写入到secret
+kubectl -n kube-system create secret generic traefik-cert --from-file=tls.key --from-file=tls.crt
+
 # 安装traefik
 $ kubectl apply -f traefik/
 ```

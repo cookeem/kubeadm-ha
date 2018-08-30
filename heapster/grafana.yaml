@@ -15,23 +15,14 @@ spec:
         node-role.kubernetes.io/master: ""
       containers:
       - name: grafana
-        image: devops-reg.io/k8s/heapster-grafana-amd64:v5.0.4
+        image: k8s.gcr.io/heapster-grafana-amd64:v5.0.4
         ports:
         - containerPort: 3000
           protocol: TCP
         volumeMounts:
-        - name: timezone
-          mountPath: "/etc/timezone"
-        - name: localtime
-          mountPath: "/etc/localtime"
         - mountPath: /etc/ssl/certs
           name: ca-certificates
           readOnly: true
-        # - mountPath: /var
-        #   name: grafana-storage
-        # - name: kube-system-pvc
-        #   mountPath: /var
-        #   subPath: heapster-grafana
         env:
         - name: INFLUXDB_HOST
           value: monitoring-influxdb
@@ -44,9 +35,9 @@ spec:
         # - name: GRAFANA_USER
         #   value: "admin"
         # - name: GRAFANA_PASSWD
-        #   value: "Gfa138@1119"
+        #   value: "admin"
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: "Gfa138@1119"
+          value: "admin"
         # - name: GF_AUTH_BASIC_ENABLED
         #   value: "false"
         # - name: GF_AUTH_ANONYMOUS_ENABLED
@@ -58,17 +49,6 @@ spec:
           # value: /api/v1/namespaces/kube-system/services/monitoring-grafana/proxy
           value: /
       volumes:
-      - name: timezone
-        hostPath:
-          path: /etc/timezone
-          type: File
-      - name: localtime
-        hostPath:
-          path: /usr/share/zoneinfo/Asia/Shanghai
-          type: File
-      - name: kube-system-pvc
-        persistentVolumeClaim:
-          claimName: kube-system-pvc
       - name: ca-certificates
         hostPath:
           path: /etc/ssl/certs

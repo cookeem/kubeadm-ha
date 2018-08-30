@@ -35,14 +35,6 @@ spec:
         name: traefik-ingress-lb
     spec:
       volumes:
-      - name: timezone
-        hostPath:
-          path: /etc/timezone
-          type: File
-      - name: localtime
-        hostPath:
-          path: /usr/share/zoneinfo/Asia/Shanghai
-          type: File
       - name: traefik-cert
         secret:
           secretName: traefik-cert
@@ -52,7 +44,7 @@ spec:
       serviceAccountName: traefik-ingress-controller
       terminationGracePeriodSeconds: 60
       containers:
-      - image: devops-reg.io/k8s/traefik:v1.6.3
+      - image: traefik:v1.6.3
         name: traefik-ingress-lb
         ports:
         - name: http
@@ -65,10 +57,6 @@ spec:
           containerPort: 8080
           hostPort: 8080
         volumeMounts:
-        - name: timezone
-          mountPath: "/etc/timezone"
-        - name: localtime
-          mountPath: "/etc/localtime"
         - mountPath: "/ssl"
           name: "traefik-cert"
         - mountPath: "/config"

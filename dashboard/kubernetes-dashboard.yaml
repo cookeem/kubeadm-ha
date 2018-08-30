@@ -116,7 +116,7 @@ spec:
         node-role.kubernetes.io/master: ""
       containers:
       - name: kubernetes-dashboard
-        image: devops-reg.io/k8s/kubernetes-dashboard-amd64:v1.8.3
+        image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.8.3
         ports:
         - containerPort: 8443
           protocol: TCP
@@ -127,10 +127,6 @@ spec:
           # to it. Uncomment only if the default does not work.
           # - --apiserver-host=http://my-address:port
         volumeMounts:
-        - name: timezone
-          mountPath: "/etc/timezone"
-        - name: localtime
-          mountPath: "/etc/localtime"
         - name: kubernetes-dashboard-certs
           mountPath: /certs
           # Create on-disk volume to store exec logs
@@ -149,14 +145,6 @@ spec:
           secretName: kubernetes-dashboard-certs
       - name: tmp-volume
         emptyDir: {}
-      - name: timezone
-        hostPath:
-          path: /etc/timezone
-          type: File
-      - name: localtime
-        hostPath:
-          path: /usr/share/zoneinfo/Asia/Shanghai
-          type: File
       serviceAccountName: kubernetes-dashboard
       # Comment the following tolerations if Dashboard must not be deployed on master
       tolerations:

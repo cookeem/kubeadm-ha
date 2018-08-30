@@ -599,7 +599,7 @@ data:
     template: |-
       initContainers:
       - name: istio-init
-        image: "devops-reg.io/k8s/istio_proxy_init:1.0.0"
+        image: "gcr.io/istio-release/proxy_init:1.0.0"
         args:
         - "-p"
         - [[ .MeshConfig.ProxyListenPort ]]
@@ -643,7 +643,7 @@ data:
         image: [[ if (isset .ObjectMeta.Annotations "sidecar.istio.io/proxyImage") -]]
         "[[ index .ObjectMeta.Annotations "sidecar.istio.io/proxyImage" ]]"
         [[ else -]]
-        devops-reg.io/k8s/istio_proxyv2:1.0.0
+        gcr.io/istio-release/proxyv2:1.0.0
         [[ end -]]
         args:
         - proxy
@@ -845,7 +845,7 @@ spec:
       serviceAccountName: istio-grafana-post-install-account
       containers:
         - name: hyperkube
-          image: "devops-reg.io/k8s/hyperkube:v1.7.6_coreos.0"
+          image: "quay.io/coreos/hyperkube:v1.7.6_coreos.0"
           command: [ "/bin/bash", "/tmp/grafana/run.sh", "/tmp/grafana/custom-resources.yaml" ]
           volumeMounts:
             - mountPath: "/tmp/grafana"
@@ -981,7 +981,7 @@ spec:
       serviceAccountName: istio-cleanup-secrets-service-account
       containers:
         - name: hyperkube
-          image: "devops-reg.io/k8s/hyperkube:v1.7.6_coreos.0"
+          image: "quay.io/coreos/hyperkube:v1.7.6_coreos.0"
           command:
           - /bin/bash
           - -c
@@ -2648,7 +2648,7 @@ spec:
           name: istio-statsd-prom-bridge
       containers:
       - name: statsd-prom-bridge
-        image: "devops-reg.io/k8s/istio_prom_statsd-exporter:v0.6.0"
+        image: "docker.io/prom/statsd-exporter:v0.6.0"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9102
@@ -2798,7 +2798,7 @@ spec:
       serviceAccountName: istio-galley-service-account
       containers:
         - name: validator
-          image: "devops-reg.io/k8s/istio_galley:1.0.0"
+          image: "gcr.io/istio-release/galley:1.0.0"
           imagePullPolicy: IfNotPresent
           ports:
           - containerPort: 443
@@ -2913,7 +2913,7 @@ spec:
       serviceAccountName: istio-egressgateway-service-account
       containers:
         - name: egressgateway
-          image: "devops-reg.io/k8s/istio_proxyv2:1.0.0"
+          image: "gcr.io/istio-release/proxyv2:1.0.0"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -3050,7 +3050,7 @@ spec:
       serviceAccountName: istio-ingressgateway-service-account
       containers:
         - name: ingressgateway
-          image: "devops-reg.io/k8s/istio_proxyv2:1.0.0"
+          image: "gcr.io/istio-release/proxyv2:1.0.0"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -3191,7 +3191,7 @@ spec:
     spec:
       containers:
         - name: grafana
-          image: "devops-reg.io/k8s/istio_grafana:1.0.0"
+          image: "gcr.io/istio-release/grafana:1.0.0"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -3321,7 +3321,7 @@ spec:
                 - s390x
       containers:
       - name: mixer
-        image: "devops-reg.io/k8s/istio_mixer:1.0.0"
+        image: "gcr.io/istio-release/mixer:1.0.0"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9093
@@ -3346,7 +3346,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
       - name: istio-proxy
-        image: "devops-reg.io/k8s/istio_proxyv2:1.0.0"
+        image: "gcr.io/istio-release/proxyv2:1.0.0"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9091
@@ -3418,7 +3418,7 @@ spec:
         emptyDir: {}
       containers:
       - name: mixer
-        image: "devops-reg.io/k8s/istio_mixer:1.0.0"
+        image: "gcr.io/istio-release/mixer:1.0.0"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9093
@@ -3443,7 +3443,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
       - name: istio-proxy
-        image: "devops-reg.io/k8s/istio_proxyv2:1.0.0"
+        image: "gcr.io/istio-release/proxyv2:1.0.0"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9091
@@ -3515,7 +3515,7 @@ spec:
       serviceAccountName: istio-pilot-service-account
       containers:
         - name: discovery
-          image: "devops-reg.io/k8s/istio_pilot:1.0.0"
+          image: "gcr.io/istio-release/pilot:1.0.0"
           imagePullPolicy: IfNotPresent
           args:
           - "discovery"
@@ -3558,7 +3558,7 @@ spec:
             mountPath: /etc/certs
             readOnly: true
         - name: istio-proxy
-          image: "devops-reg.io/k8s/istio_proxyv2:1.0.0"
+          image: "gcr.io/istio-release/proxyv2:1.0.0"
           imagePullPolicy: IfNotPresent
           ports:
           - containerPort: 15003
@@ -3667,7 +3667,7 @@ spec:
       serviceAccountName: prometheus
       containers:
         - name: prometheus
-          image: "devops-reg.io/k8s/istio_prometheus:v2.3.1"
+          image: "docker.io/prom/prometheus:v2.3.1"
           imagePullPolicy: IfNotPresent
           args:
             - '--storage.tsdb.retention=6h'
@@ -3755,7 +3755,7 @@ spec:
       serviceAccountName: istio-citadel-service-account
       containers:
         - name: citadel
-          image: "devops-reg.io/k8s/istio_citadel:1.0.0"
+          image: "gcr.io/istio-release/citadel:1.0.0"
           imagePullPolicy: IfNotPresent
           args:
             - --append-dns-names=true
@@ -3825,7 +3825,7 @@ spec:
     spec:
       containers:
         - name: servicegraph
-          image: "devops-reg.io/k8s/istio_servicegraph:1.0.0"
+          image: "gcr.io/istio-release/servicegraph:1.0.0"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8088
@@ -3903,7 +3903,7 @@ spec:
       serviceAccountName: istio-sidecar-injector-service-account
       containers:
         - name: sidecar-injector-webhook
-          image: "devops-reg.io/k8s/istio_sidecar_injector:1.0.0"
+          image: "gcr.io/istio-release/sidecar_injector:1.0.0"
           imagePullPolicy: IfNotPresent
           args:
             - --caCertFile=/etc/istio/certs/root-cert.pem
@@ -4016,7 +4016,7 @@ spec:
     spec:
       containers:
         - name: jaeger
-          image: "devops-reg.io/k8s/jaegertracing-all-in-one:1.5"
+          image: "docker.io/jaegertracing/all-in-one:1.5"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9411
