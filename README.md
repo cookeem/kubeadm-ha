@@ -60,29 +60,29 @@
 - kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
 
 ---
-[返回category](#category)
+[category](#category)
 
 #### 详细部署架构
 
 ![k8s ha](images/k8s-ha.png)
 
-- kubernetes组件说明
+- kubernetes components:
 
-> kube-apiserver：集群核心，集群API接口、集群各个组件通信的中枢；集群安全控制；
-> etcd：集群的数据中心，用于存放集群的配置以及状态信息，非常重要，如果数据丢失那么集群将无法恢复；因此高可用集群部署首先就是etcd是高可用集群；
-> kube-scheduler：集群Pod的调度中心；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-scheduler处于活跃状态；
-> kube-controller-manager：集群状态管理器，当集群状态与期望不同时，kcm会努力让集群恢复期望状态，比如：当一个pod死掉，kcm会努力新建一个pod来恢复对应replicas set期望的状态；默认kubeadm安装情况下--leader-elect参数已经设置为true，保证master集群中只有一个kube-controller-manager处于活跃状态；
-> kubelet: kubernetes node agent，负责与node上的docker engine打交道；
-> kube-proxy: 每个node上一个，负责service vip到endpoint pod的流量转发，当前主要通过设置iptables规则实现。
+> kube-apiserver: exposes the Kubernetes API. It is the front-end for the Kubernetes control plane. It is designed to scale horizontally – that is, it scales by deploying more instances.
+> etcd: is used as Kubernetes’ backing store. All cluster data is stored here. Always have a backup plan for etcd’s data for your Kubernetes cluster.
+> kube-scheduler: watches newly created pods that have no node assigned, and selects a node for them to run on.
+> kube-controller-manager: runs controllers, which are the background threads that handle routine tasks in the cluster. Logically, each controller is a separate process, but to reduce complexity, they are all compiled into a single binary and run in a single process.
+> kubelet: is the primary node agent. It watches for pods that have been assigned to its node (either by apiserver or via local configuration file)
+> kube-proxy: enables the Kubernetes service abstraction by maintaining network rules on the host and performing connection forwarding.
 
-- 负载均衡
+- load balancer
 
-> keepalived集群设置一个虚拟ip地址，虚拟ip地址指向k8s-master01、k8s-master02、k8s-master03。
-> nginx用于k8s-master01、k8s-master02、k8s-master03的apiserver的负载均衡。外部kubectl以及nodes访问apiserver的时候就可以用过keepalived的虚拟ip(192.168.20.10)以及nginx端口(16443)访问master集群的apiserver。
+> keepalived cluster config a virtual IP address (192.168.20.10), this virtual IP address point to k8s-master01, k8s-master02, k8s-master03. 
+> nginx service as the load balancer of k8s-master01, k8s-master02, k8s-master03's apiserver. The other nodes kubernetes services connect the keepalived virtual ip address (192.168.20.10) and nginx exposed port (16443) to communicate with the master cluster's apiservers.
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### 主机节点清单
 
@@ -94,7 +94,7 @@ k8s-node01 ~ 08   | 192.168.20.30 ~ 37 | worker节点 * 8 | kubelet
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 ### 安装前准备
 
@@ -155,7 +155,7 @@ Kubernetes v1.11.1
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### 所需docker镜像
 
@@ -220,7 +220,7 @@ $ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### 系统设置
 
@@ -289,7 +289,7 @@ $ reboot
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 ### kubernetes安装
 
@@ -403,7 +403,7 @@ $ crontab -e
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### kubernetes相关服务安装
 
@@ -464,7 +464,7 @@ $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 ### master高可用安装
 
@@ -548,7 +548,7 @@ $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### kubeadm初始化
 
@@ -588,7 +588,7 @@ kube-scheduler-k8s-master01            1/1       Running   1          18m       
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### 高可用配置
 
@@ -693,7 +693,7 @@ systemctl restart kubelet
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 ### master负载均衡设置
 
@@ -711,7 +711,7 @@ $ curl -k https://k8s-master-lb:6443
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### nginx负载均衡配置
 
@@ -728,7 +728,7 @@ $ curl -k https://k8s-master-lb:16443
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### kube-proxy高可用设置
 
@@ -752,7 +752,7 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### 验证高可用状态
 
@@ -793,7 +793,7 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 #### 基础组件安装
 
@@ -945,7 +945,7 @@ $ kubectl apply -f prometheus/
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 ### worker节点设置
 
@@ -989,7 +989,7 @@ k8s-node08     Ready     <none>    10m       v1.11.1
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 ### 集群验证
 
@@ -1112,6 +1112,6 @@ kubectl delete deploy,svc,hpa nginx-server
 
 ---
 
-[返回category](#category)
+[category](#category)
 
 - 至此kubernetes高可用集群完成部署，并测试通过 😃
