@@ -24,7 +24,7 @@
 
 ### category
 
-1. [部署架构](#部署架构)
+1. [deployment architecture](#deployment-architecture)
     1. [概要部署架构](#概要部署架构)
     1. [详细部署架构](#详细部署架构)
     1. [主机节点清单](#主机节点清单)
