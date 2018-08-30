@@ -43,6 +43,8 @@
 1. [master负载均衡设置](#master负载均衡设置)
     1. [keepalived安装配置](#keepalived安装配置)
     1. [nginx负载均衡配置](#nginx负载均衡配置)
+    1. [kube-proxy高可用设置](#kube-proxy高可用设置)
+    1. [验证高可用状态](#验证高可用状态)
     1. [基础组件安装](#基础组件安装)
 1. [worker节点设置](#worker节点设置)
     1. [worker加入高可用集群](#worker加入高可用集群)
@@ -549,7 +551,7 @@ $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 
 #### kubeadm初始化
 
-- 在k8s-master01上使用kubeadm进行kubernetes集群初始化
+- 在k8s-master01节点上使用kubeadm进行kubernetes集群初始化
 
 ```sh
 # 执行kubeadm init之后务必记录执行结果输出的${YOUR_TOKEN}以及${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
@@ -570,7 +572,7 @@ $ source ~/.bashrc
 $ kubectl get nodes
 ```
 
-- 在k8s-master01上等待 etcd / kube-apiserver / kube-controller-manager / kube-scheduler 启动
+- 在k8s-master01节点上等待 etcd / kube-apiserver / kube-controller-manager / kube-scheduler 启动
 
 ```sh
 $ kubectl get pods -n kube-system -o wide
@@ -671,6 +673,88 @@ $ kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
 $ sed -i "s/192.168.20.20:6443/192.168.20.22:6443/g" /etc/kubernetes/admin.conf
 ```
 
+- 在所有master节点上允许hpa通过接口采集数据，修改`/etc/kubernetes/manifests/kube-controller-manager.yaml`
+
+```sh
+$ vi /etc/kubernetes/manifests/kube-controller-manager.yaml
+    - --horizontal-pod-autoscaler-use-rest-clients=false
+```
+
+- 在所有master上允许istio的自动注入，修改`/etc/kubernetes/manifests/kube-apiserver.yaml`
+
+```sh
+$ vi /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
+
+# 重启服务
+systemctl restart kubelet
+```
+
+---
+
+[返回目录](#目录)
+
+### master负载均衡设置
+
+#### keepalived安装配置
+
+- 在所有master节点上重启keepalived
+
+```sh
+$ systemctl restart keepalived
+$ systemctl status keepalived
+
+# 检查keepalived的vip是否生效
+$ curl -k https://k8s-master-lb:6443
+```
+
+---
+
+[返回目录](#目录)
+
+#### nginx负载均衡配置
+
+- 在所有master节点上启动nginx-lb
+
+```sh
+# 使用docker-compose启动nginx负载均衡
+$ docker-compose --file=/root/nginx-lb/docker-compose.yaml up -d
+$ docker-compose --file=/root/nginx-lb/docker-compose.yaml ps
+
+# 验证负载均衡的16443端口是否生效
+$ curl -k https://k8s-master-lb:16443
+```
+
+---
+
+[返回目录](#目录)
+
+#### kube-proxy高可用设置
+
+- 在任意master节点上设置kube-proxy高可用
+
+```sh
+# 修改kube-proxy的configmap，把server指向load-balance地址和端口
+$ kubectl edit -n kube-system configmap/kube-proxy
+    server: https://192.168.20.10:16443
+```
+
+- 在任意master节点上重启kube-proxy
+
+```sh
+# 查找对应的kube-proxy pods
+$ kubectl get pods --all-namespaces -o wide | grep proxy
+
+# 删除并重启对应的kube-proxy pods
+$ kubectl delete pod -n kube-system kube-proxy-XXX
+```
+
+---
+
+[返回目录](#目录)
+
+#### 验证高可用状态
+
 - 在任意master节点上验证服务启动情况
 
 ```sh
@@ -710,21 +794,30 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 
 [返回目录](#目录)
 
-### master负载均衡设置
-
-#### keepalived安装配置
-
----
-
-[返回目录](#目录)
-
-#### nginx负载均衡配置
-
----
-
-[返回目录](#目录)
-
 #### 基础组件安装
+
+- 在任意master节点上允许master上部署pod
+
+```sh
+$ kubectl taint nodes --all node-role.kubernetes.io/master-
+```
+
+# 在devops-master01上安装calico
+kubectl apply -f calico/
+
+# 在devops-master01上安装metrics-server
+kubectl apply -f metrics-server/
+
+# 在devops-master01上安装heapster
+kubectl apply -f heapster/
+
+# 在devops-master01上安装dashboard
+kubectl apply -f dashboard/
+
+# 在devops-master01上后去dashboard的登录token
+```
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+```
 
 ---
 
