@@ -805,31 +805,65 @@ $ kubectl taint nodes --all node-role.kubernetes.io/master-
 - 在任意master节点上安装calico
 
 ```sh
-kubectl apply -f calico/
+$ kubectl apply -f calico/
 ```
 
 - 在任意master节点上安装metrics-server，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server
 
 ```sh
-kubectl apply -f metrics-server/
+$ kubectl apply -f metrics-server/
+
+# 等待5分钟，查看性能数据是否正常收集
+$ kubectl top pods -n kube-system
+NAME                                    CPU(cores)   MEMORY(bytes)
+calico-node-wkstv                       47m          113Mi
+calico-node-x2sn5                       36m          104Mi
+calico-node-xnh6s                       32m          106Mi
+coredns-78fcdf6894-2xc6s                14m          30Mi
+coredns-78fcdf6894-rk6ch                10m          22Mi
+kube-apiserver-k8s-master01             163m         816Mi
+kube-apiserver-k8s-master02             79m          617Mi
+kube-apiserver-k8s-master03             73m          614Mi
+kube-controller-manager-k8s-master01    52m          141Mi
+kube-controller-manager-k8s-master02    0m           14Mi
+kube-controller-manager-k8s-master03    0m           13Mi
+kube-proxy-269t2                        4m           21Mi
+kube-proxy-6jc8n                        9m           37Mi
+kube-proxy-7n8xb                        9m           39Mi
+kube-scheduler-k8s-master01             20m          25Mi
+kube-scheduler-k8s-master02             15m          19Mi
+kube-scheduler-k8s-master03             15m          19Mi
+metrics-server-77b77f5fc6-jm8t6         3m           43Mi
 ```
 
 - 在任意master节点上安装heapster，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server，但是dashboard依然使用heapster呈现性能数据
 
 ```sh
-kubectl apply -f heapster/
+# 安装heapster，需要等待5分钟，等待性能数据采集
+$ kubectl apply -f heapster/
 ```
 
 - 在任意master节点上安装dashboard
 
 ```sh
-kubectl apply -f dashboard/
+# 安装dashboard
+$ kubectl apply -f dashboard/
 ```
 
+> 成功安装后访问以下网址打开dashboard的登录界面，该界面提示需要登录token: https://k8s-master-lb:30000/
+
+![dashboard-login](images/dashboard-login.png)
+
 - 在任意master节点上获取dashboard的登录token
+
 ```sh
-kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+# 获取dashboard的登录token
+$ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
 ```
+
+> 使用token进行登录，进入后可以看到heapster采集的各个pod以及节点的性能数据
+
+![dashboard](images/dashboard.png)
 
 ---
 
