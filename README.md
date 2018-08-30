@@ -57,8 +57,6 @@
 
 ![ha logo](images/ha.png)
 
-- kubernetes高可用的核心架构是master的高可用，kubectl、客户端以及nodes访问load balancer实现高可用。
-
 ---
 [category](#category)
 
@@ -224,7 +222,7 @@ $ docker pull quay.io/coreos/hyperkube:v1.7.6_coreos.0
 
 #### system configuration
 
-- 在所有kubernetes节点上增加kubernetes仓库
+- on all kubernetes nodes: 增加kubernetes仓库
 
 ```sh
 $ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -239,13 +237,13 @@ exclude=kube*
 EOF
 ```
 
-- 在所有kubernetes节点上进行系统更新
+- on all kubernetes nodes: 进行系统更新
 
 ```sh
 $ yum update -y
 ```
 
-- 在所有kubernetes节点上设置SELINUX为permissive模式
+- on all kubernetes nodes: 设置SELINUX为permissive模式
 
 ```sh
 $ vi /etc/selinux/config
@@ -254,7 +252,7 @@ SELINUX=permissive
 $ setenforce 0
 ```
 
-- 在所有kubernetes节点上设置iptables参数
+- on all kubernetes nodes: 设置iptables参数
 
 ```sh
 $ cat <<EOF >  /etc/sysctl.d/k8s.conf
@@ -266,7 +264,7 @@ EOF
 $ sysctl --system
 ```
 
-- 在所有kubernetes节点上禁用swap
+- on all kubernetes nodes: 禁用swap
 
 ```sh
 $ swapoff -a
@@ -280,7 +278,7 @@ $ cat /proc/swaps
 Filename                Type        Size    Used    Priority
 ```
 
-- 在所有kubernetes节点上重启主机
+- on all kubernetes nodes: 重启主机
 
 ```sh
 # 重启主机
@@ -295,7 +293,7 @@ $ reboot
 
 #### firewalld and iptables settings
 
-- 所有节点开启防火墙
+- on all kubernetes nodes: 开启防火墙
 
 ```sh
 # 重启防火墙
@@ -318,7 +316,7 @@ TCP | Inbound | 10252     | kube-controller-manager
 TCP | Inbound | 10255     | Read-only Kubelet API (Deprecated)
 TCP | Inbound | 30000-32767 | NodePort Services
 
-- 设置防火墙策略
+- on all master nodes: 设置防火墙策略
 
 ```sh
 $ firewall-cmd --zone=public --add-port=16443/tcp --permanent
@@ -355,7 +353,7 @@ public (active)
 TCP | Inbound | 10250       | Kubelet API
 TCP | Inbound | 30000-32767 | NodePort Services
 
-- 设置防火墙策略
+- on all worker nodes: 设置防火墙策略
 
 ```sh
 $ firewall-cmd --zone=public --add-port=10250/tcp --permanent
@@ -379,7 +377,7 @@ public (active)
   rich rules:
 ```
 
-- 在所有kubernetes节点上允许kube-proxy的forward
+- on all kubernetes nodes: 允许kube-proxy的forward
 
 ```sh
 $ firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i docker0 -j ACCEPT -m comment --comment "kube-proxy redirects"
@@ -407,7 +405,7 @@ $ crontab -e
 
 #### kubernetes and related services installation
 
-- 在所有kubernetes节点上安装并启动kubernetes
+- on all kubernetes nodes: 安装并启动kubernetes
 
 ```sh
 $ yum install -y docker-ce-17.12.0.ce-0.2.rc2.el7.centos.x86_64
@@ -418,7 +416,7 @@ $ yum install -y kubelet-1.11.1-0.x86_64 kubeadm-1.11.1-0.x86_64 kubectl-1.11.1-
 $ systemctl enable kubelet && systemctl start kubelet
 ```
 
-- 在所有master节点安装并启动keepalived
+- on all master nodes: 安装并启动keepalived
 
 ```sh
 $ yum install -y keepalived
@@ -427,7 +425,7 @@ $ systemctl enable keepalived && systemctl restart keepalived
 
 #### master hosts mutual trust
 
-- 在k8s-master01节点上设置节点互信
+- on k8s-master01: 设置节点互信
 
 ```sh
 $ rm -rf /root/.ssh/*
@@ -445,7 +443,7 @@ $ cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 ```
 
-- 在k8s-master02节点上设置节点互信
+- on k8s-master02: 设置节点互信
 
 ```sh
 $ ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa
@@ -453,7 +451,7 @@ $ cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 $ scp /root/.ssh/authorized_keys root@k8s-master03:/root/.ssh/
 ```
 
-- 在k8s-master03节点上设置节点互信
+- on k8s-master03: 设置节点互信
 
 ```sh
 $ ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa
@@ -470,13 +468,13 @@ $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 
 #### create configuration files
 
-- 在k8s-master01上克隆kubeadm-ha项目源码
+- on k8s-master01: 克隆kubeadm-ha项目源码
 
 ```sh
 $ git clone https://github.com/cookeem/kubeadm-ha
 ```
 
-- 在k8s-master01上通过`create-config.sh`脚本创建相关配置文件
+- on k8s-master01: 通过`create-config.sh`脚本创建相关配置文件
 
 ```sh
 $ cd kubeadm-ha
@@ -552,7 +550,7 @@ $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 
 #### kubeadm initialization
 
-- 在k8s-master01节点上使用kubeadm进行kubernetes集群初始化
+- on k8s-master01: 使用kubeadm进行kubernetes集群初始化
 
 ```sh
 # 执行kubeadm init之后务必记录执行结果输出的${YOUR_TOKEN}以及${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
@@ -560,7 +558,7 @@ $ kubeadm init --config /root/kubeadm-config.yaml
 kubeadm join 192.168.20.20:6443 --token ${YOUR_TOKEN} --discovery-token-ca-cert-hash sha256:${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
 ```
 
-- 在所有master节点上设置kubectl的配置文件变量
+- on all master nodes: 设置kubectl的配置文件变量
 
 ```sh
 $ cat <<EOF >> ~/.bashrc
@@ -573,7 +571,7 @@ $ source ~/.bashrc
 $ kubectl get nodes
 ```
 
-- 在k8s-master01节点上等待 etcd / kube-apiserver / kube-controller-manager / kube-scheduler 启动
+- on k8s-master01: 等待 etcd / kube-apiserver / kube-controller-manager / kube-scheduler 启动
 
 ```sh
 $ kubectl get pods -n kube-system -o wide
@@ -592,7 +590,7 @@ kube-scheduler-k8s-master01            1/1       Running   1          18m       
 
 #### high availiability configuration
 
-- 在k8s-master01上把证书复制到其他master
+- on k8s-master01: 把证书复制到其他master
 
 ```sh
 # 根据实际情况修改以下HOSTNAMES变量
@@ -612,7 +610,7 @@ $ for host in ${CONTROL_PLANE_IPS}; do
 done
 ```
 
-- 在k8s-master02上把节点加入集群
+- on k8s-master02: 把节点加入集群
 
 ```sh
 # 创建相关的证书以及kubelet配置文件
@@ -643,7 +641,7 @@ $ kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
 $ sed -i "s/192.168.20.20:6443/192.168.20.21:6443/g" /etc/kubernetes/admin.conf
 ```
 
-- 在k8s-master03上把节点加入集群
+- on k8s-master03: 把节点加入集群
 
 ```sh
 # 创建相关的证书以及kubelet配置文件
@@ -674,14 +672,14 @@ $ kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
 $ sed -i "s/192.168.20.20:6443/192.168.20.22:6443/g" /etc/kubernetes/admin.conf
 ```
 
-- 在所有master节点上允许hpa通过接口采集数据，修改`/etc/kubernetes/manifests/kube-controller-manager.yaml`
+- on all master nodes: 允许hpa通过接口采集数据，修改`/etc/kubernetes/manifests/kube-controller-manager.yaml`
 
 ```sh
 $ vi /etc/kubernetes/manifests/kube-controller-manager.yaml
     - --horizontal-pod-autoscaler-use-rest-clients=false
 ```
 
-- 在所有master上允许istio的自动注入，修改`/etc/kubernetes/manifests/kube-apiserver.yaml`
+- on all master nodes: 允许istio的自动注入，修改`/etc/kubernetes/manifests/kube-apiserver.yaml`
 
 ```sh
 $ vi /etc/kubernetes/manifests/kube-apiserver.yaml
@@ -699,7 +697,7 @@ systemctl restart kubelet
 
 #### keepalived installation
 
-- 在所有master节点上重启keepalived
+- on all master nodes: 重启keepalived
 
 ```sh
 $ systemctl restart keepalived
@@ -715,7 +713,7 @@ $ curl -k https://k8s-master-lb:6443
 
 #### nginx load balance settings
 
-- 在所有master节点上启动nginx-lb
+- on all master nodes: 启动nginx-lb
 
 ```sh
 # 使用docker-compose启动nginx负载均衡
@@ -732,7 +730,7 @@ $ curl -k https://k8s-master-lb:16443
 
 #### kube-proxy HA settings
 
-- 在任意master节点上设置kube-proxy高可用
+- on any master nodes: 设置kube-proxy高可用
 
 ```sh
 # 修改kube-proxy的configmap，把server指向load-balance地址和端口
@@ -740,7 +738,7 @@ $ kubectl edit -n kube-system configmap/kube-proxy
     server: https://192.168.20.10:16443
 ```
 
-- 在任意master节点上重启kube-proxy
+- on any master nodes: 重启kube-proxy
 
 ```sh
 # 查找对应的kube-proxy pods
@@ -756,7 +754,7 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 #### high availiability verify
 
-- 在任意master节点上验证服务启动情况
+- on any master nodes: 验证服务启动情况
 
 ```sh
 # 检查节点情况
@@ -797,19 +795,19 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 
 #### kubernetes addons installation
 
-- 在任意master节点上允许master上部署pod
+- on any master nodes: 允许master上部署pod
 
 ```sh
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
 ```
 
-- 在任意master节点上安装calico
+- on any master nodes: 安装calico
 
 ```sh
 $ kubectl apply -f calico/
 ```
 
-- 在任意master节点上安装metrics-server，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server
+- on any master nodes: 安装metrics-server，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server
 
 ```sh
 $ kubectl apply -f metrics-server/
@@ -837,14 +835,14 @@ kube-scheduler-k8s-master03             15m          19Mi
 metrics-server-77b77f5fc6-jm8t6         3m           43Mi
 ```
 
-- 在任意master节点上安装heapster，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server，但是dashboard依然使用heapster呈现性能数据
+- on any master nodes: 安装heapster，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server，但是dashboard依然使用heapster呈现性能数据
 
 ```sh
 # 安装heapster，需要等待5分钟，等待性能数据采集
 $ kubectl apply -f heapster/
 ```
 
-- 在任意master节点上安装dashboard
+- on any master nodes: 安装dashboard
 
 ```sh
 # 安装dashboard
@@ -855,7 +853,7 @@ $ kubectl apply -f dashboard/
 
 ![dashboard-login](images/dashboard-login.png)
 
-- 在任意master节点上获取dashboard的登录token
+- on any master nodes: 获取dashboard的登录token
 
 ```sh
 # 获取dashboard的登录token
@@ -866,7 +864,7 @@ $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | g
 
 ![dashboard](images/dashboard.png)
 
-- 在任意master节点上安装traefik
+- on any master nodes: 安装traefik
 
 ```sh
 # 创建k8s-master-lb域名的证书
@@ -883,7 +881,7 @@ $ kubectl apply -f traefik/
 
 ![traefik](images/traefik.png)
 
-- 在任意master节点上安装istio
+- on any master nodes: 安装istio
 
 ```sh
 # 安装istio
@@ -917,7 +915,7 @@ prometheus-77c5fc7cd-zf7zr                  1/1       Running     1          21m
 servicegraph-6b99c87849-l6zm6               1/1       Running     1          21m
 ```
 
-- 在任意master节点上安装prometheus
+- on any master nodes: 安装prometheus
 
 ```sh
 # 安装prometheus
@@ -969,7 +967,7 @@ $ sed -i "s/192.168.20.20:6443/192.168.20.10:16443/g" /etc/kubernetes/kubelet.co
 $ systemctl restart docker kubelet
 ```
 
-- 在任意master节点上验证节点状态
+- on any master nodes: 验证节点状态
 
 ```sh
 $ kubectl get nodes
