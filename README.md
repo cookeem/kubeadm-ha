@@ -468,18 +468,17 @@ $ scp /root/.ssh/authorized_keys root@k8s-master02:/root/.ssh/
 
 #### create configuration files
 
-- on k8s-master01: 克隆kubeadm-ha项目源码
+- on k8s-master01: clone kubeadm-ha project source code
 
 ```sh
 $ git clone https://github.com/cookeem/kubeadm-ha
 ```
 
-- on k8s-master01: 通过`create-config.sh`脚本创建相关配置文件
+- on k8s-master01: use `create-config.sh` to create relative config files, this script will create all configuration files, follow the setting comment and make sure you set the parameters correctly.
 
 ```sh
 $ cd kubeadm-ha
 
-# 根据create-config.sh的提示，修改以下配置信息
 $ vi create-config.sh
 # master keepalived virtual ip address
 export K8SHA_VIP=192.168.60.79
@@ -510,7 +509,7 @@ export K8SHA_CALICO_REACHABLE_IP=192.168.60.1
 # kubernetes CIDR pod subnet, if CIDR pod subnet is "172.168.0.0/16" please set to "172.168.0.0"
 export K8SHA_CIDR=172.168.0.0
 
-# 以下脚本会创建3个master节点的kubeadm配置文件，keepalived配置文件，nginx负载均衡配置文件，以及calico配置文件
+# run the shell, it will create 3 masters' kubeadm config files, keepalived config files, nginx load balance config files, and calico config files.
 $ ./create-config.sh
 create kubeadm-config.yaml files success. config/k8s-master01/kubeadm-config.yaml
 create kubeadm-config.yaml files success. config/k8s-master02/kubeadm-config.yaml
@@ -523,22 +522,22 @@ create nginx-lb files success. config/k8s-master02/nginx-lb/
 create nginx-lb files success. config/k8s-master03/nginx-lb/
 create calico.yaml file success. calico/calico.yaml
 
-# 设置相关hostname变量
+# set hostname environment variables
 $ export HOST1=k8s-master01
 $ export HOST2=k8s-master02
 $ export HOST3=k8s-master03
 
-# 把kubeadm配置文件放到各个master节点的/root/category
+# copy kubeadm config files to all master nodes, path is /root/
 $ scp -r config/$HOST1/kubeadm-config.yaml $HOST1:/root/
 $ scp -r config/$HOST2/kubeadm-config.yaml $HOST2:/root/
 $ scp -r config/$HOST3/kubeadm-config.yaml $HOST3:/root/
 
-# 把keepalived配置文件放到各个master节点的/etc/keepalived/category
+# copy keepalived config files to all master nodes, path is /etc/keepalived/category/
 $ scp -r config/$HOST1/keepalived/* $HOST1:/etc/keepalived/
 $ scp -r config/$HOST2/keepalived/* $HOST2:/etc/keepalived/
 $ scp -r config/$HOST3/keepalived/* $HOST3:/etc/keepalived/
 
-# 把nginx负载均衡配置文件放到各个master节点的/root/category
+# copy nginx load balance config files to all master nodes, path is /root/
 $ scp -r config/$HOST1/nginx-lb $HOST1:/root/
 $ scp -r config/$HOST2/nginx-lb $HOST2:/root/
 $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
@@ -550,15 +549,15 @@ $ scp -r config/$HOST3/nginx-lb $HOST3:/root/
 
 #### kubeadm initialization
 
-- on k8s-master01: 使用kubeadm进行kubernetes集群初始化
+- on k8s-master01: use kubeadm to init a kubernetes cluster
 
 ```sh
-# 执行kubeadm init之后务必记录执行结果输出的${YOUR_TOKEN}以及${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
+# notice: you must save the following output message: kubeadm join --token ${YOUR_TOKEN} --discovery-token-ca-cert-hash ${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH} , this command will use lately.
 $ kubeadm init --config /root/kubeadm-config.yaml
 kubeadm join 192.168.20.20:6443 --token ${YOUR_TOKEN} --discovery-token-ca-cert-hash sha256:${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
 ```
 
-- on all master nodes: 设置kubectl的配置文件变量
+- on all master nodes: set kubectl client environment variable
 
 ```sh
 $ cat <<EOF >> ~/.bashrc
@@ -567,11 +566,11 @@ EOF
 
 $ source ~/.bashrc
 
-# 验证是否可以使用kubectl客户端连接集群
+# kubectl now can connect the kubernetes cluster
 $ kubectl get nodes
 ```
 
-- on k8s-master01: 等待 etcd / kube-apiserver / kube-controller-manager / kube-scheduler 启动
+- on k8s-master01: wait until etcd, kube-apiserver, kube-controller-manager, kube-scheduler startup
 
 ```sh
 $ kubectl get pods -n kube-system -o wide
@@ -590,13 +589,13 @@ kube-scheduler-k8s-master01            1/1       Running   1          18m       
 
 #### high availiability configuration
 
-- on k8s-master01: 把证书复制到其他master
+- on k8s-master01: copy certificates to other master nodes
 
 ```sh
-# 根据实际情况修改以下HOSTNAMES变量
+# set master nodes hostname
 $ export CONTROL_PLANE_IPS="k8s-master02 k8s-master03"
 
-# 把证书复制到其他master节点
+# copy certificates to other master nodes
 $ for host in ${CONTROL_PLANE_IPS}; do
   scp /etc/kubernetes/pki/ca.crt $host:/etc/kubernetes/pki/ca.crt
   scp /etc/kubernetes/pki/ca.key $host:/etc/kubernetes/pki/ca.key
@@ -610,10 +609,10 @@ $ for host in ${CONTROL_PLANE_IPS}; do
 done
 ```
 
-- on k8s-master02: 把节点加入集群
+- on k8s-master02: master node join the cluster
 
 ```sh
-# 创建相关的证书以及kubelet配置文件
+# create all certificates and kubelet config files
 $ kubeadm alpha phase certs all --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase kubeconfig controller-manager --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase kubeconfig scheduler --config /root/kubeadm-config.yaml
@@ -622,29 +621,29 @@ $ kubeadm alpha phase kubelet write-env-file --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase kubeconfig kubelet --config /root/kubeadm-config.yaml
 $ systemctl restart kubelet
 
-# 设置k8s-master01以及k8s-master02的HOSTNAME以及地址
+# set k8s-master01 and k8s-master02 HOSTNAME and ip address
 $ export CP0_IP=192.168.20.20
 $ export CP0_HOSTNAME=k8s-master01
 $ export CP1_IP=192.168.20.21
 $ export CP1_HOSTNAME=k8s-master02
 
-# etcd集群添加节点
+# add etcd member to the cluster
 $ kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP1_HOSTNAME} https://${CP1_IP}:2380
 $ kubeadm alpha phase etcd local --config /root/kubeadm-config.yaml
 
-# 启动master节点
+# prepare to start master
 $ kubeadm alpha phase kubeconfig all --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase controlplane all --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
 
-# 修改/etc/kubernetes/admin.conf的服务地址指向本机
+# modify /etc/kubernetes/admin.conf server settings
 $ sed -i "s/192.168.20.20:6443/192.168.20.21:6443/g" /etc/kubernetes/admin.conf
 ```
 
-- on k8s-master03: 把节点加入集群
+- on k8s-master03: master node join the cluster
 
 ```sh
-# 创建相关的证书以及kubelet配置文件
+# create all certificates and kubelet config files
 $ kubeadm alpha phase certs all --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase kubeconfig controller-manager --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase kubeconfig scheduler --config /root/kubeadm-config.yaml
@@ -653,40 +652,46 @@ $ kubeadm alpha phase kubelet write-env-file --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase kubeconfig kubelet --config /root/kubeadm-config.yaml
 $ systemctl restart kubelet
 
-# 设置k8s-master01以及k8s-master03的HOSTNAME以及地址
+# set k8s-master01 and k8s-master03 HOSTNAME and ip address
 $ export CP0_IP=192.168.20.20
 $ export CP0_HOSTNAME=k8s-master01
 $ export CP2_IP=192.168.20.22
 $ export CP2_HOSTNAME=k8s-master03
 
-# etcd集群添加节点
+# add etcd member to the cluster
 $ kubectl exec -n kube-system etcd-${CP0_HOSTNAME} -- etcdctl --ca-file /etc/kubernetes/pki/etcd/ca.crt --cert-file /etc/kubernetes/pki/etcd/peer.crt --key-file /etc/kubernetes/pki/etcd/peer.key --endpoints=https://${CP0_IP}:2379 member add ${CP2_HOSTNAME} https://${CP2_IP}:2380
 $ kubeadm alpha phase etcd local --config /root/kubeadm-config.yaml
 
-# 启动master节点
+# prepare to start master
 $ kubeadm alpha phase kubeconfig all --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase controlplane all --config /root/kubeadm-config.yaml
 $ kubeadm alpha phase mark-master --config /root/kubeadm-config.yaml
 
-# 修改/etc/kubernetes/admin.conf的服务地址指向本机
+# modify /etc/kubernetes/admin.conf server settings
 $ sed -i "s/192.168.20.20:6443/192.168.20.22:6443/g" /etc/kubernetes/admin.conf
 ```
 
-- on all master nodes: 允许hpa通过接口采集数据，修改`/etc/kubernetes/manifests/kube-controller-manager.yaml`
+- on all master nodes: enable hpa to collect performance data form apiserver, add config below in file `/etc/kubernetes/manifests/kube-controller-manager.yaml`
 
 ```sh
 $ vi /etc/kubernetes/manifests/kube-controller-manager.yaml
     - --horizontal-pod-autoscaler-use-rest-clients=false
 ```
 
-- on all master nodes: 允许istio的自动注入，修改`/etc/kubernetes/manifests/kube-apiserver.yaml`
+- on all master nodes: enable istio auto-injection, add config below in file `/etc/kubernetes/manifests/kube-apiserver.yaml`
 
 ```sh
 $ vi /etc/kubernetes/manifests/kube-apiserver.yaml
     - --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
 
-# 重启服务
+# restart kubelet service
 systemctl restart kubelet
+```
+
+- on any master nodes: install calico network addon, after network addon installed the cluster nodes status will be `READY`
+
+```sh
+$ kubectl apply -f calico/
 ```
 
 ---
@@ -697,13 +702,13 @@ systemctl restart kubelet
 
 #### keepalived installation
 
-- on all master nodes: 重启keepalived
+- on all master nodes: restart keepalived service
 
 ```sh
 $ systemctl restart keepalived
 $ systemctl status keepalived
 
-# 检查keepalived的vip是否生效
+# check keepalived vip
 $ curl -k https://k8s-master-lb:6443
 ```
 
@@ -713,14 +718,14 @@ $ curl -k https://k8s-master-lb:6443
 
 #### nginx load balance settings
 
-- on all master nodes: 启动nginx-lb
+- on all master nodes: start up nginx load balance
 
 ```sh
-# 使用docker-compose启动nginx负载均衡
+# use docker-compose to start up nginx load balance
 $ docker-compose --file=/root/nginx-lb/docker-compose.yaml up -d
 $ docker-compose --file=/root/nginx-lb/docker-compose.yaml ps
 
-# 验证负载均衡的16443端口是否生效
+# check nginx load balance
 $ curl -k https://k8s-master-lb:16443
 ```
 
@@ -730,21 +735,20 @@ $ curl -k https://k8s-master-lb:16443
 
 #### kube-proxy HA settings
 
-- on any master nodes: 设置kube-proxy高可用
+- on any master nodes: set kube-proxy server settings, make sure this settings use the keepalived virtual IP and nginx load balancer port (here is: https://192.168.20.10:16443)
 
 ```sh
-# 修改kube-proxy的configmap，把server指向load-balance地址和端口
 $ kubectl edit -n kube-system configmap/kube-proxy
     server: https://192.168.20.10:16443
 ```
 
-- on any master nodes: 重启kube-proxy
+- on any master nodes: restart kube-proxy pods
 
 ```sh
-# 查找对应的kube-proxy pods
+# find all kube-proxy pods
 $ kubectl get pods --all-namespaces -o wide | grep proxy
 
-# 删除并重启对应的kube-proxy pods
+# delete and restart all kube-proxy pods
 $ kubectl delete pod -n kube-system kube-proxy-XXX
 ```
 
@@ -754,17 +758,17 @@ $ kubectl delete pod -n kube-system kube-proxy-XXX
 
 #### high availiability verify
 
-- on any master nodes: 验证服务启动情况
+- on any master nodes: check cluster running status
 
 ```sh
-# 检查节点情况
+# check kubernetes nodes status
 $ kubectl get nodes
-NAME              STATUS    ROLES     AGE       VERSION
+NAME           STATUS    ROLES     AGE       VERSION
 k8s-master01   Ready     master    1h        v1.11.1
 k8s-master02   Ready     master    58m       v1.11.1
 k8s-master03   Ready     master    55m       v1.11.1
 
-# 检查pods运行情况
+# check kube-system pods running status
 $ kubectl get pods -n kube-system -o wide
 NAME                                   READY     STATUS    RESTARTS   AGE       IP              NODE
 calico-node-nxskr                      2/2       Running   0          46m       192.168.20.22   k8s-master03
@@ -795,24 +799,18 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 
 #### kubernetes addons installation
 
-- on any master nodes: 允许master上部署pod
+- on any master nodes: enable master node pod schedulable
 
 ```sh
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
 ```
 
-- on any master nodes: 安装calico
-
-```sh
-$ kubectl apply -f calico/
-```
-
-- on any master nodes: 安装metrics-server，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server
+- on any master nodes: install metrics-server, after v1.11.0 heapster is deprecated for performance data collection, it use metrics-server
 
 ```sh
 $ kubectl apply -f metrics-server/
 
-# 等待5分钟，查看性能数据是否正常收集
+# wait for 5 minutes, use kubectl top to check the pod performance usage
 $ kubectl top pods -n kube-system
 NAME                                    CPU(cores)   MEMORY(bytes)
 calico-node-wkstv                       47m          113Mi
@@ -835,59 +833,59 @@ kube-scheduler-k8s-master03             15m          19Mi
 metrics-server-77b77f5fc6-jm8t6         3m           43Mi
 ```
 
-- on any master nodes: 安装heapster，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server，但是dashboard依然使用heapster呈现性能数据
+- on any master nodes: install heapster, after v1.11.0 heapster is deprecated for performance data collection, it use metrics-server. But kube-dashboard use heapster to display performance info, so we install it.
 
 ```sh
-# 安装heapster，需要等待5分钟，等待性能数据采集
+# install heapster, wait for 5 minutes
 $ kubectl apply -f heapster/
 ```
 
-- on any master nodes: 安装dashboard
+- on any master nodes: install kube-dashboard
 
 ```sh
-# 安装dashboard
+# install kube-dashboard
 $ kubectl apply -f dashboard/
 ```
 
-> 成功安装后访问以下网址打开dashboard的登录界面，该界面提示需要登录token: https://k8s-master-lb:30000/
+> after install, open kube-dashboard in web browser, it need to login with token: https://k8s-master-lb:30000/
 
 ![dashboard-login](images/dashboard-login.png)
 
-- on any master nodes: 获取dashboard的登录token
+- on any master nodes: get kube-dashboard login token
 
 ```sh
-# 获取dashboard的登录token
+# get kube-dashboard login token
 $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
 ```
 
-> 使用token进行登录，进入后可以看到heapster采集的各个pod以及节点的性能数据
+> login to kube-dashboard, you can see all pods performance metrics
 
 ![dashboard](images/dashboard.png)
 
-- on any master nodes: 安装traefik
+- on any master nodes: install traefik
 
 ```sh
-# 创建k8s-master-lb域名的证书
+# create k8s-master-lb domain certificate
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=k8s-master-lb"
 
-# 把证书写入到secret
+# create kubernetes secret
 kubectl -n kube-system create secret generic traefik-cert --from-file=tls.key --from-file=tls.crt
 
-# 安装traefik
+# install traefik
 $ kubectl apply -f traefik/
 ```
 
-> 成功安装后访问以下网址打开traefik管理界面: http://k8s-master-lb:30011/
+> after install use web browser to open traefik admin webUI: http://k8s-master-lb:30011/
 
 ![traefik](images/traefik.png)
 
-- on any master nodes: 安装istio
+- on any master nodes: install istio
 
 ```sh
-# 安装istio
+# install istio
 $ kubectl apply -f istio/
 
-# 检查istio服务相关pods
+# check all istio pods
 $ kubectl get pods -n istio-system
 NAME                                        READY     STATUS      RESTARTS   AGE
 grafana-69c856fc69-jbx49                    1/1       Running     1          21m
@@ -915,27 +913,27 @@ prometheus-77c5fc7cd-zf7zr                  1/1       Running     1          21m
 servicegraph-6b99c87849-l6zm6               1/1       Running     1          21m
 ```
 
-- on any master nodes: 安装prometheus
+- on any master nodes: install prometheus
 
 ```sh
-# 安装prometheus
+# install prometheus
 $ kubectl apply -f prometheus/
 ```
 
-> 成功安装后访问以下网址打开prometheus管理界面，查看相关性能采集数据: http://k8s-master-lb:30013/
+> after install, open prometheus admin webUI: http://k8s-master-lb:30013/
 
 ![prometheus](images/prometheus.png)
 
-> 成功安装后访问以下网址打开grafana管理界面(账号密码都是`admin`)，查看相关性能采集数据: http://k8s-master-lb:30006/
-> 登录后，进入datasource设置界面，增加prometheus数据源，http://k8s-master-lb:30006/datasources
+> open grafana admin webUI (user and password is`admin`): http://k8s-master-lb:30006/
+> after login, add prometheus datasource: http://k8s-master-lb:30006/datasources
 
 ![grafana-datasource](images/grafana-datasource.png)
 
-> 进入导入dashboard界面: http://k8s-master-lb:30006/dashboard/import 导入`heapster/grafana-dashboard`category下的dashboard `Kubernetes App Metrics`和`Kubernetes cluster monitoring (via Prometheus)`
+> import dashboard: http://k8s-master-lb:30006/dashboard/import import all files under `heapster/grafana-dashboard` directory, dashboard `Kubernetes App Metrics`, `Kubernetes cluster monitoring (via Prometheus)`
 
 ![grafana-import](images/grafana-import.png)
 
-> 导入的dashboard性能呈现如下图:
+> dashboard you imported:
 
 ![grafana-cluster](images/grafana-cluster.png)
 
@@ -949,25 +947,24 @@ $ kubectl apply -f prometheus/
 
 #### workers join HA cluster
 
-- on all worker nodes: 使用kubeadm join加入kubernetes集群
+- on all worker nodes: join kubernetes cluster
 
 ```sh
-# 清理节点上的kubernetes配置信息
 $ kubeadm reset
 
-# 使用之前kubeadm init执行结果记录的${YOUR_TOKEN}以及${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}，把worker节点加入到集群
+# use kubeadm to join the cluster, here we use the k8s-master01 apiserver address and port.
 $ kubeadm join 192.168.20.20:6443 --token ${YOUR_TOKEN} --discovery-token-ca-cert-hash sha256:${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
 
 
-# 在workers上修改kubernetes集群设置，让server指向nginx负载均衡的ip和端口
+# set the `/etc/kubernetes/*.conf` server settings, make sure this settings use the keepalived virtual IP and nginx load balancer port (here is: https://192.168.20.10:16443)
 $ sed -i "s/192.168.20.20:6443/192.168.20.10:16443/g" /etc/kubernetes/bootstrap-kubelet.conf
 $ sed -i "s/192.168.20.20:6443/192.168.20.10:16443/g" /etc/kubernetes/kubelet.conf
 
-# 重启本节点
+# restart docker and kubelet service
 $ systemctl restart docker kubelet
 ```
 
-- on any master nodes: 验证节点状态
+- on any master nodes: check all nodes status
 
 ```sh
 $ kubectl get nodes
@@ -993,30 +990,30 @@ k8s-node08     Ready     <none>    10m       v1.11.1
 
 #### verify kubernetes cluster high availiablity installation
 
-- 验证集群高可用
+- NodePort testing
 
 ```sh
-# 创建一个replicas=3的nginx deployment
+# create a nginx deployment, replicas=3
 $ kubectl run nginx --image=nginx --replicas=3 --port=80
 deployment "nginx" created
 
-# 检查nginx pod的创建情况
+# check nginx pods status
 $ kubectl get pods -l=run=nginx -o wide
 NAME                     READY     STATUS    RESTARTS   AGE       IP             NODE
 nginx-58b94844fd-jvlqh   1/1       Running   0          9s        172.168.7.2    k8s-node05
 nginx-58b94844fd-mkt72   1/1       Running   0          9s        172.168.9.2    k8s-node07
 nginx-58b94844fd-xhb8x   1/1       Running   0          9s        172.168.11.2   k8s-node09
 
-# 创建nginx的NodePort service
+# create nginx NodePort service
 $ kubectl expose deployment nginx --type=NodePort --port=80
 service "nginx" exposed
 
-# 检查nginx service的创建情况
+# check nginx service status
 $ kubectl get svc -l=run=nginx -o wide
 NAME      TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE       SELECTOR
 nginx     NodePort   10.106.129.121   <none>        80:31443/TCP   7s        run=nginx
 
-# 检查nginx NodePort service是否正常提供服务
+# check nginx NodePort service accessibility
 $ curl k8s-master-lb:31443
 <!DOCTYPE html>
 <html>
@@ -1045,10 +1042,9 @@ Commercial support is available at
 </html>
 ```
 
-- pod之间互访测试
+- pods connectivity testing
 
 ```sh
-# 启动一个client测试nginx是否可以访问
 kubectl run nginx-client -ti --rm --image=alpine -- ash
 / # wget -O - nginx
 Connecting to nginx (10.102.101.78:80)
@@ -1080,31 +1076,32 @@ Commercial support is available at
 </body>
 </html>
 
-# 清除nginx的deployment以及service
+# remove all test nginx deployment and service
 kubectl delete deploy,svc nginx
 ```
 
-- 测试HPA自动扩展
+- HPA testing
 
 ```sh
-# 创建测试服务
+# create test nginx-server
 kubectl run nginx-server --requests=cpu=10m --image=nginx --port=80
 kubectl expose deployment nginx-server --port=80
 
-# 创建hpa
+# create hpa
 kubectl autoscale deployment nginx-server --cpu-percent=10 --min=1 --max=10
 kubectl get hpa
 kubectl describe hpa nginx-server
 
-# 给测试服务增加负载
+# increase nginx-server load
 kubectl run -ti --rm load-generator --image=busybox -- ash
 wget -q -O- http://nginx-server.default.svc.cluster.local > /dev/null
 while true; do wget -q -O- http://nginx-server.default.svc.cluster.local > /dev/null; done
 
-# 检查hpa自动扩展情况，一般需要等待几分钟。结束增加负载后，pod自动缩容（自动缩容需要大概10-15分钟）
+# it may take a few minutes to stabilize the number of replicas. Since the amount of load is not controlled in any way it may happen that the final number of replicas will differ from this example.
+
 kubectl get hpa -w
 
-# 删除测试数据
+# remove all test deployment service and HPA
 kubectl delete deploy,svc,hpa nginx-server
 ```
 
@@ -1112,4 +1109,4 @@ kubectl delete deploy,svc,hpa nginx-server
 
 [category](#category)
 
-- 至此kubernetes高可用集群完成部署，并测试通过 😃
+- now kubernetes high availiability cluster setup successfully 😃

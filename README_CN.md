@@ -691,6 +691,12 @@ $ vi /etc/kubernetes/manifests/kube-apiserver.yaml
 systemctl restart kubelet
 ```
 
+- 在任意master节点上安装calico，安装calico网络组件后，nodes状态才会恢复正常
+
+```sh
+$ kubectl apply -f calico/
+```
+
 ---
 
 [返回目录](#目录)
@@ -801,12 +807,6 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 
 ```sh
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
-```
-
-- 在任意master节点上安装calico
-
-```sh
-$ kubectl apply -f calico/
 ```
 
 - 在任意master节点上安装metrics-server，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server
