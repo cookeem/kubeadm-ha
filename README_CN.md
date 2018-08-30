@@ -865,6 +865,17 @@ $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | g
 
 ![dashboard](images/dashboard.png)
 
+- 在任意master节点上安装dashboard
+
+```sh
+# 安装prometheus
+$ kubectl apply -f prometheus/
+```
+
+> 成功安装后访问以下网址打开prometheus管理界面，查看相关性能采集数据: http://k8s-master-lb:30013/
+
+![prometheus](images/prometheus.png)
+
 ---
 
 [返回目录](#目录)
@@ -872,6 +883,42 @@ $ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | g
 ### worker节点设置
 
 #### worker加入高可用集群
+
+- 在所有workers节点上，使用kubeadm join加入kubernetes集群
+
+```sh
+# 清理节点上的kubernetes配置信息
+$ kubeadm reset
+
+# 使用之前kubeadm init执行结果记录的${YOUR_TOKEN}以及${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}，把worker节点加入到集群
+$ kubeadm join 192.168.20.20:6443 --token ${YOUR_TOKEN} --discovery-token-ca-cert-hash sha256:${YOUR_DISCOVERY_TOKEN_CA_CERT_HASH}
+
+
+# 在workers上修改kubernetes集群设置，让server指向nginx负载均衡的ip和端口
+$ sed -i "s/192.168.20.20:6443/192.168.20.10:16443/g" /etc/kubernetes/bootstrap-kubelet.conf
+$ sed -i "s/192.168.20.20:6443/192.168.20.10:16443/g" /etc/kubernetes/kubelet.conf
+
+# 重启本节点
+$ systemctl restart docker kubelet
+```
+
+- 在任意master节点上验证节点状态
+
+```sh
+$ kubectl get nodes
+NAME           STATUS    ROLES     AGE       VERSION
+k8s-master01   Ready     master    1h        v1.11.1
+k8s-master02   Ready     master    58m       v1.11.1
+k8s-master03   Ready     master    55m       v1.11.1
+k8s-node01     Ready     <none>    30m       v1.11.1
+k8s-node02     Ready     <none>    24m       v1.11.1
+k8s-node03     Ready     <none>    22m       v1.11.1
+k8s-node04     Ready     <none>    22m       v1.11.1
+k8s-node05     Ready     <none>    16m       v1.11.1
+k8s-node06     Ready     <none>    13m       v1.11.1
+k8s-node07     Ready     <none>    11m       v1.11.1
+k8s-node08     Ready     <none>    10m       v1.11.1
+```
 
 ---
 
