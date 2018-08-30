@@ -802,20 +802,32 @@ kube-scheduler-k8s-master03            1/1       Running   1          54m       
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
 ```
 
-# 在devops-master01上安装calico
+- 在任意master节点上安装calico
+
+```sh
 kubectl apply -f calico/
-
-# 在devops-master01上安装metrics-server
-kubectl apply -f metrics-server/
-
-# 在devops-master01上安装heapster
-kubectl apply -f heapster/
-
-# 在devops-master01上安装dashboard
-kubectl apply -f dashboard/
-
-# 在devops-master01上后去dashboard的登录token
 ```
+
+- 在任意master节点上安装metrics-server，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server
+
+```sh
+kubectl apply -f metrics-server/
+```
+
+- 在任意master节点上安装heapster，从v1.11.0开始，性能采集不再采用heapster采集pod性能数据，而是使用metrics-server，但是dashboard依然使用heapster呈现性能数据
+
+```sh
+kubectl apply -f heapster/
+```
+
+- 在任意master节点上安装dashboard
+
+```sh
+kubectl apply -f dashboard/
+```
+
+- 在任意master节点上获取dashboard的登录token
+```sh
 kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
 ```
 
