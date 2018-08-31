@@ -157,7 +157,7 @@ Kubernetes v1.11.1
 
 #### required docker images
 
-- 相关docker镜像以及版本
+- required docker images and tags
 
 ```sh
 # kuberentes basic components
