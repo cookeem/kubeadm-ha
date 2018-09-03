@@ -39,3 +39,15 @@
 7. upgrade: patch virtualservice/my-app -> svc/my-app-v1 * 90% + svc/my-app-v2 * 10% weight
 8. rollback: deploy virtualservice/my-app -> svc/my-app-v1
 9. confirmed: remove deploy/my-app-v1 svc/my-app-v1
+
+# shadow deploy istio mode
+
+1. create deploy/my-app-v1
+2. create svc/my-app-v1 -> deploy/my-app-v1
+3. create virtualservice/my-app -> svc/my-app-v1
+4. create gateway/my-app -> virtualservice/my-app
+5. create deploy/my-app-v2
+6. create svc/my-app-v2 -> deploy/my-app-v2
+7. upgrade: patch virtualservice/my-app -> svc/my-app-v1 mirror to svc/my-app-v2
+8. rollback: deploy virtualservice/my-app -> svc/my-app-v1
+9. confirmed: remove deploy/my-app-v1 svc/my-app-v1
