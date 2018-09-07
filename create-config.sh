@@ -79,10 +79,22 @@ etcd:
       initial-cluster: "${K8SHA_HOST1}=https://${K8SHA_IP1}:2380"
     serverCertSANs:
       - ${K8SHA_HOST1}
+      - ${K8SHA_HOST2}
+      - ${K8SHA_HOST3}
+      - ${K8SHA_VHOST}
       - ${K8SHA_IP1}
+      - ${K8SHA_IP2}
+      - ${K8SHA_IP3}
+      - ${K8SHA_VIP}
     peerCertSANs:
       - ${K8SHA_HOST1}
+      - ${K8SHA_HOST2}
+      - ${K8SHA_HOST3}
+      - ${K8SHA_VHOST}
       - ${K8SHA_IP1}
+      - ${K8SHA_IP2}
+      - ${K8SHA_IP3}
+      - ${K8SHA_VIP}
 networking:
   # This CIDR is a Calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
@@ -111,11 +123,23 @@ etcd:
       initial-cluster: "${K8SHA_HOST1}=https://${K8SHA_IP1}:2380,${K8SHA_HOST2}=https://${K8SHA_IP2}:2380"
       initial-cluster-state: existing
     serverCertSANs:
+      - ${K8SHA_HOST1}
       - ${K8SHA_HOST2}
+      - ${K8SHA_HOST3}
+      - ${K8SHA_VHOST}
+      - ${K8SHA_IP1}
       - ${K8SHA_IP2}
+      - ${K8SHA_IP3}
+      - ${K8SHA_VIP}
     peerCertSANs:
+      - ${K8SHA_HOST1}
       - ${K8SHA_HOST2}
+      - ${K8SHA_HOST3}
+      - ${K8SHA_VHOST}
+      - ${K8SHA_IP1}
       - ${K8SHA_IP2}
+      - ${K8SHA_IP3}
+      - ${K8SHA_VIP}
 networking:
   # This CIDR is a calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
@@ -144,11 +168,23 @@ etcd:
       initial-cluster: "${K8SHA_HOST1}=https://${K8SHA_IP1}:2380,${K8SHA_HOST2}=https://${K8SHA_IP2}:2380,${K8SHA_HOST3}=https://${K8SHA_IP3}:2380"
       initial-cluster-state: existing
     serverCertSANs:
+      - ${K8SHA_HOST1}
+      - ${K8SHA_HOST2}
       - ${K8SHA_HOST3}
+      - ${K8SHA_VHOST}
+      - ${K8SHA_IP1}
+      - ${K8SHA_IP2}
       - ${K8SHA_IP3}
+      - ${K8SHA_VIP}
     peerCertSANs:
+      - ${K8SHA_HOST1}
+      - ${K8SHA_HOST2}
       - ${K8SHA_HOST3}
+      - ${K8SHA_VHOST}
+      - ${K8SHA_IP1}
+      - ${K8SHA_IP2}
       - ${K8SHA_IP3}
+      - ${K8SHA_VIP}
 networking:
   # This CIDR is a calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
