@@ -5,16 +5,16 @@
 #######################################
 
 # master keepalived virtual ip address
-export K8SHA_VIP=192.168.60.79
+export K8SHA_VIP=192.168.20.10
 
 # master01 ip address
-export K8SHA_IP1=192.168.60.72
+export K8SHA_IP1=192.168.20.20
 
 # master02 ip address
-export K8SHA_IP2=192.168.60.77
+export K8SHA_IP2=192.168.20.21
 
 # master03 ip address
-export K8SHA_IP3=192.168.60.78
+export K8SHA_IP3=192.168.20.22
 
 # master keepalived virtual ip hostname
 export K8SHA_VHOST=k8s-master-lb
@@ -41,7 +41,7 @@ export K8SHA_NETINF3=nm-bond
 export K8SHA_KEEPALIVED_AUTH=412f7dc3bfed32194d1600c483e10ad1d
 
 # calico reachable ip address
-export K8SHA_CALICO_REACHABLE_IP=192.168.60.1
+export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 
 # kubernetes CIDR pod subnet, if CIDR pod subnet is "172.168.0.0/16" please set to "172.168.0.0"
 export K8SHA_CIDR=172.168.0.0
