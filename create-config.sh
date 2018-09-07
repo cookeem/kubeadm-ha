@@ -17,16 +17,16 @@ export K8SHA_IP2=192.168.24.213
 export K8SHA_IP3=192.168.20.214
 
 # master keepalived virtual ip hostname
-export K8SHA_VHOST=k8s-master-lb
+export K8SHA_VHOST=k8s-lb
 
 # master01 hostname
-export K8SHA_HOST1=k8s-master01
+export K8SHA_HOST1=master-1
 
 # master02 hostname
-export K8SHA_HOST2=k8s-master02
+export K8SHA_HOST2=master-2
 
 # master03 hostname
-export K8SHA_HOST3=k8s-master03
+export K8SHA_HOST3=master-3
 
 # master01 network interface name
 export K8SHA_NETINF1=eth3
