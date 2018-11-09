@@ -82,7 +82,11 @@ etcd:
       - ${K8SHA_IP1}
     peerCertSANs:
       - ${K8SHA_HOST1}
+      - ${K8SHA_HOST2}
+      - ${K8SHA_HOST3}
       - ${K8SHA_IP1}
+      - ${K8SHA_IP2}
+      - ${K8SHA_IP3}
 networking:
   # This CIDR is a Calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
@@ -114,8 +118,12 @@ etcd:
       - ${K8SHA_HOST2}
       - ${K8SHA_IP2}
     peerCertSANs:
+      - ${K8SHA_HOST1}
       - ${K8SHA_HOST2}
+      - ${K8SHA_HOST3}
+      - ${K8SHA_IP1}
       - ${K8SHA_IP2}
+      - ${K8SHA_IP3}
 networking:
   # This CIDR is a calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
@@ -147,7 +155,11 @@ etcd:
       - ${K8SHA_HOST3}
       - ${K8SHA_IP3}
     peerCertSANs:
+      - ${K8SHA_HOST1}
+      - ${K8SHA_HOST2}
       - ${K8SHA_HOST3}
+      - ${K8SHA_IP1}
+      - ${K8SHA_IP2}
       - ${K8SHA_IP3}
 networking:
   # This CIDR is a calico default. Substitute or remove for your CNI provider.
