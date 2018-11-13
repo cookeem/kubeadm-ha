@@ -2,14 +2,15 @@
 global_defs {
     router_id LVS_DEVEL
 }
-vrrp_script chk_apiserver {
+vrrp_script check_apiserver {
     script "/etc/keepalived/check_apiserver.sh"
-    interval 2
+    interval 5
     weight -5
     fall 3  
     rise 2
 }
 vrrp_instance VI_1 {
+    nopreempt
     state K8SHA_KA_STATE
     interface K8SHA_KA_INTF
     mcast_src_ip K8SHA_IPLOCAL
@@ -24,6 +25,6 @@ vrrp_instance VI_1 {
         K8SHA_VIP
     }
     track_script {
-       chk_apiserver
+       check_apiserver
     }
 }

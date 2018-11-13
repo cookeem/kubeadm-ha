@@ -164,7 +164,7 @@ cp keepalived/check_apiserver.sh config/$K8SHA_HOST2/keepalived
 cp keepalived/check_apiserver.sh config/$K8SHA_HOST3/keepalived
 
 sed \
--e "s/K8SHA_KA_STATE/MASTER/g" \
+-e "s/K8SHA_KA_STATE/BACKUP/g" \
 -e "s/K8SHA_KA_INTF/${K8SHA_NETINF1}/g" \
 -e "s/K8SHA_IPLOCAL/${K8SHA_IP1}/g" \
 -e "s/K8SHA_KA_PRIO/102/g" \
