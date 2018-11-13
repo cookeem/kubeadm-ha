@@ -67,15 +67,21 @@
 - kubernetes components:
 
 > kube-apiserver: exposes the Kubernetes API. It is the front-end for the Kubernetes control plane. It is designed to scale horizontally – that is, it scales by deploying more instances.
+
 > etcd: is used as Kubernetes’ backing store. All cluster data is stored here. Always have a backup plan for etcd’s data for your Kubernetes cluster.
+
 > kube-scheduler: watches newly created pods that have no node assigned, and selects a node for them to run on.
+
 > kube-controller-manager: runs controllers, which are the background threads that handle routine tasks in the cluster. Logically, each controller is a separate process, but to reduce complexity, they are all compiled into a single binary and run in a single process.
+
 > kubelet: is the primary node agent. It watches for pods that have been assigned to its node (either by apiserver or via local configuration file)
+
 > kube-proxy: enables the Kubernetes service abstraction by maintaining network rules on the host and performing connection forwarding.
 
 - load balancer
 
 > keepalived cluster config a virtual IP address (192.168.20.10), this virtual IP address point to k8s-master01, k8s-master02, k8s-master03.
+
 > nginx service as the load balancer of k8s-master01, k8s-master02, k8s-master03's apiserver. The other nodes kubernetes services connect the keepalived virtual ip address (192.168.20.10) and nginx exposed port (16443) to communicate with the master cluster's apiservers.
 
 ---
