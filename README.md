@@ -538,15 +538,20 @@ $ scp -r config/$HOST1/kubeadm-config.yaml $HOST1:/root/
 $ scp -r config/$HOST2/kubeadm-config.yaml $HOST2:/root/
 $ scp -r config/$HOST3/kubeadm-config.yaml $HOST3:/root/
 
-# copy keepalived config files to all master nodes, path is /etc/keepalived/category/
+# copy keepalived config files to all master nodes, path is /etc/keepalived/
 $ scp -r config/$HOST1/keepalived/* $HOST1:/etc/keepalived/
 $ scp -r config/$HOST2/keepalived/* $HOST2:/etc/keepalived/
 $ scp -r config/$HOST3/keepalived/* $HOST3:/etc/keepalived/
 
-# copy nginx load balance config files to all master nodes, path is /root/
-$ scp -r config/$HOST1/nginx-lb $HOST1:/root/
-$ scp -r config/$HOST2/nginx-lb $HOST2:/root/
-$ scp -r config/$HOST3/nginx-lb $HOST3:/root/
+# copy nginx load balance config files to all master nodes, path is /etc/kubernetes/
+$ scp -r config/$HOST1/nginx-lb/nginx-lb.conf $HOST1:/etc/kubernetes/
+$ scp -r config/$HOST2/nginx-lb/nginx-lb.conf $HOST2:/etc/kubernetes/
+$ scp -r config/$HOST3/nginx-lb/nginx-lb.conf $HOST3:/etc/kubernetes/
+
+# copy nginx load balance deployment files to all master nodes, path is /etc/kubernetes/manifests/
+$ scp -r config/$HOST1/nginx-lb/nginx-lb.yaml $HOST1:/etc/kubernetes/manifests/
+$ scp -r config/$HOST2/nginx-lb/nginx-lb.yaml $HOST2:/etc/kubernetes/manifests/
+$ scp -r config/$HOST3/nginx-lb/nginx-lb.yaml $HOST3:/etc/kubernetes/manifests/
 ```
 
 ---
@@ -724,12 +729,7 @@ $ curl -k https://k8s-master-lb:6443
 
 #### nginx load balance settings
 
-- on all master nodes: start up nginx load balance
-
-```sh
-# use docker-compose to start up nginx load balance
-$ docker-compose --file=/root/nginx-lb/docker-compose.yaml up -d
-$ docker-compose --file=/root/nginx-lb/docker-compose.yaml ps
+- nginx load balancer is self-hosted by kubelet
 
 # check nginx load balance
 $ curl -k https://k8s-master-lb:16443

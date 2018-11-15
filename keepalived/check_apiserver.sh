@@ -16,9 +16,15 @@ do
 done
 
 if [[ $err != "0" ]]; then
+    # if apiserver down stop keepalived
     echo "systemctl stop keepalived"
     /usr/bin/systemctl stop keepalived
     exit 1
 else
+    # if apiserver up check keepalived and start it up
+    check_keeaplived=$(ps -ef| grep keepalived | grep -v 'color=auto' | wc -l)
+    if [[ $check_keeaplived == "0" ]]; then
+        /usr/bin/systemctl start keepalived
+    fi
     exit 0
 fi

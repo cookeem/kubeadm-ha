@@ -546,10 +546,15 @@ $ scp -r config/$HOST1/keepalived/* $HOST1:/etc/keepalived/
 $ scp -r config/$HOST2/keepalived/* $HOST2:/etc/keepalived/
 $ scp -r config/$HOST3/keepalived/* $HOST3:/etc/keepalived/
 
-# 把nginx负载均衡配置文件放到各个master节点的/root/目录
-$ scp -r config/$HOST1/nginx-lb $HOST1:/root/
-$ scp -r config/$HOST2/nginx-lb $HOST2:/root/
-$ scp -r config/$HOST3/nginx-lb $HOST3:/root/
+# 把nginx负载均衡配置文件放到各个master节点的/etc/kubernetes/目录
+$ scp -r config/$HOST1/nginx-lb/nginx-lb.conf $HOST1:/etc/kubernetes/
+$ scp -r config/$HOST2/nginx-lb/nginx-lb.conf $HOST2:/etc/kubernetes/
+$ scp -r config/$HOST3/nginx-lb/nginx-lb.conf $HOST3:/etc/kubernetes/
+
+# 把nginx负载均衡部署文件放到各个master节点的/etc/kubernetes/manifests/目录
+$ scp -r config/$HOST1/nginx-lb/nginx-lb.yaml $HOST1:/etc/kubernetes/manifests/
+$ scp -r config/$HOST2/nginx-lb/nginx-lb.yaml $HOST2:/etc/kubernetes/manifests/
+$ scp -r config/$HOST3/nginx-lb/nginx-lb.yaml $HOST3:/etc/kubernetes/manifests/
 ```
 
 ---
@@ -727,12 +732,7 @@ $ curl -k https://k8s-master-lb:6443
 
 #### nginx负载均衡配置
 
-- 在所有master节点上启动nginx-lb
-
-```sh
-# 使用docker-compose启动nginx负载均衡
-$ docker-compose --file=/root/nginx-lb/docker-compose.yaml up -d
-$ docker-compose --file=/root/nginx-lb/docker-compose.yaml ps
+- nginx负载均衡由kubelet托管，启动kubelet会自动启动nginx-lb
 
 # 验证负载均衡的16443端口是否生效
 $ curl -k https://k8s-master-lb:16443

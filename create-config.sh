@@ -196,9 +196,9 @@ echo "create keepalived files success. config/$K8SHA_HOST3/keepalived/"
 
 # create all nginx-lb files
 
-cp nginx-lb/docker-compose.yaml config/$K8SHA_HOST1/nginx-lb/
-cp nginx-lb/docker-compose.yaml config/$K8SHA_HOST2/nginx-lb/
-cp nginx-lb/docker-compose.yaml config/$K8SHA_HOST3/nginx-lb/
+cp nginx-lb/nginx-lb.yaml config/$K8SHA_HOST1/nginx-lb/
+cp nginx-lb/nginx-lb.yaml config/$K8SHA_HOST2/nginx-lb/
+cp nginx-lb/nginx-lb.yaml config/$K8SHA_HOST3/nginx-lb/
 
 sed \
 -e "s/K8SHA_IP1/$K8SHA_IP1/g" \
