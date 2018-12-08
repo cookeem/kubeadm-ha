@@ -13,7 +13,7 @@ spec:
       path: /etc/kubernetes/nginx-lb.conf
   containers:
   - name: nginx-lb
-    image: devops-reg.io/k8s/nginx:latest
+    image: nginx:latest
     imagePullPolicy: IfNotPresent
     livenessProbe:
       failureThreshold: 8
