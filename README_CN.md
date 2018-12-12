@@ -50,6 +50,8 @@
     1. [worker加入高可用集群](#worker加入高可用集群)
 1. [集群验证](#集群验证)
     1. [验证集群高可用设置](#验证集群高可用设置)
+1. [集群升级](#集群升级)
+    1. [集群升级v1.11.1升级v1.11.5](#集群升级v1-11-1升级v1-11-5)
 
 ### 部署架构
 
@@ -1121,3 +1123,153 @@ kubectl delete deploy,svc,hpa nginx-server
 [返回目录](#目录)
 
 - 至此kubernetes高可用集群完成部署，并测试通过 😃
+
+[返回目录](#目录)
+
+### 集群升级
+
+#### 集群升级v1.11.1升级v1.11.5
+
+- Kubernetes最近爆出高危安全漏洞（CVE-2018-1002105），v1.11.x建议升级到v1.11.5或更新版本以修复漏洞，详细参见: https://thenewstack.io/critical-vulnerability-allows-kubernetes-node-hacking/
+
+- 在所有节点上更新kubelet和kubeadm到v1.11.5
+
+```
+# 更新kubelet和kubeadm到v1.11.5
+$ yum -y update kubeadm-1.11.5-0.x86_64 kubelet-1.11.5-0.x86_64
+
+# 重启服务
+$ systemctl daemon-reload
+$ systemctl restart kubelet
+```
+
+- 在所有节点上拉取v1.11.5的kubernetes镜像
+
+```
+$ docker pull k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
+$ docker pull k8s.gcr.io/kube-scheduler-amd64:v1.11.5
+$ docker pull k8s.gcr.io/kube-apiserver-amd64:v1.11.5
+$ docker pull k8s.gcr.io/kube-proxy-amd64:v1.11.5
+```
+
+- 在所有master节点上进行版本更新
+
+```
+# 查看版本更新的各个模块的支持情况
+$ kubeadm upgrade plan
+Upgrade to the latest stable version:
+
+COMPONENT            CURRENT   AVAILABLE
+API Server           v1.11.1   v1.11.5
+Controller Manager   v1.11.1   v1.11.5
+Scheduler            v1.11.1   v1.11.5
+Kube Proxy           v1.11.1   v1.11.5
+CoreDNS              1.1.3     1.1.3
+Etcd                 3.2.18    3.2.18
+
+You can now apply the upgrade by executing the following command:
+
+        kubeadm upgrade apply v1.11.5
+
+# 正式执行更新，输出如下：
+$ kubeadm upgrade apply v1.11.5
+[preflight] Running pre-flight checks.
+[upgrade] Making sure the cluster is healthy:
+[upgrade/config] Making sure the configuration is correct:
+[upgrade/config] Reading configuration from the cluster...
+[upgrade/config] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -oyaml'
+[upgrade/apply] Respecting the --cri-socket flag that is set with higher priority than the config file.
+[upgrade/version] You have chosen to change the cluster version to "v1.11.5"
+[upgrade/versions] Cluster version: v1.11.1
+[upgrade/versions] kubeadm version: v1.11.5
+[upgrade/confirm] Are you sure you want to proceed with the upgrade? [y/N]: y
+[upgrade/prepull] Will prepull images for components [kube-apiserver kube-controller-manager kube-scheduler etcd]
+[upgrade/apply] Upgrading your Static Pod-hosted control plane to version "v1.11.5"...
+Static pod: kube-apiserver-pro-master01 hash: f8a81b3b047edadfaea2759697caf09e
+Static pod: kube-controller-manager-pro-master01 hash: 94369a77f84beef59df8e6c0c075d6eb
+Static pod: kube-scheduler-pro-master01 hash: 537879acc30dd5eff5497cb2720a6d64
+[upgrade/staticpods] Writing new Static Pod manifests to "/etc/kubernetes/tmp/kubeadm-upgraded-manifests249561254"
+[controlplane] wrote Static Pod manifest for component kube-apiserver to "/etc/kubernetes/tmp/kubeadm-upgraded-manifests249561254/kube-apiserver.yaml"
+[controlplane] wrote Static Pod manifest for component kube-controller-manager to "/etc/kubernetes/tmp/kubeadm-upgraded-manifests249561254/kube-controller-manager.yaml"
+[controlplane] wrote Static Pod manifest for component kube-scheduler to "/etc/kubernetes/tmp/kubeadm-upgraded-manifests249561254/kube-scheduler.yaml"
+[certificates] Using the existing etcd/ca certificate and key.
+[certificates] Using the existing apiserver-etcd-client certificate and key.
+[upgrade/staticpods] Moved new manifest to "/etc/kubernetes/manifests/kube-apiserver.yaml" and backed up old manifest to "/etc/kubernetes/tmp/kubeadm-backup-manifests-2018-12-05-18-26-14/kube-apiserver.yaml"
+[upgrade/staticpods] Waiting for the kubelet to restart the component
+Static pod: kube-apiserver-pro-master01 hash: f8a81b3b047edadfaea2759697caf09e
+Static pod: kube-apiserver-pro-master01 hash: 145a58c8db4210f1eef7891f55dc6db6
+[apiclient] Found 3 Pods for label selector component=kube-apiserver
+[upgrade/staticpods] Component "kube-apiserver" upgraded successfully!
+[upgrade/staticpods] Moved new manifest to "/etc/kubernetes/manifests/kube-controller-manager.yaml" and backed up old manifest to "/etc/kubernetes/tmp/kubeadm-backup-manifests-2018-12-05-18-26-14/kube-controller-manager.yaml"
+[upgrade/staticpods] Waiting for the kubelet to restart the component
+Static pod: kube-controller-manager-pro-master01 hash: 94369a77f84beef59df8e6c0c075d6eb
+Static pod: kube-controller-manager-pro-master01 hash: c0de2763a74e6511dd773bffaec3a971
+[apiclient] Found 3 Pods for label selector component=kube-controller-manager
+[upgrade/staticpods] Component "kube-controller-manager" upgraded successfully!
+[upgrade/staticpods] Moved new manifest to "/etc/kubernetes/manifests/kube-scheduler.yaml" and backed up old manifest to "/etc/kubernetes/tmp/kubeadm-backup-manifests-2018-12-05-18-26-14/kube-scheduler.yaml"
+[upgrade/staticpods] Waiting for the kubelet to restart the component
+Static pod: kube-scheduler-pro-master01 hash: 537879acc30dd5eff5497cb2720a6d64
+Static pod: kube-scheduler-pro-master01 hash: 03ccb6e070f017ec5bf3aea2233e9c9e
+[apiclient] Found 3 Pods for label selector component=kube-scheduler
+[upgrade/staticpods] Component "kube-scheduler" upgraded successfully!
+[uploadconfig] storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[kubelet] Creating a ConfigMap "kubelet-config-1.11" in namespace kube-system with the configuration for the kubelets in the cluster
+[kubelet] Downloading configuration for the kubelet from the "kubelet-config-1.11" ConfigMap in the kube-system namespace
+[kubelet] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[patchnode] Uploading the CRI Socket information "/var/run/dockershim.sock" to the Node API object "pro-master01" as an annotation
+[bootstraptoken] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstraptoken] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstraptoken] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+[upgrade/successful] SUCCESS! Your cluster was upgraded to "v1.11.5". Enjoy!
+
+[upgrade/kubelet] Now that your control plane is upgraded, please proceed with upgrading your kubelets if you haven't already done so.
+```
+
+- 检查节点更新情况
+
+```
+# 检查所有节点的VERSION
+$ kubectl get no
+NAME           STATUS    ROLES     AGE       VERSION
+k8s-master01   Ready     master    43d       v1.11.5
+k8s-master02   Ready     master    43d       v1.11.5
+k8s-master03   Ready     master    43d       v1.11.5
+k8s-node01     Ready     <none>    42d       v1.11.5
+k8s-node02     Ready     <none>    43d       v1.11.5
+k8s-node03     Ready     <none>    43d       v1.11.5
+k8s-node04     Ready     <none>    43d       v1.11.5
+k8s-node05     Ready     <none>    43d       v1.11.5
+k8s-node06     Ready     <none>    43d       v1.11.5
+k8s-node07     Ready     <none>    43d       v1.11.5
+k8s-node08     Ready     <none>    43d       v1.11.5
+
+# 检查相关pod镜像是否已经更新
+$ kubectl get po -n kube-system -o yaml | grep "image:" | grep "kube-"
+      image: k8s.gcr.io/kube-apiserver-amd64:v1.11.5
+      image: k8s.gcr.io/kube-apiserver-amd64:v1.11.5
+      image: k8s.gcr.io/kube-apiserver-amd64:v1.11.5
+      image: k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
+      image: k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
+      image: k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-proxy-amd64:v1.11.5
+      image: k8s.gcr.io/kube-scheduler-amd64:v1.11.5
+      image: k8s.gcr.io/kube-scheduler-amd64:v1.11.5
+      image: k8s.gcr.io/kube-scheduler-amd64:v1.11.5
+```
+
+- 至此kubernetes高可用集群完成到v1.11.5的升级 😃
+
+[返回目录](#目录)
