@@ -12491,23 +12491,23 @@ metadata:
     app: istio-ingressgateway
     istio: ingressgateway
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: istio-ingressgateway
     istio: ingressgateway
   ports:
     -
       name: http2
-      nodePort: 31380
+      nodePort: 31000
       port: 80
       targetPort: 80
     -
       name: https
-      nodePort: 31390
+      nodePort: 31001
       port: 443
     -
       name: tcp
-      nodePort: 31400
+      nodePort: 31002
       port: 31400
     -
       name: tcp-pilot-grpc-tls
@@ -12641,10 +12641,12 @@ metadata:
 spec:
   selector:
     app: prometheus
+  type: NodePort
   ports:
   - name: http-prometheus
     protocol: TCP
     port: 9090
+    nodePort: 31003
 
 ---
 # Source: istio/charts/security/templates/service.yaml
@@ -12682,12 +12684,13 @@ metadata:
     release: istio
     heritage: Tiller
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - port: 8088
       targetPort: 8088
       protocol: TCP
       name: http
+      nodePort: 31004
   selector:
     app: servicegraph
 
@@ -14215,11 +14218,13 @@ items:
       release: istio
       heritage: Tiller
   spec:
+    type: NodePort
     ports:
       - name: query-http
         port: 16686
         protocol: TCP
         targetPort: 16686
+        nodePort: 31005
     selector:
       app: jaeger
 - apiVersion: v1
