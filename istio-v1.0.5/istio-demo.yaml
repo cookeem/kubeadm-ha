@@ -12545,12 +12545,13 @@ metadata:
     release: istio
     heritage: Tiller
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - port: 3000
       targetPort: 3000
       protocol: TCP
       name: http
+      nodePort: 31006
   selector:
     app: grafana
 
