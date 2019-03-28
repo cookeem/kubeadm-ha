@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: grafana
+    spec:
+      nodeSelector:
+        app: kube-system
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: grafana
+        image: grafana/grafana:6.0.2
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "admin123"
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: grafana-storage
+      volumes:
+      - name: grafana-storage
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kubernetes.io/cluster-service: 'true'
+  name: grafana
+  namespace: kube-system
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 3000
+    nodePort: 30001
+  selector:
+    k8s-app: grafana

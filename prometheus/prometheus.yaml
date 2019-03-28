@@ -1,0 +1,376 @@
+---
+# Prometheus configuration format https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: kube-system
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: EnsureExists
+data:
+  alert-demo-rules.yaml: |
+    groups:
+    - name: pods.rules
+      rules:
+      - alert: pods-abnormal-status
+        expr: kube_pod_status_phase{phase=~"Failed|Pending|Unknown"} == 1
+        for: 30s
+        labels:
+          severity: critical
+          service: pods
+        annotations:
+          description: namespace {{ $labels.namespace }} pod {{ $labels.pod }} now is {{ $labels.phase }} state
+          summary: Pod state abnormal
+
+  prometheus.yml: |
+    global:
+      scrape_interval: 10s
+    rule_files:
+    - /etc/config/alert-demo-rules.yaml
+    scrape_configs:
+    - job_name: prometheus
+      static_configs:
+      - targets:
+        - localhost:9090
+
+    - job_name: kubernetes-apiservers
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - action: keep
+        regex: default;kubernetes;https
+        source_labels:
+        - __meta_kubernetes_namespace
+        - __meta_kubernetes_service_name
+        - __meta_kubernetes_endpoint_port_name
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+    - job_name: kubernetes-nodes-kubelet
+      kubernetes_sd_configs:
+      - role: node
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+    - job_name: kubernetes-nodes-cadvisor
+      kubernetes_sd_configs:
+      - role: node
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __metrics_path__
+        replacement: /metrics/cadvisor
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+    - job_name: kubernetes-service-endpoints
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - action: keep
+        regex: true
+        source_labels:
+        - __meta_kubernetes_service_annotation_prometheus_io_scrape
+      - action: replace
+        regex: (https?)
+        source_labels:
+        - __meta_kubernetes_service_annotation_prometheus_io_scheme
+        target_label: __scheme__
+      - action: replace
+        regex: (.+)
+        source_labels:
+        - __meta_kubernetes_service_annotation_prometheus_io_path
+        target_label: __metrics_path__
+      - action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        source_labels:
+        - __address__
+        - __meta_kubernetes_service_annotation_prometheus_io_port
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_namespace
+        target_label: kubernetes_namespace
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_service_name
+        target_label: kubernetes_name
+
+    - job_name: kubernetes-services
+      kubernetes_sd_configs:
+      - role: service
+      metrics_path: /probe
+      params:
+        module:
+        - http_2xx
+      relabel_configs:
+      - action: keep
+        regex: true
+        source_labels:
+        - __meta_kubernetes_service_annotation_prometheus_io_probe
+      - source_labels:
+        - __address__
+        target_label: __param_target
+      - replacement: blackbox
+        target_label: __address__
+      - source_labels:
+        - __param_target
+        target_label: instance
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - source_labels:
+        - __meta_kubernetes_namespace
+        target_label: kubernetes_namespace
+      - source_labels:
+        - __meta_kubernetes_service_name
+        target_label: kubernetes_name
+
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - action: keep
+        regex: true
+        source_labels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+      - action: replace
+        regex: (.+)
+        source_labels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_path
+        target_label: __metrics_path__
+      - action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        source_labels:
+        - __address__
+        - __meta_kubernetes_pod_annotation_prometheus_io_port
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_namespace
+        target_label: kubernetes_namespace
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_pod_name
+        target_label: kubernetes_pod_name
+    alerting:
+      alertmanagers:
+      - kubernetes_sd_configs:
+          - role: pod
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          regex: kube-system
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+          regex: alertmanager
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_container_port_number]
+          regex:
+          action: drop
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: kube-system
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+  - nonResourceURLs:
+      - "/metrics"
+    verbs:
+      - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: kube-system
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: prometheus
+  namespace: kube-system
+  labels:
+    kubernetes.io/name: "Prometheus"
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+      nodePort: 30002
+  selector:
+    k8s-app: prometheus
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  namespace: kube-system
+  labels:
+    k8s-app: prometheus
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+spec:
+  serviceName: "prometheus"
+  replicas: 1
+  podManagementPolicy: "Parallel"
+  updateStrategy:
+   type: "RollingUpdate"
+  selector:
+    matchLabels:
+      k8s-app: prometheus
+  template:
+    metadata:
+      labels:
+        k8s-app: prometheus
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      priorityClassName: system-cluster-critical
+      serviceAccountName: prometheus
+      nodeSelector:
+        app: kube-system
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      initContainers:
+      - name: "init-chown-data"
+        image: "busybox:latest"
+        imagePullPolicy: "IfNotPresent"
+        command: ["chown", "-R", "65534:65534", "/data"]
+        volumeMounts:
+        - name: prometheus-data
+          mountPath: /data
+          subPath: ""
+      containers:
+        - name: prometheus-server-configmap-reload
+          image: "jimmidyson/configmap-reload:v0.1"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --volume-dir=/etc/config
+            - --webhook-url=http://localhost:9090/-/reload
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+              readOnly: true
+          resources:
+            limits:
+              cpu: 10m
+              memory: 10Mi
+            requests:
+              cpu: 10m
+              memory: 10Mi
+
+        - name: prometheus-server
+          image: "prom/prometheus:v2.8.0"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --config.file=/etc/config/prometheus.yml
+            - --storage.tsdb.path=/data
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+            - --web.enable-lifecycle
+          ports:
+            - containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          # based on 10 running nodes with 30 pods each
+          resources:
+            limits:
+              cpu: 200m
+              memory: 1000Mi
+            requests:
+              cpu: 200m
+              memory: 1000Mi
+
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: prometheus-data
+              mountPath: /data
+              subPath: ""
+      terminationGracePeriodSeconds: 300
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+        - name: prometheus-data
+          emptyDir: {}

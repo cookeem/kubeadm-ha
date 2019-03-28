@@ -1,3 +1,81 @@
+## 安装前准备
+
+## 安装组件
+
+## 创建配置文件
+
+## 启动load-balancer
+
+### 启动keepalived
+
+### 启动nginx-lb
+
+## 初始化高可用master集群
+
+## 把nginx-lb作为kubernetes集群基础服务
+
+## 添加worker节点
+
+## 集群高可用验证测试
+
+### nodePort测试
+
+### 集群内服务测试
+
+## 安装组件
+
+### kubernetes-dashboard
+
+#### 安装kubernetes-dashboard
+
+#### 登录kubernetes-dashboard
+
+#### 使用kubernetes-dashboard管理集群
+
+### heapster
+
+#### 安装heapster
+
+#### 验证heapster度量信息采集
+
+### metrics-server
+
+#### 安装metrics-server
+
+### prometheus
+
+#### 安装prometheus相关组件
+
+#### 使用prometheus监控性能
+
+#### 使用alertmanager验证告警
+
+### grafana
+
+#### 安装grafana
+
+#### 使用grafana呈现prometheus性能指标
+
+### istio
+
+#### 安装istio
+
+#### 使用istio进行AB测试
+
+#### 进行服务跟踪
+
+#### 进行流量监测
+
+### traefik
+
+#### 安装traefik
+
+#### 使用traefik作为边界路由器
+
+## 测试自动扩缩容
+
+## 证书到期更新
+
 ```bash
 # 第一个master执行
 $ kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs
@@ -172,8 +250,13 @@ $ kubectl completion bash > ~/.kube/completion.bash.inc
   " >> $HOME/.bash_profile
   source $HOME/.bash_profile
 
+# 允许master部署应用
+$ kubectl taint nodes --all node-role.kubernetes.io/master-
+
 # 安装kubernetes-dashboard
 $ kubectl label nodes demo-01.local app=kube-system
+$ kubectl label nodes demo-02.local app=kube-system
+$ kubectl label nodes demo-03.local app=kube-system
 
 $ kubectl apply -f /root/kubeadm-init/kubernetes-dashboard/kubernetes-dashboard.yaml
 secret/kubernetes-dashboard-certs created
