@@ -1,8 +1,64 @@
+# kubeadm-highavailiability (English / 中文) - 基于kubeadm的kubernetes高可用集群部署，支持v1.14.x v1.11.x v1.9.x v1.7.x v1.6.x版本
+
+![k8s logo](images/kubernetes.png)
+
+- [中文文档(for v1.14.x版本)](README_CN.md)
+- [English document(for v1.14.x version)](README.md)
+- [中文文档(for v1.11.x版本)](v1.11/README_CN.md)
+- [English document(for v1.11.x version)](v1.11/README.md)
+- [中文文档(for v1.9.x版本)](v1.9/README_CN.md)
+- [English document(for v1.9.x version)](v1.9/README.md)
+- [中文文档(for v1.7.x版本)](v1.7/README_CN.md)
+- [English document(for v1.7.x version)](v1.7/README.md)
+- [中文文档(for v1.6.x版本)](v1.6/README_CN.md)
+- [English document(for v1.6.x version)](v1.6/README.md)
+
+---
+
+- [GitHub项目地址](https://github.com/cookeem/kubeadm-ha/)
+- [OSChina项目地址](https://git.oschina.net/cookeem/kubeadm-ha/)
+
+---
+
+- 该指引适用于v1.11.x版本的kubernetes集群
+
+> v1.11.x版本支持在control plane上启动TLS的etcd高可用集群。
+
+
+
+## 部署架构
+
+### 部署架构概要
+
+![](images/kubernetes-ha-architecture.png)
+
+### 主机清单
+
+### 版本信息
+
 ## 安装前准备
+
+### 系统更新
+
+### 防火墙设置
+
+### 系统参数设置
+
+### master节点互信设置
 
 ## 安装组件
 
+### docker安装
+
+### kubernetes管理软件安装
+
+### keepalived安装
+
 ## 创建配置文件
+
+### 生成相关配置文件
+
+### 配置文件清单
 
 ## 启动load-balancer
 
@@ -11,6 +67,10 @@
 ### 启动nginx-lb
 
 ## 初始化高可用master集群
+
+### 安装第一个master节点
+
+### 把其他master节点加入controlplane控制平面
 
 ## 把nginx-lb作为kubernetes集群基础服务
 
