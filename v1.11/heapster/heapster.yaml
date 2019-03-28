@@ -18,8 +18,6 @@ spec:
         k8s-app: heapster
     spec:
       serviceAccountName: heapster
-      nodeSelector:
-        app: kube-system
       containers:
       - name: heapster
         image: k8s.gcr.io/heapster-amd64:v1.5.4
@@ -31,9 +29,6 @@ spec:
         - --source=kubernetes.summary_api:https://kubernetes.default?kubeletHttps=true&kubeletPort=10250&insecure=true
         - --sink=influxdb:http://monitoring-influxdb.kube-system.svc:8086
         - --metric-resolution=30s
-      tolerations:
-      - key: node-role.kubernetes.io/master
-        effect: NoSchedule
 ---
 apiVersion: v1
 kind: Service

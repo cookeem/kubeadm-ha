@@ -11,17 +11,14 @@ spec:
         task: monitoring
         k8s-app: influxdb
     spec:
-      # nodeSelector:
-      #   node-role.kubernetes.io/master: ""
       nodeSelector:
-        app: kube-system
+        node-role.kubernetes.io/master: ""
       containers:
       - name: influxdb
-        image: k8s.gcr.io/heapster-influxdb-amd64:v1.5.2-fixed
+        image: k8s.gcr.io/heapster-influxdb-amd64:v1.5.2
         volumeMounts:
         - mountPath: /data
           name: influxdb-storage
-        command: ["/usr/bin/influxd", "--config", "/etc/config.toml"]
       volumes:
       - name: influxdb-storage
         emptyDir: {}
