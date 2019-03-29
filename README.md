@@ -20,17 +20,124 @@
 
 ---
 
-- 该指引适用于v1.11.x版本的kubernetes集群
+## 目录
 
-> v1.11.x版本支持在control plane上启动TLS的etcd高可用集群。
+- 该指引适用于v1.14.x版本的kubernetes集群
 
+- [部署架构](#部署架构)
+
+  - [部署架构概要](#部署架构概要)
+  
+  - [主机清单](#主机清单)
+  
+  - [版本信息](#版本信息)
+  
+- [安装前准备](#安装前准备)
+
+  - [系统更新](#系统更新)
+  
+  - [防火墙设置](#防火墙设置)
+  
+  - [系统参数设置](#系统参数设置)
+  
+  - [master节点互信设置](#master节点互信设置)
+  
+- [安装组件](#安装组件)
+
+  - [docker安装](#docker安装)
+  
+  - [kubernetes管理软件安装](#kubernetes管理软件安装)
+  
+  - [keepalived安装](#keepalived安装)
+  
+- [创建配置文件](#创建配置文件)
+
+  - [生成相关配置文件](#生成相关配置文件)
+  
+  - [配置文件清单](#配置文件清单)
+  
+- [启动load-balancer](#启动loadbalancer)
+
+  - [启动keepalived](#启动keepalived)
+  
+  - [启动nginx-lb](#启动nginxlb)
+  
+- [初始化高可用master集群](#初始化高可用master集群)
+
+  - [安装第一个master节点](#安装第一个master节点)
+  
+  - [把其他master节点加入controlplane控制平面](#把其他master节点加入controlplane控制平面)
+  
+- [把nginx-lb作为kubernetes集群基础服务](#把nginxlb作为kubernetes集群基础服务)
+
+- [添加worker节点](#添加worker节点)
+
+- [安装组件](#安装组件)
+
+  - [kubernetes-dashboard](#kubernetes-dashboard)
+  
+    - [安装kubernetes-dashboard](#安装kubernetes-dashboard)
+    
+    - [登录kubernetes-dashboard](#登录kubernetes-dashboard)
+    
+    - [使用kubernetes-dashboard管理集群](#使用kubernetes-dashboard管理集群)
+    
+  - [heapster](#heapster)
+  
+    - [安装heapster](#安装heapster)
+    
+    - [验证heapster度量信息采集](#验证heapster度量信息采集)
+    
+  - [metrics-server](#metrics-server)
+  
+    - [安装metrics-server](#安装metrics-server)
+    
+  - [prometheus](#prometheus)
+  
+    - [安装prometheus相关组件](#安装prometheus相关组件)
+    
+    - [使用prometheus监控性能](#使用prometheus监控性能)
+    
+    - [使用alertmanager验证告警](#使用alertmanager验证告警)
+    
+  - [grafana](#grafana)
+  
+    - [安装grafana](#安装grafana)
+    
+    - [使用grafana呈现prometheus性能指标](#使用grafana呈现prometheus性能指标)
+    
+  - [istio](#istio)
+  
+    - [安装istio](#安装istio)
+    
+    - [使用istio进行AB测试](#使用istio进行AB测试)
+    
+    - [进行服务跟踪](#进行服务跟踪)
+    
+    - [进行流量监测](#进行流量监测)
+    
+  - [traefik](#traefik)
+  
+    - [安装traefik](#安装traefik)
+    
+    - [使用traefik作为边界路由器](#使用traefik作为边界路由器)
+    
+- [集群验证](#集群验证)
+
+  - [集群高可用验证测试](#集群高可用验证测试)
+  
+  - [nodePort测试](#nodeport测试)
+  
+  - [集群内服务测试](#集群内服务测试)
+  
+  - [测试自动扩缩容](#测试自动扩缩容)
+  
+- [证书到期更新](#证书到期更新)
 
 
 ## 部署架构
 
 ### 部署架构概要
-
-![](images/kubernetes-ha-architecture.png)
 
 ### 主机清单
 
@@ -75,12 +182,6 @@
 ## 把nginx-lb作为kubernetes集群基础服务
 
 ## 添加worker节点
-
-## 集群高可用验证测试
-
-### nodePort测试
-
-### 集群内服务测试
 
 ## 安装组件
 
@@ -132,7 +233,15 @@
 
 #### 使用traefik作为边界路由器
 
-## 测试自动扩缩容
+## 集群验证
+
+### 集群高可用验证测试
+
+### nodePort测试
+
+### 集群内服务测试
+
+### 测试自动扩缩容
 
 ## 证书到期更新
 
