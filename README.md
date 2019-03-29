@@ -49,6 +49,7 @@
   - [把其他master节点加入controlplane控制平面](#把其他master节点加入controlplane控制平面)
 - [把nginx-lb作为kubernetes集群基础服务](#把nginxlb作为kubernetes集群基础服务)
 - [添加worker节点](#添加worker节点)
+- [设置kubectl自动完成](#设置kubectl自动完成)
 - [安装组件](#安装组件)
   - [kubernetes-dashboard](#kubernetes-dashboard)
     - [安装kubernetes-dashboard](#安装kubernetes-dashboard)
@@ -959,7 +960,19 @@ demo-03.local   Ready    master   90m   v1.14.0
 demo-04.local   Ready    <none>   14s   v1.14.0
 ```
 
-- 高可用kubernetes集群已经完成安装
+## 设置kubectl自动完成
+
+```bash
+# kubectl自动完成
+$ yum install -y bash-completion
+$ source <(kubectl completion bash)
+$ kubectl completion bash > ~/.kube/completion.bash.inc
+  printf "
+  # Kubectl shell completion
+  source '$HOME/.kube/completion.bash.inc'
+  " >> $HOME/.bash_profile
+  source $HOME/.bash_profile
+```
 
 ## 安装组件
 
@@ -1027,15 +1040,6 @@ demo-04.local   Ready    <none>   14s   v1.14.0
 
 
 
-# kubectl自动完成
-$ yum install -y bash-completion
-$ source <(kubectl completion bash)
-$ kubectl completion bash > ~/.kube/completion.bash.inc
-  printf "
-  # Kubectl shell completion
-  source '$HOME/.kube/completion.bash.inc'
-  " >> $HOME/.bash_profile
-  source $HOME/.bash_profile
 
 # 允许master部署应用
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
