@@ -219,6 +219,90 @@ $ yum update -y
 
 ### 防火墙设置
 
+- master节点需要开放的端口
+
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 16443*    | Load balancer Kubernetes API server port
+TCP | Inbound | 6443*     | Kubernetes API server
+TCP | Inbound | 4001      | etcd listen client port
+TCP | Inbound | 2379-2380 | etcd server client API
+TCP | Inbound | 10250     | Kubelet API
+TCP | Inbound | 10251     | kube-scheduler
+TCP | Inbound | 10252     | kube-controller-manager
+TCP | Inbound | 30000-32767 | NodePort Services
+
+- 所有master节点设置防火墙策略
+
+```bash
+# 开放端口策略
+$ firewall-cmd --zone=public --add-port=16443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=6443/tcp --permanent
+$ firewall-cmd --zone=public --add-port=4001/tcp --permanent
+$ firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10251/tcp --permanent
+$ firewall-cmd --zone=public --add-port=10252/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+$ firewall-cmd --reload
+
+# 查看端口开放状态
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources:
+  services: ssh dhcpv6-client
+  ports: 4001/tcp 6443/tcp 2379-2380/tcp 10250/tcp 10251/tcp 10252/tcp 30000-32767/tcp
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+```
+
+- worker节点需要开放的端口
+
+协议 | 方向 | 端口 | 说明
+:--- | :--- | :--- | :---
+TCP | Inbound | 10250       | Kubelet API
+TCP | Inbound | 30000-32767 | NodePort Services
+
+- 所有worker节点设置防火墙策略
+
+```sh
+# 开放端口策略
+$ firewall-cmd --zone=public --add-port=10250/tcp --permanent
+$ firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+$ firewall-cmd --reload
+
+# 查看端口开放状态
+$ firewall-cmd --list-all --zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens2f1 ens1f0 nm-bond
+  sources:
+  services: ssh dhcpv6-client
+  ports: 10250/tcp 30000-32767/tcp
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+```
+
+- 所有节点必须清理iptables上的icmp禁止策略，否则会引起集群网络检测异常
+
+```bash
+# 为防止firewalld服务重启iptables被重置，把策略更新放在crontab中定期更新
+$ crontab -e
+* * * * * /usr/sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
+```
+
 ### 系统参数设置
 
 ### master节点互信设置
