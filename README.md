@@ -312,6 +312,19 @@ $ crontab -e
 * * * * * /usr/sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
 ```
 
+- 所有节点设置`/etc/hosts`主机名，请根据实际情况进行配置
+
+```bash
+$ cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+172.20.10.9     demo-vip.local
+172.20.10.10	  demo-01.local
+172.20.10.11    demo-02.local
+172.20.10.12    demo-03.local
+172.20.10.13    demo-04.local
+```
+
 ### 系统参数设置
 
 - 在所有节点上设置SELINUX为permissive模式
@@ -337,7 +350,7 @@ EOF
 $ sysctl --system
 ```
 
-- 在所有kubernetes节点上禁用swap
+- 在所有节点上禁用swap
 
 ```sh
 $ swapoff -a
@@ -349,11 +362,7 @@ $ vi /etc/fstab
 # 确认swap已经被禁用
 $ cat /proc/swaps
 Filename                Type        Size    Used    Priority
-```
 
-- 在所有kubernetes节点上重启主机
-
-```sh
 # 重启主机
 $ reboot
 ```
@@ -362,17 +371,251 @@ $ reboot
 
 ### master节点互信设置
 
+- 在所有master节点上进行互信免密码登录设置
+
+```bash
+# 在所有master节点上上创建本机公钥
+$ ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+
+# 在demo-01.local上将id_rsa.pub（公钥）追加到授权key文件中
+$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+# 在demo-01.local上将授权key文件复制到demo-02.local上
+$ scp ~/.ssh/authorized_keys root@demo-02.local:~/.ssh/
+
+# 在demo-02.local上将id_rsa.pub（公钥）追加到授权key文件中
+$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+# 在demo-02.local上将授权key文件复制到demo-03.local上
+$ scp ~/.ssh/authorized_keys root@demo-03.local:~/.ssh/
+
+# 在demo-03.local上将id_rsa.pub（公钥）追加到授权key文件中
+$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+# 在demo-03.local上将授权key文件复制到demo-01.local和demo-02.local上
+$ scp ~/.ssh/authorized_keys root@demo-01.local:~/.ssh/
+$ scp ~/.ssh/authorized_keys root@demo-02.local:~/.ssh/
+
+# 在所有master节点上执行ssh，查看是否互信免密码登录
+$ ssh demo-01.local hostname && \
+ssh demo-02.local hostname && \
+ssh demo-03.local hostname
+demo-01.local
+demo-02.local
+demo-03.local
+```
+
 ## 安装组件
 
 ### docker安装
 
+- 设置docker-ce的安装yum源
+
+```bash
+# 安装yum管理工具
+$ yum install -y yum-utils
+
+# 添加阿里云的yum源
+$ yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+```
+
+- 安装docker-ce
+
+```bash
+# 查看可用的docker-ce版本，最新版为18.09.3-3.el7
+$ yum list docker-ce --showduplicates
+已加载插件：fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirrors.aliyun.com
+ * elrepo: mirror-hk.koddos.net
+ * extras: mirrors.aliyun.com
+ * updates: mirrors.aliyun.com
+已安装的软件包
+docker-ce.x86_64                 3:18.09.3-3.el7                         @docker-ce-stable
+可安装的软件包
+docker-ce.x86_64                 17.03.0.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.03.1.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.03.2.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.03.3.ce-1.el7                        docker-ce-stable 
+docker-ce.x86_64                 17.06.0.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.06.1.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.06.2.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.09.0.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.09.1.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.12.0.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 17.12.1.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 18.03.0.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 18.03.1.ce-1.el7.centos                 docker-ce-stable 
+docker-ce.x86_64                 18.06.0.ce-3.el7                        docker-ce-stable 
+docker-ce.x86_64                 18.06.1.ce-3.el7                        docker-ce-stable 
+docker-ce.x86_64                 18.06.2.ce-3.el7                        docker-ce-stable 
+docker-ce.x86_64                 18.06.3.ce-3.el7                        docker-ce-stable 
+docker-ce.x86_64                 3:18.09.0-3.el7                         docker-ce-stable 
+docker-ce.x86_64                 3:18.09.1-3.el7                         docker-ce-stable 
+docker-ce.x86_64                 3:18.09.2-3.el7                         docker-ce-stable 
+docker-ce.x86_64                 3:18.09.3-3.el7                         docker-ce-stable 
+
+# 安装docker-ce
+$ yum install -y 3:docker-ce-18.09.3-3.el7.x86_64
+
+# 启动docker服务
+$ systemctl enable docker && systemctl start docker
+
+# 查看docker版本
+$ docker version
+Client:
+ Version:           18.09.3
+ API version:       1.39
+ Go version:        go1.10.8
+ Git commit:        774a1f4
+ Built:             Thu Feb 28 06:33:21 2019
+ OS/Arch:           linux/amd64
+ Experimental:      false
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          18.09.3
+  API version:      1.39 (minimum version 1.12)
+  Go version:       go1.10.8
+  Git commit:       774a1f4
+  Built:            Thu Feb 28 06:02:24 2019
+  OS/Arch:          linux/amd64
+  Experimental:     false
+```
+
 ### kubernetes管理软件安装
+
+- 设置kubernetes安装yum源
+
+```bash
+# 配置kubernetes软件yum源
+$ cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+```
+
+- 安装kubernetes
+
+```bash
+# 查看yum上的kubernetes版本，这里最新版本是kubelet-1.14.0-0.x86_64
+$ yum search kubelet --showduplicates
+...
+kubelet-1.12.0-0.x86_64 : Container cluster management
+kubelet-1.12.1-0.x86_64 : Container cluster management
+kubelet-1.12.2-0.x86_64 : Container cluster management
+kubelet-1.12.3-0.x86_64 : Container cluster management
+kubelet-1.12.4-0.x86_64 : Container cluster management
+kubelet-1.12.5-0.x86_64 : Container cluster management
+kubelet-1.12.6-0.x86_64 : Container cluster management
+kubelet-1.12.7-0.x86_64 : Container cluster management
+kubelet-1.13.0-0.x86_64 : Container cluster management
+kubelet-1.13.1-0.x86_64 : Container cluster management
+kubelet-1.13.2-0.x86_64 : Container cluster management
+kubelet-1.13.3-0.x86_64 : Container cluster management
+kubelet-1.13.4-0.x86_64 : Container cluster management
+kubelet-1.13.5-0.x86_64 : Container cluster management
+kubelet-1.14.0-0.x86_64 : Container cluster management
+kubelet-1.14.0-0.x86_64 : Container cluster management
+...
+
+# 安装kubernetes组件
+$ yum install -y kubeadm-1.14.0-0.x86_64 kubelet-1.14.0-0.x86_64 kubectl-1.14.0-0.x86_64
+```
 
 ### keepalived安装
 
+- 安装keepalived
+
+```bash
+# 安装keepalived
+$ yum install -y keepalived
+```
+
+- 启动keepalived服务
+
+```bash
+# 启动keepalived服务
+$ systemctl enable keepalived && systemctl start keepalived
+```
+
 ## 创建配置文件
 
+- 拉取[https://github.com/cookeem/kubeadm-ha](https://github.com/cookeem/kubeadm-ha)代码，把kubeadm-ha代码放到第一个master节点`demo-01.local`的/root目录上
+
+```bash
+$ git clone https://github.com/cookeem/kubeadm-ha
+```
+
+- 核心配置文件如下
+
+```bash
+.
+├── create-config.sh # 自动生成相关配置文件的脚本
+├── kubeadm-config.yaml.tpl # kubeadm初始化配置文件模板
+├── calico
+│   └── calico.yaml.tpl # calico网络组件配置文件模板
+├── keepalived
+│   ├── check_apiserver.sh # keepalived自动检测脚本
+│   └── keepalived.conf.tpl # keepalived配置文件模板
+└── nginx-lb
+    ├── docker-compose.yaml # 使用docker-compose方式启动nginx-lb的配置文件
+    ├── nginx-lb.conf.tpl # nginx-lb配置文件
+    └── nginx-lb.yaml # 使用kubelet托管nginx-lb的配置文件
+```
+
 ### 生成相关配置文件
+
+- 配置`create-config.sh`脚本，以下内容请务必根据集群的情况进行配置
+
+```bash
+# master keepalived virtual ip address
+export K8SHA_VIP=172.20.10.9
+
+# master01 ip address
+export K8SHA_IP1=172.20.10.10
+
+# master02 ip address
+export K8SHA_IP2=172.20.10.11
+
+# master03 ip address
+export K8SHA_IP3=172.20.10.12
+
+# master keepalived virtual ip hostname
+export K8SHA_VHOST=demo-vip.local
+
+# master01 hostname
+export K8SHA_HOST1=demo-01.local
+
+# master02 hostname
+export K8SHA_HOST2=demo-02.local
+
+# master03 hostname
+export K8SHA_HOST3=demo-03.local
+
+# master01 network interface name
+export K8SHA_NETINF1=enp0s3
+
+# master02 network interface name
+export K8SHA_NETINF2=enp0s3
+
+# master03 network interface name
+export K8SHA_NETINF3=enp0s3
+
+# keepalived auth_pass config
+export K8SHA_KEEPALIVED_AUTH=412f7dc3bfed32194d1600c483e10ad1d
+
+# calico reachable ip address
+export K8SHA_CALICO_REACHABLE_IP=172.20.10.1
+
+# kubernetes CIDR pod subnet
+export K8SHA_CIDR=192.168.0.0
+```
 
 ### 配置文件清单
 

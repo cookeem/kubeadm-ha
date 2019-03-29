@@ -68,10 +68,6 @@ sed \
 -e "s/K8SHA_CIDR/${K8SHA_CIDR}/g" \
 kubeadm-config.yaml.tpl > kubeadm-config.yaml
 
-cp kubeadm-config.yaml config/$K8SHA_HOST1/kubeadm-config.yaml
-cp kubeadm-config.yaml config/$K8SHA_HOST2/kubeadm-config.yaml
-cp kubeadm-config.yaml config/$K8SHA_HOST3/kubeadm-config.yaml
-
 echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST1/kubeadm-config.yaml"
 echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST2/kubeadm-config.yaml"
 echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST3/kubeadm-config.yaml"
@@ -151,8 +147,6 @@ sed \
 calico/calico.yaml.tpl > calico/calico.yaml
 
 echo "create calico.yaml file success. calico/calico.yaml"
-
-scp -r config/$K8SHA_HOST1/kubeadm-config.yaml root@$K8SHA_HOST1:/root/
 
 scp -r config/$K8SHA_HOST1/nginx-lb root@$K8SHA_HOST1:/root/
 scp -r config/$K8SHA_HOST2/nginx-lb root@$K8SHA_HOST2:/root/
