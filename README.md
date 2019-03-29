@@ -163,6 +163,60 @@ traefik | v1.7.9 | ingress边界路由组件
 
 ### 系统更新
 
+- 更新操作系统内核
+
+```bash
+# 设置elrepo，linux内核更新yum源
+$ rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+$ rpm -Uvh https://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm
+
+# 查看最新的操作系统内核版本，这里版本为5.0.4-1.el7.elrepo
+$ yum --disablerepo="*" --enablerepo="elrepo-kernel" list available
+已加载插件：fastestmirror
+Loading mirror speeds from cached hostfile
+ * elrepo-kernel: mirror-hk.koddos.net
+可安装的软件包
+kernel-lt.x86_64                             4.4.177-1.el7.elrepo            elrepo-kernel
+kernel-lt-devel.x86_64                       4.4.177-1.el7.elrepo            elrepo-kernel
+kernel-lt-doc.noarch                         4.4.177-1.el7.elrepo            elrepo-kernel
+kernel-lt-headers.x86_64                     4.4.177-1.el7.elrepo            elrepo-kernel
+kernel-lt-tools.x86_64                       4.4.177-1.el7.elrepo            elrepo-kernel
+kernel-lt-tools-libs.x86_64                  4.4.177-1.el7.elrepo            elrepo-kernel
+kernel-lt-tools-libs-devel.x86_64            4.4.177-1.el7.elrepo            elrepo-kernel
+kernel-ml-devel.x86_64                       5.0.4-1.el7.elrepo              elrepo-kernel
+kernel-ml-doc.noarch                         5.0.4-1.el7.elrepo              elrepo-kernel
+kernel-ml-headers.x86_64                     5.0.4-1.el7.elrepo              elrepo-kernel
+kernel-ml-tools.x86_64                       5.0.4-1.el7.elrepo              elrepo-kernel
+kernel-ml-tools-libs.x86_64                  5.0.4-1.el7.elrepo              elrepo-kernel
+kernel-ml-tools-libs-devel.x86_64            5.0.4-1.el7.elrepo              elrepo-kernel
+perf.x86_64                                  5.0.4-1.el7.elrepo              elrepo-kernel
+python-perf.x86_64                           5.0.4-1.el7.elrepo              elrepo-kernel
+
+# 安装新版本内核kernel-ml-5.0.4-1.el7.elrepo
+$ yum --disablerepo="*" --enablerepo="elrepo-kernel" install -y kernel-ml-5.0.4-1.el7.elrepo
+
+# 修改/etc/default/grub的启动选项
+$ vi /etc/default/grub
+GRUB_DEFAULT=0
+
+# 创建grub启动配置文件
+$ grub2-mkconfig -o /boot/grub2/grub.cfg
+
+# 重启系统
+$ reboot
+
+# 验证系统版本，已经更新为5.0.4-1.el7.elrepo.x86_64
+$ uname -a
+Linux demo-01.local 5.0.4-1.el7.elrepo.x86_64 #1 SMP Sat Mar 23 18:00:44 EDT 2019 x86_64 x86_64 x86_64 GNU/Linux
+```
+
+- 更新系统软件包版本
+
+```bash
+# 更新系统软件包版本
+$ yum update -y
+```
+
 ### 防火墙设置
 
 ### 系统参数设置
