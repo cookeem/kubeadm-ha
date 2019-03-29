@@ -139,7 +139,17 @@
 
 ### 部署架构概要
 
+![](images/kubernetes-ha-architecture.png)
+
+- 如上图，kubernetes高可用集群我们使用`Stacked etcd topology`的模式进行部署，每一个master节点（control plane node）运行`kube-apiserver`、`kube-scheduler`、`kube-controller-manager`，每一个master节点同时也运行`etcd`作为集群运行状态存储。其中`kube-apiserver`以负载均衡（load balancer）的方式向worker节点提供服务。
+
 ### 主机清单
+
+主机名 | IP地址 | 说明 | 组件
+:--- | :--- | :--- | :---
+demo-vip.local     | 172.20.10.9 | keepalived浮动IP | 无
+demo-01.local ~ demo-03.local | 172.20.10.10 ~ 12 | master节点 * 3 | keepalived、nginx、kubelet、kube-apiserver、kube-scheduler、kube-controller-manager、etcd
+demo-04.local     | 172.20.10.13 | worker节点 * 1 | kubelet
 
 ### 版本信息
 
