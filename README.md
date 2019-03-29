@@ -25,113 +25,59 @@
 - 该指引适用于v1.14.x版本的kubernetes集群
 
 - [部署架构](#部署架构)
-
   - [部署架构概要](#部署架构概要)
-  
   - [主机清单](#主机清单)
-  
   - [版本信息](#版本信息)
-  
 - [安装前准备](#安装前准备)
-
   - [系统更新](#系统更新)
-  
   - [防火墙设置](#防火墙设置)
-  
   - [系统参数设置](#系统参数设置)
-  
   - [master节点互信设置](#master节点互信设置)
-  
 - [安装组件](#安装组件)
-
   - [docker安装](#docker安装)
-  
   - [kubernetes管理软件安装](#kubernetes管理软件安装)
-  
   - [keepalived安装](#keepalived安装)
-  
 - [创建配置文件](#创建配置文件)
-
   - [生成相关配置文件](#生成相关配置文件)
-  
   - [配置文件清单](#配置文件清单)
-  
 - [启动load-balancer](#启动loadbalancer)
-
   - [启动keepalived](#启动keepalived)
-  
   - [启动nginx-lb](#启动nginxlb)
-  
 - [初始化高可用master集群](#初始化高可用master集群)
-
   - [安装第一个master节点](#安装第一个master节点)
-  
   - [把其他master节点加入controlplane控制平面](#把其他master节点加入controlplane控制平面)
-  
 - [把nginx-lb作为kubernetes集群基础服务](#把nginxlb作为kubernetes集群基础服务)
-
 - [添加worker节点](#添加worker节点)
-
 - [安装组件](#安装组件)
-
   - [kubernetes-dashboard](#kubernetes-dashboard)
-  
     - [安装kubernetes-dashboard](#安装kubernetes-dashboard)
-    
     - [登录kubernetes-dashboard](#登录kubernetes-dashboard)
-    
     - [使用kubernetes-dashboard管理集群](#使用kubernetes-dashboard管理集群)
-    
   - [heapster](#heapster)
-  
     - [安装heapster](#安装heapster)
-    
     - [验证heapster度量信息采集](#验证heapster度量信息采集)
-    
   - [metrics-server](#metrics-server)
-  
     - [安装metrics-server](#安装metrics-server)
-    
   - [prometheus](#prometheus)
-  
     - [安装prometheus相关组件](#安装prometheus相关组件)
-    
     - [使用prometheus监控性能](#使用prometheus监控性能)
-    
     - [使用alertmanager验证告警](#使用alertmanager验证告警)
-    
   - [grafana](#grafana)
-  
     - [安装grafana](#安装grafana)
-    
     - [使用grafana呈现prometheus性能指标](#使用grafana呈现prometheus性能指标)
-    
   - [istio](#istio)
-  
     - [安装istio](#安装istio)
-    
     - [使用istio进行AB测试](#使用istio进行AB测试)
-    
     - [进行服务跟踪](#进行服务跟踪)
-    
     - [进行流量监测](#进行流量监测)
-    
   - [traefik](#traefik)
-  
     - [安装traefik](#安装traefik)
-    
     - [使用traefik作为边界路由器](#使用traefik作为边界路由器)
-    
 - [集群验证](#集群验证)
-
   - [集群高可用验证测试](#集群高可用验证测试)
-  
   - [nodePort测试](#nodeport测试)
-  
   - [集群内服务测试](#集群内服务测试)
-  
   - [测试自动扩缩容](#测试自动扩缩容)
-  
 - [证书到期更新](#证书到期更新)
 
 
@@ -157,8 +103,8 @@ demo-04.local     | 172.20.10.13 | worker节点 * 1 | kubelet
 
 ```bash
 # Linux发行版信息
-$ cat /etc/redhat-release 
-CentOS Linux release 7.6.1810 (Core) 
+$ cat /etc/redhat-release
+CentOS Linux release 7.6.1810 (Core)
 
 # Linux内核
 $ uname -a
@@ -316,16 +262,16 @@ You can now join any number of the control-plane node running the following comm
     --experimental-control-plane --certificate-key b1788f02d442c623d28f5281bb566bf4fcd9e739c45f127a95ea07b558538244
 
 Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
-As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use 
+As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
 "kubeadm init phase upload-certs --experimental-upload-certs" to reload certs afterward.
 
 Then you can join any number of worker nodes by running the following on each as root:
 
 kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
-    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954 
+    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954
 
 
-# 
+#
 $ cat << EOF >> ~/.bashrc
 export KUBECONFIG=/etc/kubernetes/admin.conf
 EOF
@@ -517,7 +463,7 @@ token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2V
 
 # 重建heapster-influxdb-amd64:v1.5.2镜像，修改/etc/config.toml文件
 $ docker run -ti --rm --entrypoint "/bin/sh" k8s.gcr.io/heapster-influxdb-amd64:v1.5.2
-sed -i "s/localhost/127.0.0.1/g" /etc/config.toml 
+sed -i "s/localhost/127.0.0.1/g" /etc/config.toml
 
 $ docker ps | grep heapster | grep bin
 a9aa804c95d7        k8s.gcr.io/heapster-influxdb-amd64:v1.5.2   "/bin/sh"                2 minutes ago       Up 2 minutes                            priceless_wilson
@@ -534,36 +480,36 @@ deployment.extensions/monitoring-influxdb created
 service/monitoring-influxdb created
 
 $ kubectl top pods -n kube-system
-NAME                                       CPU(cores)   MEMORY(bytes)   
-calico-kube-controllers-7bfdd87774-gh4rf   1m           13Mi            
-calico-node-4kcrh                          21m          66Mi            
-calico-node-4ljlm                          23m          65Mi            
-calico-node-wh5rs                          23m          65Mi            
-calico-node-wwmpf                          18m          64Mi            
-coredns-fb8b8dccf-7fp98                    2m           11Mi            
-coredns-fb8b8dccf-l8xzz                    2m           11Mi            
-etcd-demo-01.local                         39m          89Mi            
-etcd-demo-02.local                         52m          84Mi            
-etcd-demo-03.local                         38m          82Mi            
-heapster-665bbb7c6f-wd559                  1m           28Mi            
-kube-apiserver-demo-01.local               77m          229Mi           
-kube-apiserver-demo-02.local               68m          243Mi           
-kube-apiserver-demo-03.local               77m          219Mi           
-kube-controller-manager-demo-01.local      19m          51Mi            
-kube-controller-manager-demo-02.local      1m           16Mi            
-kube-controller-manager-demo-03.local      1m           14Mi            
-kube-proxy-9mcnp                           3m           15Mi            
-kube-proxy-mt6z6                           1m           14Mi            
-kube-proxy-qf9zp                           1m           15Mi            
-kube-proxy-sfhrs                           0m           14Mi            
-kube-scheduler-demo-01.local               11m          16Mi            
-kube-scheduler-demo-02.local               1m           13Mi            
-kube-scheduler-demo-03.local               11m          16Mi            
-kubernetes-dashboard-5688c4f8bd-g6fnc      0m           20Mi            
-monitoring-influxdb-fb5756876-xx56f        0m           21Mi            
-nginx-lb-demo-01.local                     31m          3Mi             
-nginx-lb-demo-02.local                     0m           2Mi             
-nginx-lb-demo-03.local                     0m           2Mi             
+NAME                                       CPU(cores)   MEMORY(bytes)
+calico-kube-controllers-7bfdd87774-gh4rf   1m           13Mi
+calico-node-4kcrh                          21m          66Mi
+calico-node-4ljlm                          23m          65Mi
+calico-node-wh5rs                          23m          65Mi
+calico-node-wwmpf                          18m          64Mi
+coredns-fb8b8dccf-7fp98                    2m           11Mi
+coredns-fb8b8dccf-l8xzz                    2m           11Mi
+etcd-demo-01.local                         39m          89Mi
+etcd-demo-02.local                         52m          84Mi
+etcd-demo-03.local                         38m          82Mi
+heapster-665bbb7c6f-wd559                  1m           28Mi
+kube-apiserver-demo-01.local               77m          229Mi
+kube-apiserver-demo-02.local               68m          243Mi
+kube-apiserver-demo-03.local               77m          219Mi
+kube-controller-manager-demo-01.local      19m          51Mi
+kube-controller-manager-demo-02.local      1m           16Mi
+kube-controller-manager-demo-03.local      1m           14Mi
+kube-proxy-9mcnp                           3m           15Mi
+kube-proxy-mt6z6                           1m           14Mi
+kube-proxy-qf9zp                           1m           15Mi
+kube-proxy-sfhrs                           0m           14Mi
+kube-scheduler-demo-01.local               11m          16Mi
+kube-scheduler-demo-02.local               1m           13Mi
+kube-scheduler-demo-03.local               11m          16Mi
+kubernetes-dashboard-5688c4f8bd-g6fnc      0m           20Mi
+monitoring-influxdb-fb5756876-xx56f        0m           21Mi
+nginx-lb-demo-01.local                     31m          3Mi
+nginx-lb-demo-02.local                     0m           2Mi
+nginx-lb-demo-03.local                     0m           2Mi
 
 $ kubectl taint nodes --all node-role.kubernetes.io/master-
 ```
