@@ -68,9 +68,7 @@ sed \
 -e "s/K8SHA_CIDR/${K8SHA_CIDR}/g" \
 kubeadm-config.yaml.tpl > kubeadm-config.yaml
 
-echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST1/kubeadm-config.yaml"
-echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST2/kubeadm-config.yaml"
-echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST3/kubeadm-config.yaml"
+echo "create kubeadm-config.yaml files success. kubeadm-config.yaml"
 
 # create all keepalived files
 cp keepalived/check_apiserver.sh config/$K8SHA_HOST1/keepalived

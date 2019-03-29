@@ -481,6 +481,9 @@ Server: Docker Engine - Community
   Built:            Thu Feb 28 06:02:24 2019
   OS/Arch:          linux/amd64
   Experimental:     false
+
+# 安装docker-compose，docker-compose用于安装过程中临时启动nginx-lb需要
+$ yum install docker-compose
 ```
 
 ### kubernetes管理软件安装
@@ -617,7 +620,47 @@ export K8SHA_CALICO_REACHABLE_IP=172.20.10.1
 export K8SHA_CIDR=192.168.0.0
 ```
 
+- 执行配置脚本生成配置文件
+
+```bash
+# 执行脚本，自动创建配置文件
+$ ./create-config.sh 
+create kubeadm-config.yaml files success. kubeadm-config.yaml
+create keepalived files success. config/demo-01.local/keepalived/
+create keepalived files success. config/demo-02.local/keepalived/
+create keepalived files success. config/demo-03.local/keepalived/
+create nginx-lb files success. config/demo-01.local/nginx-lb/
+create nginx-lb files success. config/demo-02.local/nginx-lb/
+create nginx-lb files success. config/demo-03.local/nginx-lb/
+create calico.yaml file success. calico/calico.yaml
+docker-compose.yaml                                     100%  213   162.8KB/s   00:00    
+nginx-lb.yaml                                           100%  680   461.9KB/s   00:00    
+nginx-lb.conf                                           100% 1033     1.3MB/s   00:00    
+docker-compose.yaml                                     100%  213   113.9KB/s   00:00    
+nginx-lb.yaml                                           100%  680   439.6KB/s   00:00    
+nginx-lb.conf                                           100% 1033   854.1KB/s   00:00    
+docker-compose.yaml                                     100%  213    86.3KB/s   00:00    
+nginx-lb.yaml                                           100%  680   106.7KB/s   00:00    
+nginx-lb.conf                                           100% 1033   542.8KB/s   00:00    
+check_apiserver.sh                                      100%  488   431.4KB/s   00:00    
+keepalived.conf                                         100%  558   692.5KB/s   00:00    
+check_apiserver.sh                                      100%  488   360.3KB/s   00:00    
+keepalived.conf                                         100%  558   349.0KB/s   00:00    
+check_apiserver.sh                                      100%  488   371.4KB/s   00:00    
+keepalived.conf                                         100%  558   382.4KB/s   00:00    
+```
+
 ### 配置文件清单
+
+- 执行`create-config.sh`脚本后，会自动生成以下配置文件：
+
+  - kubeadm-config.yaml：kubeadm初始化配置文件，位于kubeadm-ha代码的`./`根目录
+
+  - keepalived：keepalived配置文件，位于各个master节点的`/etc/keepalived`目录
+  
+  - nginx-lb：nginx-lb负载均衡配置文件，位于各个master节点的`/root/nginx-lb`目录
+
+  - calico.yaml：calico网络组件部署文件，位于kubeadm-ha代码的`./calico`目录
 
 ## 启动load-balancer
 
