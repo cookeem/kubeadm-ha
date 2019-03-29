@@ -25,8 +25,11 @@
 - 该指引适用于v1.14.x版本的kubernetes集群
 
 - [部署架构](#部署架构)
+
   - [部署架构概要](#部署架构概要)
+  
   - [主机清单](#主机清单)
+  
   - [版本信息](#版本信息)
   
 - [安装前准备](#安装前准备)
@@ -161,6 +164,10 @@ CentOS Linux release 7.6.1810 (Core)
 $ uname -a
 Linux demo-01.local 5.0.4-1.el7.elrepo.x86_64 #1 SMP Sat Mar 23 18:00:44 EDT 2019 x86_64 x86_64 x86_64 GNU/Linux
 
+# kubernetes版本
+$ kubelet --version
+Kubernetes v1.14.0
+
 # docker-ce版本信息
 $ docker version
 Client:
@@ -182,12 +189,20 @@ Server: Docker Engine - Community
   OS/Arch:          linux/amd64
   Experimental:     false
 
-# kubernetes版本
-$ kubelet --version
-Kubernetes v1.14.0
+# docker-compose版本
+$ docker-compose version
+docker-compose version 1.18.0, build 8dd22a9
+docker-py version: 2.6.1
+CPython version: 3.4.9
+OpenSSL version: OpenSSL 1.0.2k-fips  26 Jan 2017
 ```
 
-- 
+- 组件版本信息
+
+组件 | 版本 | 备注
+:--- | :--- | :---
+calico | v3.6.0 | 网络组件
+
 
 ## 安装前准备
 
