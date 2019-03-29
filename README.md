@@ -219,6 +219,15 @@ $ yum update -y
 
 ### 防火墙设置
 
+- 所有节点开启firewalld防火墙
+
+```sh
+# 重启防火墙
+$ systemctl enable firewalld
+$ systemctl restart firewalld
+$ systemctl status firewalld
+```
+
 - master节点需要开放的端口
 
 协议 | 方向 | 端口 | 说明
@@ -304,6 +313,52 @@ $ crontab -e
 ```
 
 ### 系统参数设置
+
+- 在所有节点上设置SELINUX为permissive模式
+
+```sh
+# 修改配置
+$ vi /etc/selinux/config
+SELINUX=permissive
+
+$ setenforce 0
+```
+
+- 在所有节点上设置iptables参数
+
+```sh
+# 所有节点配置ip转发
+$ cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+# 让配置生效
+$ sysctl --system
+```
+
+- 在所有kubernetes节点上禁用swap
+
+```sh
+$ swapoff -a
+
+# 禁用fstab中的swap项目
+$ vi /etc/fstab
+#/dev/mapper/centos-swap swap                    swap    defaults        0 0
+
+# 确认swap已经被禁用
+$ cat /proc/swaps
+Filename                Type        Size    Used    Priority
+```
+
+- 在所有kubernetes节点上重启主机
+
+```sh
+# 重启主机
+$ reboot
+```
+
+- 注意，安装kubernetes集群，要求每个节点至少有2个cpu。
 
 ### master节点互信设置
 
