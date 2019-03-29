@@ -153,6 +153,45 @@ demo-04.local     | 172.20.10.13 | worker节点 * 1 | kubelet
 
 ### 版本信息
 
+- 系统版本信息
+
+```bash
+# Linux发行版信息
+$ cat /etc/redhat-release 
+CentOS Linux release 7.6.1810 (Core) 
+
+# Linux内核
+$ uname -a
+Linux demo-01.local 5.0.4-1.el7.elrepo.x86_64 #1 SMP Sat Mar 23 18:00:44 EDT 2019 x86_64 x86_64 x86_64 GNU/Linux
+
+# docker-ce版本信息
+$ docker version
+Client:
+ Version:           18.09.3
+ API version:       1.39
+ Go version:        go1.10.8
+ Git commit:        774a1f4
+ Built:             Thu Feb 28 06:33:21 2019
+ OS/Arch:           linux/amd64
+ Experimental:      false
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          18.09.3
+  API version:      1.39 (minimum version 1.12)
+  Go version:       go1.10.8
+  Git commit:       774a1f4
+  Built:            Thu Feb 28 06:02:24 2019
+  OS/Arch:          linux/amd64
+  Experimental:     false
+
+# kubernetes版本
+$ kubelet --version
+Kubernetes v1.14.0
+```
+
+- 
+
 ## 安装前准备
 
 ### 系统更新
