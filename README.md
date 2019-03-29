@@ -44,6 +44,7 @@
   - [启动keepalived](#启动keepalived)
   - [启动nginx-lb](#启动nginxlb)
 - [初始化高可用master集群](#初始化高可用master集群)
+  - [获取kubernetes镜像](#获取kubernetes镜像)
   - [安装第一个master节点](#安装第一个master节点)
   - [把其他master节点加入controlplane控制平面](#把其他master节点加入controlplane控制平面)
 - [把nginx-lb作为kubernetes集群基础服务](#把nginxlb作为kubernetes集群基础服务)
@@ -664,19 +665,301 @@ keepalived.conf                                         100%  558   382.4KB/s   
 
 ## 启动load-balancer
 
+- kubernetes v1.14.0 的kubeadm安装方式需要先启动load-balancer。这里我们使用keepalived作为浮动ip，nginx作为负载均衡。
+
 ### 启动keepalived
+
+- 执行`create-config.sh`脚本后，keepalived的配置文件会自动复制到各个master的节点的`/etc/keepalived`目录
+
+- 在所有master节点上重启keepalived服务
+
+```bash
+# 重启keepalived服务
+$ systemctl restart keepalived
+
+# 查看keepalived服务状态，以下信息表明keepalived已经正常启动
+$ systemctl status keepalived
+● keepalived.service - LVS and VRRP High Availability Monitor
+   Loaded: loaded (/usr/lib/systemd/system/keepalived.service; enabled; vendor preset: disabled)
+   Active: active (running) since 五 2019-03-29 02:25:32 EDT; 19min ago
+  Process: 3551 ExecStart=/usr/sbin/keepalived $KEEPALIVED_OPTIONS (code=exited, status=0/SUCCESS)
+ Main PID: 3577 (keepalived)
+    Tasks: 3
+   Memory: 448.5M
+   CGroup: /system.slice/keepalived.service
+           ├─3577 /usr/sbin/keepalived -D
+           ├─3578 /usr/sbin/keepalived -D
+           └─3579 /usr/sbin/keepalived -D
+
+3月 29 02:25:54 demo-01.local Keepalived_vrrp[3579]: /etc/keepalived/check_apiserver....5
+3月 29 02:25:58 demo-01.local Keepalived_vrrp[3579]: Sending gratuitous ARP on enp0s3...9
+3月 29 02:25:58 demo-01.local Keepalived_vrrp[3579]: VRRP_Instance(VI_1) Sending/queu...9
+3月 29 02:25:58 demo-01.local Keepalived_vrrp[3579]: Sending gratuitous ARP on enp0s3...9
+3月 29 02:25:58 demo-01.local Keepalived_vrrp[3579]: Sending gratuitous ARP on enp0s3...9
+3月 29 02:25:58 demo-01.local Keepalived_vrrp[3579]: Sending gratuitous ARP on enp0s3...9
+3月 29 02:25:58 demo-01.local Keepalived_vrrp[3579]: Sending gratuitous ARP on enp0s3...9
+3月 29 02:25:59 demo-01.local Keepalived_vrrp[3579]: /etc/keepalived/check_apiserver....5
+3月 29 02:26:04 demo-01.local Keepalived_vrrp[3579]: VRRP_Script(check_apiserver) suc...d
+3月 29 02:26:09 demo-01.local Keepalived_vrrp[3579]: VRRP_Instance(VI_1) Changing eff...2
+Hint: Some lines were ellipsized, use -l to show in full.
+
+# 验证keepalived的vip是否生效，demo-vip.local已经生效
+$ ping demo-vip.local
+PING demo-vip.local (172.20.10.9) 56(84) bytes of data.
+64 bytes from demo-vip.local (172.20.10.9): icmp_seq=1 ttl=64 time=0.121 ms
+64 bytes from demo-vip.local (172.20.10.9): icmp_seq=2 ttl=64 time=0.081 ms
+64 bytes from demo-vip.local (172.20.10.9): icmp_seq=3 ttl=64 time=0.053 ms
+```
 
 ### 启动nginx-lb
 
+- 执行`create-config.sh`脚本后，nginx-lb的配置文件会自动复制到各个master的节点的`/root/nginx-lb`目录
+
+- 在所有master节点上以docker-compose方式启动nginx-lb负载均衡器
+
+```bash
+# 进入/root/nginx-lb/
+$ cd /root/nginx-lb/
+
+# 使用docker-compose方式启动nginx-lb
+$ docker-compose up -d
+Creating nginx-lb ... done
+
+# 检查nginx-lb启动状态，如果正常启动表明服务正常
+$ docker-compose ps
+  Name           Command          State                Ports              
+--------------------------------------------------------------------------
+nginx-lb   nginx -g daemon off;   Up      0.0.0.0:16443->16443/tcp, 80/tcp
+```
+
 ## 初始化高可用master集群
+
+### 获取kubernetes镜像
+
+- 建议预先拉取kubernetes所需镜像
+
+```bash
+# 获取kubernetes所需镜像清单
+$ kubeadm --kubernetes-version=v1.14.0 config images list
+k8s.gcr.io/kube-apiserver:v1.14.0
+k8s.gcr.io/kube-controller-manager:v1.14.0
+k8s.gcr.io/kube-scheduler:v1.14.0
+k8s.gcr.io/kube-proxy:v1.14.0
+k8s.gcr.io/pause:3.1
+k8s.gcr.io/etcd:3.3.10
+k8s.gcr.io/coredns:1.3.1
+
+# 拉取kubernetes所需镜像
+$ kubeadm --kubernetes-version=v1.14.0 config images pull
+```
 
 ### 安装第一个master节点
 
+- 在第一个master节点`demo-01.local`上以master（control plane）的方式启动kubernetes服务
+
+```bash
+# 在demo-01.local上执行以下命令初始化第一个master节点，等待几分钟
+# 非常重要，务必把执行结果中以下内容保存下来，输出结果中有两条命令可以分别把节点加入到集群作为master或者worker
+$ kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs
+...
+You can now join any number of the control-plane node running the following command on each as root:
+
+  kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
+    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954 \
+    --experimental-control-plane --certificate-key b1788f02d442c623d28f5281bb566bf4fcd9e739c45f127a95ea07b558538244
+
+Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
+As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
+"kubeadm init phase upload-certs --experimental-upload-certs" to reload certs afterward.
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
+    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954
+```
+
+- 设置kubectl的配置文件，完成设置后才可以使用kubectl访问集群
+
+```bash
+# 在~/.bashrc文件中设置KUBECONFIG环境变量
+$ cat << EOF >> ~/.bashrc
+export KUBECONFIG=/etc/kubernetes/admin.conf
+EOF
+
+# KUBECONFIG生效后才可以使用kubectl访问集群
+$ source ~/.bashrc
+```
+
+- 安装calico网络组件，否则coredns无法正常启动
+
+```bash
+# calico网络组件需要先拉取以下镜像
+$ docker pull calico/cni:v3.6.0
+$ docker pull calico/node:v3.6.0
+$ docker pull calico/kube-controllers:v3.6.0
+
+# 在demo-01.local上安装calico组件
+$ kubectl apply -f calico/calico.yaml
+configmap/calico-config created
+customresourcedefinition.apiextensions.k8s.io/felixconfigurations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ipamblocks.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/blockaffinities.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ipamhandles.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ipamconfigs.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/bgppeers.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ippools.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/hostendpoints.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/clusterinformations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/globalnetworkpolicies.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/globalnetworksets.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/networkpolicies.crd.projectcalico.org created
+clusterrole.rbac.authorization.k8s.io/calico-kube-controllers created
+clusterrolebinding.rbac.authorization.k8s.io/calico-kube-controllers created
+clusterrole.rbac.authorization.k8s.io/calico-node created
+clusterrolebinding.rbac.authorization.k8s.io/calico-node created
+daemonset.extensions/calico-node created
+serviceaccount/calico-node created
+deployment.extensions/calico-kube-controllers created
+serviceaccount/calico-kube-controllers created
+
+# 完成calico安装后查看pod状态，coredns状态恢复正常
+$ kubectl get pods --all-namespaces
+NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-7bfdd87774-gh4rf   1/1     Running   0          24s
+kube-system   calico-node-4kcrh                          1/1     Running   0          24s
+kube-system   coredns-fb8b8dccf-7fp98                    1/1     Running   0          4m42s
+kube-system   coredns-fb8b8dccf-l8xzz                    1/1     Running   0          4m42s
+kube-system   etcd-demo-01.local                         1/1     Running   0          4m15s
+kube-system   kube-apiserver-demo-01.local               1/1     Running   0          3m59s
+kube-system   kube-controller-manager-demo-01.local      1/1     Running   0          3m58s
+kube-system   kube-proxy-qf9zp                           1/1     Running   0          4m42s
+kube-system   kube-scheduler-demo-01.local               1/1     Running   0          4m17s
+
+# 查看节点状态，demo-01.local状态正常
+$ kubectl get nodes
+NAME            STATUS   ROLES    AGE    VERSION
+demo-01.local   Ready    master   5m3s   v1.14.0
+```
+
 ### 把其他master节点加入controlplane控制平面
+
+- 在第一个master节点使用kubeadm初始化第一个kubernetes的master节点后，会输出两条命令，其中第一条命令就是把节点以master的方式加入到集群。
+
+- 在第二第三个master节点`demo-02.local`和`demo-03.local`上分别执行以下命令，把`demo-02.local`和`demo-03.local`以master方式加入到集群。
+
+```bash
+# 在其他的master节点demo-02.local和demo-03.local上执行以下命令，把节点加入到controlplane
+$ kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
+  --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954 \
+  --experimental-control-plane --certificate-key b1788f02d442c623d28f5281bb566bf4fcd9e739c45f127a95ea07b558538244
+```
+
+- 在`demo-02.local`和`demo-03.local`上设置kubectl的配置文件，完成设置后才可以使用kubectl访问集群
+
+```bash
+# 在~/.bashrc文件中设置KUBECONFIG环境变量
+$ cat << EOF >> ~/.bashrc
+export KUBECONFIG=/etc/kubernetes/admin.conf
+EOF
+
+# KUBECONFIG生效后才可以使用kubectl访问集群
+$ source ~/.bashrc
+```
+
+- 检查集群状态
+
+```bash
+# 查看节点状态
+$ kubectl get nodes
+NAME            STATUS   ROLES    AGE     VERSION
+demo-01.local   Ready    master   10m     v1.14.0
+demo-02.local   Ready    master   3m10s   v1.14.0
+demo-03.local   Ready    master   110s    v1.14.0
+
+# 查看pod状态
+$ kubectl get pods -n kube-system -o wide
+NAME                                       READY   STATUS    RESTARTS   AGE     IP             NODE            NOMINATED NODE   READINESS GATES
+calico-kube-controllers-7bfdd87774-gh4rf   1/1     Running   0          5m22s   192.168.8.65   demo-01.local   <none>           <none>
+calico-node-4kcrh                          1/1     Running   0          5m22s   172.20.10.10   demo-01.local   <none>           <none>
+calico-node-4ljlm                          1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
+calico-node-wh5rs                          1/1     Running   0          102s    172.20.10.12   demo-03.local   <none>           <none>
+coredns-fb8b8dccf-7fp98                    1/1     Running   0          9m40s   192.168.8.67   demo-01.local   <none>           <none>
+coredns-fb8b8dccf-l8xzz                    1/1     Running   0          9m40s   192.168.8.66   demo-01.local   <none>           <none>
+etcd-demo-01.local                         1/1     Running   0          9m13s   172.20.10.10   demo-01.local   <none>           <none>
+etcd-demo-02.local                         1/1     Running   0          3m1s    172.20.10.11   demo-02.local   <none>           <none>
+etcd-demo-03.local                         1/1     Running   0          100s    172.20.10.12   demo-03.local   <none>           <none>
+kube-apiserver-demo-01.local               1/1     Running   0          8m57s   172.20.10.10   demo-01.local   <none>           <none>
+kube-apiserver-demo-02.local               1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
+kube-apiserver-demo-03.local               1/1     Running   0          101s    172.20.10.12   demo-03.local   <none>           <none>
+kube-controller-manager-demo-01.local      1/1     Running   0          8m56s   172.20.10.10   demo-01.local   <none>           <none>
+kube-controller-manager-demo-02.local      1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
+kube-controller-manager-demo-03.local      1/1     Running   0          101s    172.20.10.12   demo-03.local   <none>           <none>
+kube-proxy-mt6z6                           1/1     Running   0          102s    172.20.10.12   demo-03.local   <none>           <none>
+kube-proxy-qf9zp                           1/1     Running   0          9m40s   172.20.10.10   demo-01.local   <none>           <none>
+kube-proxy-sfhrs                           1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
+kube-scheduler-demo-01.local               1/1     Running   0          9m15s   172.20.10.10   demo-01.local   <none>           <none>
+kube-scheduler-demo-02.local               1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
+kube-scheduler-demo-03.local               1/1     Running   0          101s    172.20.10.12   demo-03.local   <none>           <none>
+```
 
 ## 把nginx-lb作为kubernetes集群基础服务
 
+- 高可用kubernetes集群已经完成配置，但是使用docker-compose方式启动nginx-lb由于无法提供kubernetes集群的健康检查和自动重启功能，nginx-lb作为高可用kubernetes集群的核心组件建议也作为kubernetes集群中的一个pod来进行管理。
+
+- 在/etc/kubernetes/manifests/目录下，是kubelet直接管理的核心部署文件。现在我们停止原先使用docker-compose启动的nginx-lb，由kubelet直接管理nginx-lb服务。
+
+```bash
+# 所有节点暂停kubelet
+$ systemctl stop kubelet
+
+# 所有节点停止并删除使用docker-compose方式启动的nginx-lb容器
+$ docker stop nginx-lb && docker rm nginx-lb
+
+# 在demo-01.local节点上执行以下命令，把nginx-lb配置复制到所有master节点的/etc/kubernetes/manifests/目录
+$ export K8SHA_HOST1=demo-01.local
+$ export K8SHA_HOST2=demo-02.local
+$ export K8SHA_HOST3=demo-03.local
+$ scp /root/nginx-lb/nginx-lb.conf root@${K8SHA_HOST1}:/etc/kubernetes/
+$ scp /root/nginx-lb/nginx-lb.conf root@${K8SHA_HOST2}:/etc/kubernetes/
+$ scp /root/nginx-lb/nginx-lb.conf root@${K8SHA_HOST3}:/etc/kubernetes/
+$ scp /root/nginx-lb/nginx-lb.yaml root@${K8SHA_HOST1}:/etc/kubernetes/manifests/
+$ scp /root/nginx-lb/nginx-lb.yaml root@${K8SHA_HOST2}:/etc/kubernetes/manifests/
+$ scp /root/nginx-lb/nginx-lb.yaml root@${K8SHA_HOST3}:/etc/kubernetes/manifests/
+
+# 在所有master节点上重启kubelet和docker
+$ systemctl restart kubelet docker
+
+# 查看所有pod状态，增加了nginx-lb的pod
+$ kubectl get pods --all-namespaces -o wide
+NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE   IP             NODE            NOMINATED NODE   READINESS GATES
+...
+kube-system   nginx-lb-demo-01.local                     1/1     Running   0          90s   172.20.10.10   demo-01.local   <none>           <none>
+kube-system   nginx-lb-demo-02.local                     1/1     Running   0          72s   172.20.10.11   demo-02.local   <none>           <none>
+kube-system   nginx-lb-demo-03.local                     1/1     Running   0          78s   172.20.10.12   demo-03.local   <none>           <none>
+```
+
 ## 添加worker节点
+
+- 在第一个master节点使用kubeadm初始化第一个kubernetes的master节点后，会输出两条命令，其中第二条命令就是把节点以worker的方式加入到集群。
+
+- 在worker节点`demo-04.local`上执行以下命令，把`demo-04.local`以worker方式加入到集群。
+
+```bash
+# 在demo-04.local节点上执行以下命令，把节点以worker方式加入到集群
+$ kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
+    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954
+
+# 查看集群节点状态
+$ kubectl get nodes
+NAME            STATUS   ROLES    AGE   VERSION
+demo-01.local   Ready    master   99m   v1.14.0
+demo-02.local   Ready    master   92m   v1.14.0
+demo-03.local   Ready    master   90m   v1.14.0
+demo-04.local   Ready    <none>   14s   v1.14.0
+```
+
+- 高可用kubernetes集群已经完成安装
 
 ## 安装组件
 
@@ -741,168 +1024,8 @@ keepalived.conf                                         100%  558   382.4KB/s   
 ## 证书到期更新
 
 ```bash
-# 第一个master执行
-$ kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs
-You can now join any number of the control-plane node running the following command on each as root:
-
-  kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
-    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954 \
-    --experimental-control-plane --certificate-key b1788f02d442c623d28f5281bb566bf4fcd9e739c45f127a95ea07b558538244
-
-Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
-As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
-"kubeadm init phase upload-certs --experimental-upload-certs" to reload certs afterward.
-
-Then you can join any number of worker nodes by running the following on each as root:
-
-kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
-    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954
 
 
-#
-$ cat << EOF >> ~/.bashrc
-export KUBECONFIG=/etc/kubernetes/admin.conf
-EOF
-
-# 安装calico
-$ kubectl apply -f /root/kubeadm-init/calico/calico.yaml
-configmap/calico-config created
-customresourcedefinition.apiextensions.k8s.io/felixconfigurations.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/ipamblocks.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/blockaffinities.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/ipamhandles.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/ipamconfigs.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/bgppeers.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/ippools.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/hostendpoints.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/clusterinformations.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/globalnetworkpolicies.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/globalnetworksets.crd.projectcalico.org created
-customresourcedefinition.apiextensions.k8s.io/networkpolicies.crd.projectcalico.org created
-clusterrole.rbac.authorization.k8s.io/calico-kube-controllers created
-clusterrolebinding.rbac.authorization.k8s.io/calico-kube-controllers created
-clusterrole.rbac.authorization.k8s.io/calico-node created
-clusterrolebinding.rbac.authorization.k8s.io/calico-node created
-daemonset.extensions/calico-node created
-serviceaccount/calico-node created
-deployment.extensions/calico-kube-controllers created
-serviceaccount/calico-kube-controllers created
-
-# 查看pod状态
-$ kubectl get pods --all-namespaces
-NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE
-kube-system   calico-kube-controllers-7bfdd87774-gh4rf   1/1     Running   0          24s
-kube-system   calico-node-4kcrh                          1/1     Running   0          24s
-kube-system   coredns-fb8b8dccf-7fp98                    1/1     Running   0          4m42s
-kube-system   coredns-fb8b8dccf-l8xzz                    1/1     Running   0          4m42s
-kube-system   etcd-demo-01.local                         1/1     Running   0          4m15s
-kube-system   kube-apiserver-demo-01.local               1/1     Running   0          3m59s
-kube-system   kube-controller-manager-demo-01.local      1/1     Running   0          3m58s
-kube-system   kube-proxy-qf9zp                           1/1     Running   0          4m42s
-kube-system   kube-scheduler-demo-01.local               1/1     Running   0          4m17s
-
-# 查看节点状态
-$ kubectl get nodes
-NAME            STATUS   ROLES    AGE    VERSION
-demo-01.local   Ready    master   5m3s   v1.14.0
-
-# 在其他的master节点执行，把节点加入到controlplane
-$ kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
-  --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954 \
-  --experimental-control-plane --certificate-key b1788f02d442c623d28f5281bb566bf4fcd9e739c45f127a95ea07b558538244
-
-# 查看pod状态
-$ kubectl get pods -n kube-system -o wide
-NAME                                       READY   STATUS    RESTARTS   AGE     IP             NODE            NOMINATED NODE   READINESS GATES
-calico-kube-controllers-7bfdd87774-gh4rf   1/1     Running   0          5m22s   192.168.8.65   demo-01.local   <none>           <none>
-calico-node-4kcrh                          1/1     Running   0          5m22s   172.20.10.10   demo-01.local   <none>           <none>
-calico-node-4ljlm                          1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
-calico-node-wh5rs                          1/1     Running   0          102s    172.20.10.12   demo-03.local   <none>           <none>
-coredns-fb8b8dccf-7fp98                    1/1     Running   0          9m40s   192.168.8.67   demo-01.local   <none>           <none>
-coredns-fb8b8dccf-l8xzz                    1/1     Running   0          9m40s   192.168.8.66   demo-01.local   <none>           <none>
-etcd-demo-01.local                         1/1     Running   0          9m13s   172.20.10.10   demo-01.local   <none>           <none>
-etcd-demo-02.local                         1/1     Running   0          3m1s    172.20.10.11   demo-02.local   <none>           <none>
-etcd-demo-03.local                         1/1     Running   0          100s    172.20.10.12   demo-03.local   <none>           <none>
-kube-apiserver-demo-01.local               1/1     Running   0          8m57s   172.20.10.10   demo-01.local   <none>           <none>
-kube-apiserver-demo-02.local               1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
-kube-apiserver-demo-03.local               1/1     Running   0          101s    172.20.10.12   demo-03.local   <none>           <none>
-kube-controller-manager-demo-01.local      1/1     Running   0          8m56s   172.20.10.10   demo-01.local   <none>           <none>
-kube-controller-manager-demo-02.local      1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
-kube-controller-manager-demo-03.local      1/1     Running   0          101s    172.20.10.12   demo-03.local   <none>           <none>
-kube-proxy-mt6z6                           1/1     Running   0          102s    172.20.10.12   demo-03.local   <none>           <none>
-kube-proxy-qf9zp                           1/1     Running   0          9m40s   172.20.10.10   demo-01.local   <none>           <none>
-kube-proxy-sfhrs                           1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
-kube-scheduler-demo-01.local               1/1     Running   0          9m15s   172.20.10.10   demo-01.local   <none>           <none>
-kube-scheduler-demo-02.local               1/1     Running   0          3m2s    172.20.10.11   demo-02.local   <none>           <none>
-kube-scheduler-demo-03.local               1/1     Running   0          101s    172.20.10.12   demo-03.local   <none>           <none>
-
-# 查看节点状态
-$ kubectl get nodes
-NAME            STATUS   ROLES    AGE     VERSION
-demo-01.local   Ready    master   10m     v1.14.0
-demo-02.local   Ready    master   3m10s   v1.14.0
-demo-03.local   Ready    master   110s    v1.14.0
-
-# 所有节点暂停kubelet
-$ systemctl stop kubelet
-
-# 所有节点停止并删除nginx-lb容器
-$ docker stop nginx-lb && docker rm nginx-lb
-
-# 在第一个master节点上执行
-$ export K8SHA_HOST1=demo-01.local
-$ export K8SHA_HOST2=demo-02.local
-$ export K8SHA_HOST3=demo-03.local
-$ scp /root/nginx-lb/nginx-lb.conf root@${K8SHA_HOST1}:/etc/kubernetes/
-$ scp /root/nginx-lb/nginx-lb.conf root@${K8SHA_HOST2}:/etc/kubernetes/
-$ scp /root/nginx-lb/nginx-lb.conf root@${K8SHA_HOST3}:/etc/kubernetes/
-$ scp /root/nginx-lb/nginx-lb.yaml root@${K8SHA_HOST1}:/etc/kubernetes/manifests/
-$ scp /root/nginx-lb/nginx-lb.yaml root@${K8SHA_HOST2}:/etc/kubernetes/manifests/
-$ scp /root/nginx-lb/nginx-lb.yaml root@${K8SHA_HOST3}:/etc/kubernetes/manifests/
-
-# 在所有master节点重启kubelet和docker
-$ systemctl restart kubelet docker
-
-# 查看所有pod状态，增加了nginx-lb的pod
-$ kubectl get pods --all-namespaces -o wide
-NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE   IP             NODE            NOMINATED NODE   READINESS GATES
-kube-system   calico-kube-controllers-7bfdd87774-gh4rf   1/1     Running   1          24m   192.168.8.69   demo-01.local   <none>           <none>
-kube-system   calico-node-4kcrh                          1/1     Running   1          24m   172.20.10.10   demo-01.local   <none>           <none>
-kube-system   calico-node-4ljlm                          1/1     Running   1          22m   172.20.10.11   demo-02.local   <none>           <none>
-kube-system   calico-node-wh5rs                          1/1     Running   1          20m   172.20.10.12   demo-03.local   <none>           <none>
-kube-system   coredns-fb8b8dccf-7fp98                    1/1     Running   1          28m   192.168.8.70   demo-01.local   <none>           <none>
-kube-system   coredns-fb8b8dccf-l8xzz                    1/1     Running   2          28m   192.168.8.68   demo-01.local   <none>           <none>
-kube-system   etcd-demo-01.local                         1/1     Running   1          28m   172.20.10.10   demo-01.local   <none>           <none>
-kube-system   etcd-demo-02.local                         1/1     Running   1          22m   172.20.10.11   demo-02.local   <none>           <none>
-kube-system   etcd-demo-03.local                         1/1     Running   1          20m   172.20.10.12   demo-03.local   <none>           <none>
-kube-system   kube-apiserver-demo-01.local               1/1     Running   1          28m   172.20.10.10   demo-01.local   <none>           <none>
-kube-system   kube-apiserver-demo-02.local               1/1     Running   1          22m   172.20.10.11   demo-02.local   <none>           <none>
-kube-system   kube-apiserver-demo-03.local               1/1     Running   1          20m   172.20.10.12   demo-03.local   <none>           <none>
-kube-system   kube-controller-manager-demo-01.local      1/1     Running   1          28m   172.20.10.10   demo-01.local   <none>           <none>
-kube-system   kube-controller-manager-demo-02.local      1/1     Running   1          22m   172.20.10.11   demo-02.local   <none>           <none>
-kube-system   kube-controller-manager-demo-03.local      1/1     Running   1          20m   172.20.10.12   demo-03.local   <none>           <none>
-kube-system   kube-proxy-mt6z6                           1/1     Running   1          20m   172.20.10.12   demo-03.local   <none>           <none>
-kube-system   kube-proxy-qf9zp                           1/1     Running   1          28m   172.20.10.10   demo-01.local   <none>           <none>
-kube-system   kube-proxy-sfhrs                           1/1     Running   1          22m   172.20.10.11   demo-02.local   <none>           <none>
-kube-system   kube-scheduler-demo-01.local               1/1     Running   1          28m   172.20.10.10   demo-01.local   <none>           <none>
-kube-system   kube-scheduler-demo-02.local               1/1     Running   1          22m   172.20.10.11   demo-02.local   <none>           <none>
-kube-system   kube-scheduler-demo-03.local               1/1     Running   1          20m   172.20.10.12   demo-03.local   <none>           <none>
-kube-system   nginx-lb-demo-01.local                     1/1     Running   0          90s   172.20.10.10   demo-01.local   <none>           <none>
-kube-system   nginx-lb-demo-02.local                     1/1     Running   0          72s   172.20.10.11   demo-02.local   <none>           <none>
-kube-system   nginx-lb-demo-03.local                     1/1     Running   0          78s   172.20.10.12   demo-03.local   <none>           <none>
-
-# 在worker节点上执行
-$ kubeadm join 172.20.10.9:16443 --token m8k0m4.eheru9acqftbre89 \
-    --discovery-token-ca-cert-hash sha256:e97e9db0ca6839cae2989571346b6142f7e928861728d5067a979668aaf46954
-
-#
-$ kubectl get nodes
-NAME            STATUS   ROLES    AGE   VERSION
-demo-01.local   Ready    master   99m   v1.14.0
-demo-02.local   Ready    master   92m   v1.14.0
-demo-03.local   Ready    master   90m   v1.14.0
-demo-04.local   Ready    <none>   14s   v1.14.0
 
 # kubectl自动完成
 $ yum install -y bash-completion
@@ -922,7 +1045,7 @@ $ kubectl label nodes demo-01.local app=kube-system
 $ kubectl label nodes demo-02.local app=kube-system
 $ kubectl label nodes demo-03.local app=kube-system
 
-$ kubectl apply -f /root/kubeadm-init/kubernetes-dashboard/kubernetes-dashboard.yaml
+$ kubectl apply -f /root/kubeadm-ha/kubernetes-dashboard/kubernetes-dashboard.yaml
 secret/kubernetes-dashboard-certs created
 serviceaccount/kubernetes-dashboard created
 role.rbac.authorization.k8s.io/kubernetes-dashboard-minimal created
@@ -958,7 +1081,7 @@ a9aa804c95d7        k8s.gcr.io/heapster-influxdb-amd64:v1.5.2   "/bin/sh"       
 
 $ docker commit priceless_wilson k8s.gcr.io/heapster-influxdb-amd64:v1.5.2-fixed
 
-$ kubectl apply -f /root/kubeadm-init/heapster/
+$ kubectl apply -f /root/kubeadm-ha/heapster/
 clusterrolebinding.rbac.authorization.k8s.io/heapster created
 clusterrole.rbac.authorization.k8s.io/heapster created
 serviceaccount/heapster created
