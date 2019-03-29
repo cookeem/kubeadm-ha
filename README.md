@@ -148,7 +148,16 @@ OpenSSL version: OpenSSL 1.0.2k-fips  26 Jan 2017
 组件 | 版本 | 备注
 :--- | :--- | :---
 calico | v3.6.0 | 网络组件
-
+kubernetes-dashboard | v1.10.1 | kubernetes管理UI
+heapster | v1.5.4 | 性能采集组件（kubernetes-dashboard使用）
+metrics-server | v0.3.1 | 性能采集组件
+prometheus | v2.8.0 | 性能监控组件
+alertmanager | v0.16.1 | 告警管理组件
+node-exporter | v0.17.0 | 节点性能采集组件
+kube-state-metrics | v1.5.0 | kubernetes集群状态采集组件
+grafana | v6.0.2 | 性能呈现组件
+istio | v1.1.1 | 服务网格
+traefik | v1.7.9 | ingress边界路由组件
 
 ## 安装前准备
 
