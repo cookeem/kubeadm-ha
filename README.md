@@ -963,8 +963,10 @@ demo-04.local   Ready    <none>   14s   v1.14.0
 ## 设置kubectl自动完成
 
 ```bash
-# kubectl自动完成
+# 安装bash-completion
 $ yum install -y bash-completion
+
+# 设置kubectl自动完成
 $ source <(kubectl completion bash)
 $ kubectl completion bash > ~/.kube/completion.bash.inc
   printf "
