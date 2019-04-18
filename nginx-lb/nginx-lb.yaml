@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
+  name: nginx-lb
+  namespace: kube-system
+spec:
+  volumes:
+  - name: nginx-lb-conf
+    hostPath:
+      type: File
+      path: /etc/kubernetes/nginx-lb.conf
+  containers:
+  - name: nginx-lb
+    image: nginx:latest
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 8
+      tcpSocket:
+        port: 16443
+      periodSeconds: 10  
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    volumeMounts:
+    - name: nginx-lb-conf
+      mountPath: /etc/nginx/nginx.conf
+      readOnly: true
+  hostNetwork: true
+  priorityClassName: system-cluster-critical

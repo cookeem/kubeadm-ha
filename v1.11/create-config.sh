@@ -5,48 +5,46 @@
 #######################################
 
 # master keepalived virtual ip address
-export K8SHA_VIP=192.168.24.10
+export K8SHA_VIP=192.168.20.10
 
 # master01 ip address
-export K8SHA_IP1=192.168.24.212
+export K8SHA_IP1=192.168.20.20
 
 # master02 ip address
-export K8SHA_IP2=192.168.24.213
+export K8SHA_IP2=192.168.20.21
 
 # master03 ip address
-export K8SHA_IP3=192.168.20.214
+export K8SHA_IP3=192.168.20.22
 
 # master keepalived virtual ip hostname
-export K8SHA_VHOST=k8s-lb
+export K8SHA_VHOST=k8s-master-lb
 
 # master01 hostname
-export K8SHA_HOST1=master-1
+export K8SHA_HOST1=k8s-master01
 
 # master02 hostname
-export K8SHA_HOST2=master-2
+export K8SHA_HOST2=k8s-master02
 
 # master03 hostname
-export K8SHA_HOST3=master-3
+export K8SHA_HOST3=k8s-master03
 
 # master01 network interface name
-export K8SHA_NETINF1=eth3
+export K8SHA_NETINF1=nm-bond
 
 # master02 network interface name
-export K8SHA_NETINF2=eth3
+export K8SHA_NETINF2=nm-bond
 
 # master03 network interface name
-export K8SHA_NETINF3=eth3
-
+export K8SHA_NETINF3=nm-bond
 
 # keepalived auth_pass config
 export K8SHA_KEEPALIVED_AUTH=412f7dc3bfed32194d1600c483e10ad1d
 
 # calico reachable ip address
-export K8SHA_CALICO_REACHABLE_IP=192.168.24.1
+export K8SHA_CALICO_REACHABLE_IP=192.168.20.1
 
-
-# kubernetes CIDR pod subnet
-export K8SHA_CIDR=192.168.0.0
+# kubernetes CIDR pod subnet, if CIDR pod subnet is "172.168.0.0/16" please set to "172.168.0.0"
+export K8SHA_CIDR=172.168.0.0
 
 ##############################
 # please do not modify anything below
@@ -81,22 +79,10 @@ etcd:
       initial-cluster: "${K8SHA_HOST1}=https://${K8SHA_IP1}:2380"
     serverCertSANs:
       - ${K8SHA_HOST1}
-      - ${K8SHA_HOST2}
-      - ${K8SHA_HOST3}
-      - ${K8SHA_VHOST}
       - ${K8SHA_IP1}
-      - ${K8SHA_IP2}
-      - ${K8SHA_IP3}
-      - ${K8SHA_VIP}
     peerCertSANs:
       - ${K8SHA_HOST1}
-      - ${K8SHA_HOST2}
-      - ${K8SHA_HOST3}
-      - ${K8SHA_VHOST}
       - ${K8SHA_IP1}
-      - ${K8SHA_IP2}
-      - ${K8SHA_IP3}
-      - ${K8SHA_VIP}
 networking:
   # This CIDR is a Calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
@@ -125,23 +111,11 @@ etcd:
       initial-cluster: "${K8SHA_HOST1}=https://${K8SHA_IP1}:2380,${K8SHA_HOST2}=https://${K8SHA_IP2}:2380"
       initial-cluster-state: existing
     serverCertSANs:
-      - ${K8SHA_HOST1}
       - ${K8SHA_HOST2}
-      - ${K8SHA_HOST3}
-      - ${K8SHA_VHOST}
-      - ${K8SHA_IP1}
       - ${K8SHA_IP2}
-      - ${K8SHA_IP3}
-      - ${K8SHA_VIP}
     peerCertSANs:
-      - ${K8SHA_HOST1}
       - ${K8SHA_HOST2}
-      - ${K8SHA_HOST3}
-      - ${K8SHA_VHOST}
-      - ${K8SHA_IP1}
       - ${K8SHA_IP2}
-      - ${K8SHA_IP3}
-      - ${K8SHA_VIP}
 networking:
   # This CIDR is a calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
@@ -170,23 +144,11 @@ etcd:
       initial-cluster: "${K8SHA_HOST1}=https://${K8SHA_IP1}:2380,${K8SHA_HOST2}=https://${K8SHA_IP2}:2380,${K8SHA_HOST3}=https://${K8SHA_IP3}:2380"
       initial-cluster-state: existing
     serverCertSANs:
-      - ${K8SHA_HOST1}
-      - ${K8SHA_HOST2}
       - ${K8SHA_HOST3}
-      - ${K8SHA_VHOST}
-      - ${K8SHA_IP1}
-      - ${K8SHA_IP2}
       - ${K8SHA_IP3}
-      - ${K8SHA_VIP}
     peerCertSANs:
-      - ${K8SHA_HOST1}
-      - ${K8SHA_HOST2}
       - ${K8SHA_HOST3}
-      - ${K8SHA_VHOST}
-      - ${K8SHA_IP1}
-      - ${K8SHA_IP2}
       - ${K8SHA_IP3}
-      - ${K8SHA_VIP}
 networking:
   # This CIDR is a calico default. Substitute or remove for your CNI provider.
   podSubnet: "${K8SHA_CIDR}/16"
@@ -195,21 +157,6 @@ EOF
 echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST1/kubeadm-config.yaml"
 echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST2/kubeadm-config.yaml"
 echo "create kubeadm-config.yaml files success. config/$K8SHA_HOST3/kubeadm-config.yaml"
-
-sed \
--e "s/K8SHA_HOST1/${K8SHA_HOST1}/g" \
--e "s/K8SHA_HOST2/${K8SHA_HOST2}/g" \
--e "s/K8SHA_HOST3/${K8SHA_HOST3}/g" \
--e "s/K8SHA_VHOST/${K8SHA_VHOST}/g" \
--e "s/K8SHA_IP1/${K8SHA_IP1}/g" \
--e "s/K8SHA_IP2/${K8SHA_IP2}/g" \
--e "s/K8SHA_IP3/${K8SHA_IP3}/g" \
--e "s/K8SHA_VIP/${K8SHA_VIP}/g" \
--e "s/K8SHA_CIDR/${K8SHA_CIDR}/g" \
-kubeadm-config.yaml.tpl > kubeadm-config.yaml
-
-echo "create kubeadm-config.yaml files success. kubeadm-config.yaml"
-
 
 # create all keepalived files
 cp keepalived/check_apiserver.sh config/$K8SHA_HOST1/keepalived
@@ -249,10 +196,6 @@ echo "create keepalived files success. config/$K8SHA_HOST3/keepalived/"
 
 # create all nginx-lb files
 
-cp nginx-lb/docker-compose.yaml config/$K8SHA_HOST1/nginx-lb/
-cp nginx-lb/docker-compose.yaml config/$K8SHA_HOST2/nginx-lb/
-cp nginx-lb/docker-compose.yaml config/$K8SHA_HOST3/nginx-lb/
-
 cp nginx-lb/nginx-lb.yaml config/$K8SHA_HOST1/nginx-lb/
 cp nginx-lb/nginx-lb.yaml config/$K8SHA_HOST2/nginx-lb/
 cp nginx-lb/nginx-lb.yaml config/$K8SHA_HOST3/nginx-lb/
@@ -286,11 +229,3 @@ sed \
 calico/calico.yaml.tpl > calico/calico.yaml
 
 echo "create calico.yaml file success. calico/calico.yaml"
-
-scp -r config/$K8SHA_HOST1/nginx-lb root@$K8SHA_HOST1:/root/
-scp -r config/$K8SHA_HOST2/nginx-lb root@$K8SHA_HOST2:/root/
-scp -r config/$K8SHA_HOST3/nginx-lb root@$K8SHA_HOST3:/root/
-
-scp -r config/$K8SHA_HOST1/keepalived/* root@$K8SHA_HOST1:/etc/keepalived/
-scp -r config/$K8SHA_HOST2/keepalived/* root@$K8SHA_HOST2:/etc/keepalived/
-scp -r config/$K8SHA_HOST3/keepalived/* root@$K8SHA_HOST3:/etc/keepalived/
