@@ -4,7 +4,7 @@
 err=0
 for k in $(seq 1 12)
 do
-    check_code=$(curl -k https://localhost:6443)
+    check_code=$(curl -k https://localhost:16443)
     if [[ $check_code == "" ]]; then
         err=$(expr $err + 1)
         sleep 5
