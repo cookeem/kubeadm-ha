@@ -3,8 +3,8 @@
 - 容器运行时使用docker
 - 适用kubernetes版本: v1.24.x以上版本
 
-[中文](README.md)
-[English](README-EN.md)
+- [中文](README.md)
+- [English](README-EN.md)
 
 ## 部署节点信息
 

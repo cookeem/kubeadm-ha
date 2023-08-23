@@ -3,8 +3,8 @@
 - container runtime using docker
 - Applicable kubernetes version: v1.24.x and above
 
-[中文](README.md)
-[English](README-EN.md)
+- [中文](README.md)
+- [English](README-EN.md)
 
 ## Deployment node information
 
