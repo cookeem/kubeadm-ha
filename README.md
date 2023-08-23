@@ -10,7 +10,7 @@ hostname     | ip address      | comment
 k8s-master01 | 192.168.0.101   | kubernetes 控制平面主机 master01
 k8s-master02 | 192.168.0.102   | kubernetes 控制平面主机 master02
 k8s-master03 | 192.168.0.103   | kubernetes 控制平面主机 master03
-k8s-vip      | 192.168.0.100   | kubernetes 浮动IP，通过keepalived创建，如果使用公有云请预先申请改浮动IP
+k8s-vip      | 192.168.0.100   | kubernetes 浮动IP，通过keepalived创建，如果使用公有云请预先申请该浮动IP
 
 ```bash
 # 各节点请添加主机名解释
@@ -93,8 +93,6 @@ k8s-master01   Ready    control-plane   35m   v1.28.0
 k8s-master02   Ready    control-plane   31m   v1.28.0
 k8s-master03   Ready    control-plane   30m   v1.28.0
 ```
-
-###  
 
 ## 安装docker
 
@@ -274,6 +272,11 @@ virtualIp: 192.168.0.100
 virtualPort: 16443
 # 浮动ip地址映射的主机名，请在/etc/hosts配置文件中进行主机名映射设置
 virtualHostname: k8s-vip
+# kubernetes的容器运行时socket
+# docker情况下: unix:///var/run/cri-dockerd.sock
+# containerd情况下: unix:///var/run/containerd/containerd.sock
+# cri-o情况下: unix:///var/run/crio/crio.sock
+criSocket: unix:///var/run/cri-dockerd.sock
 # kubernetes集群的pod子网地址，如果不设置，使用默认的pod子网地址
 podSubnet: "10.244.0.0/24"
 # kubernetes集群的service子网地址，如果不设置，使用默认的service子网地址
