@@ -3,6 +3,9 @@
 - 容器运行时使用docker
 - 适用kubernetes版本: v1.24.x以上版本
 
+[中文](README.md)
+[English](README-EN.md)
+
 ## 部署节点信息
 
 hostname     | ip address      | comment   
@@ -15,10 +18,10 @@ k8s-vip      | 192.168.0.100   | kubernetes 浮动IP，通过keepalived创建，
 ```bash
 # 各节点请添加主机名解释
 cat << EOF >> /etc/hosts
-192.168.0.100	k8s-vip
-192.168.0.101	k8s-master01
-192.168.0.102	k8s-master02
-192.168.0.103	k8s-master03
+192.168.0.100    k8s-vip
+192.168.0.101    k8s-master01
+192.168.0.102    k8s-master02
+192.168.0.103    k8s-master03
 EOF
 ```
 
@@ -36,10 +39,10 @@ EOF
 # 操作系统版本: Debian 11
 $ lsb_release -a
 No LSB modules are available.
-Distributor ID:	Debian
-Description:	Debian GNU/Linux 11 (bullseye)
-Release:	11
-Codename:	bullseye
+Distributor ID:     Debian
+Description:        Debian GNU/Linux 11 (bullseye)
+Release:            11
+Codename:           bullseye
 
 # docker版本: 24.0.5
 $ docker version
@@ -385,8 +388,8 @@ kubeadm init --config=kubeadm-config.yaml --upload-certs
 You can now join any number of the control-plane node running the following command on each as root:
 
   kubeadm join 192.168.0.100:16443 --token tgszyf.c9dicrflqy85juaf \
-	--discovery-token-ca-cert-hash sha256:xxx \
-	--control-plane --certificate-key xxx
+    --discovery-token-ca-cert-hash sha256:xxx \
+    --control-plane --certificate-key xxx
 
 Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
 As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
@@ -395,12 +398,12 @@ As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you c
 Then you can join any number of worker nodes by running the following on each as root:
 
 kubeadm join 192.168.0.100:16443 --token tgszyf.c9dicrflqy85juaf \
-	--discovery-token-ca-cert-hash sha256:xxx 
+    --discovery-token-ca-cert-hash sha256:xxx 
 
 
   kubeadm join 192.168.0.100:16443 --token tgszyf.c9dicrflqy85juaf \
-	--discovery-token-ca-cert-hash sha256:xxx \
-	--control-plane --certificate-key xxx
+    --discovery-token-ca-cert-hash sha256:xxx \
+    --control-plane --certificate-key xxx
 
 # 在k8s-master02 和 k8s-master03节点上执行以下命令，把k8s-master02 和 k8s-master03加入到高可用kubernetes集群
 # 记住kubeadm join命令需要设置--cri-socket unix:///var/run/cri-dockerd.sock
