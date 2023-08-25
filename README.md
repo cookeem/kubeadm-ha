@@ -350,8 +350,7 @@ export LB_DIR=/data/k8s-lb
 
 # 把高可用负载均衡器的文件复制到k8s-master01
 ssh k8s-master01 mkdir -p ${LB_DIR}
-scp -r k8s-master01/nginx-lb root@k8s-master01:${LB_DIR}
-scp -r k8s-master01/keepalived/ root@k8s-master01:${LB_DIR}
+scp -r k8s-master01/nginx-lb k8s-master01/keepalived root@k8s-master01:${LB_DIR}
 
 # 在 k8s-master01 节点上启动高可用负载均衡器
 ssh k8s-master01 "cd ${LB_DIR}/keepalived/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
@@ -359,8 +358,7 @@ ssh k8s-master01 "cd ${LB_DIR}/nginx-lb/ && docker-compose stop && docker-compos
 
 # 把高可用负载均衡器的文件复制到k8s-master01
 ssh k8s-master02 mkdir -p ${LB_DIR}
-scp -r k8s-master02/nginx-lb root@k8s-master02:${LB_DIR}
-scp -r k8s-master02/keepalived/ root@k8s-master02:${LB_DIR}
+scp -r k8s-master02/nginx-lb k8s-master02/keepalived root@k8s-master02:${LB_DIR}
 
 # 在 k8s-master02 节点上启动高可用负载均衡器
 ssh k8s-master02 "cd ${LB_DIR}/keepalived/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
@@ -368,8 +366,7 @@ ssh k8s-master02 "cd ${LB_DIR}/nginx-lb/ && docker-compose stop && docker-compos
 
 # 把高可用负载均衡器的文件复制到k8s-master01
 ssh k8s-master03 mkdir -p ${LB_DIR}
-scp -r k8s-master03/nginx-lb root@k8s-master03:${LB_DIR}
-scp -r k8s-master03/keepalived/ root@k8s-master03:${LB_DIR}
+scp -r k8s-master03/nginx-lb k8s-master03/keepalived root@k8s-master03:${LB_DIR}
 
 # 在 k8s-master03 节点上启动高可用负载均衡器
 ssh k8s-master03 "cd ${LB_DIR}/keepalived/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
