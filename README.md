@@ -198,7 +198,7 @@ Requires=cri-docker.socket
 [Service]
 Type=notify
 ExecStart=/usr/local/bin/cri-dockerd --container-runtime-endpoint fd:// --pod-infra-container-image=$PAUSE_IMAGE
-ExecReload=/bin/kill -s HUP $MAINPID
+ExecReload=/bin/kill -s HUP \$MAINPID
 TimeoutSec=0
 RestartSec=2
 Restart=always
