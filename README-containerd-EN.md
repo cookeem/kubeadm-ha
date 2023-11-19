@@ -608,4 +608,4 @@ kubectl -n istio-system get pods,svc
 
 - Refer to the installation guide: [https://github.com/dory-engine/dorycli](https://github.com/dory-engine/dorycli)
 
-[🚀🚀🚀 Use dorycli to install and deploy Dory-Engine (https://www.bilibili.com/video/BV1x94y167T5/)](https://www.bilibili.com/video/BV1x94y167T5/)
+[🚀🚀🚀 Use dorycli to install and deploy Dory-Engine (https://www.bilibili.com/video/BV1aG411D7Sj/)](https://www.bilibili.com/video/BV1aG411D7Sj/)

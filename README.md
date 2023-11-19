@@ -649,4 +649,4 @@ kubectl -n istio-system get pods,svc
 
 - 安装指引参见: [https://github.com/dory-engine/dorycli](https://github.com/dory-engine/dorycli)
 
-[🚀🚀🚀 使用dorycli安装部署Dory-Engine (https://www.bilibili.com/video/BV1x94y167T5/)](https://www.bilibili.com/video/BV1x94y167T5/)
+[🚀🚀🚀 使用dorycli安装部署Dory-Engine (https://www.bilibili.com/video/BV1aG411D7Sj/)](https://www.bilibili.com/video/BV1aG411D7Sj/)
