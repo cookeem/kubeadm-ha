@@ -237,7 +237,7 @@ virtualPort: 16443
 # 浮动ip地址映射的主机名，请在/etc/hosts配置文件中进行主机名映射设置
 virtualHostname: k8s-vip
 # kubernetes的容器运行时socket
-# docker情况下: unix:///var/run/containerd/containerd.sock
+# docker情况下: unix:///var/run/cri-dockerd.sock
 # containerd情况下: unix:///var/run/containerd/containerd.sock
 # cri-o情况下: unix:///var/run/crio/crio.sock
 criSocket: unix:///var/run/containerd/containerd.sock

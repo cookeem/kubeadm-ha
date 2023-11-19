@@ -237,7 +237,7 @@ virtualPort: 16443
 # The host name of the floating ip address mapping, please set the host name mapping in the /etc/hosts configuration file
 virtualHostname: k8s-vip
 # kubernetes container runtime socket
-# In case of docker: unix:///var/run/containerd/containerd.sock
+# In case of docker: unix:///var/run/cri-dockerd.sock
 # In case of containerd: unix:///var/run/containerd/containerd.sock
 # In case of cri-o: unix:///var/run/crio/crio.sock
 criSocket: unix:///var/run/containerd/containerd.sock
