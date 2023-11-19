@@ -1,6 +1,6 @@
 # 通过kubeadm安装kubernetes高可用集群
 
-- 容器运行时使用docker
+- 容器运行时使用containerd
 - 适用kubernetes版本: v1.24.x以上版本
 
 - [中文 容器运行时docker](README.md)
@@ -33,8 +33,8 @@ EOF
 ![](images/kubeadm-ha.png)
 
 - 演示需要，只部署3个高可用的master节点
-- 使用keepalived和nginx作为高可用的负载均衡器，通过dorycli命令行工具生成负载均衡器的配置，并通过docker-compose部署负载均衡器
-- 容器运行时使用docker，cri-socket使用cri-dockerd连接docker和kubernetes
+- 使用keepalived和nginx作为高可用的负载均衡器，通过dorycli命令行工具生成负载均衡器的配置，并通过nerdctl部署负载均衡器
+- 容器运行时使用containerd
 
 ## 版本信息
 
@@ -47,46 +47,25 @@ Description:        Debian GNU/Linux 11 (bullseye)
 Release:            11
 Codename:           bullseye
 
-# docker版本: 24.0.5
-$ docker version
-Client: Docker Engine - Community
- Version:           24.0.5
- API version:       1.43
- Go version:        go1.20.6
- Git commit:        ced0996
- Built:             Fri Jul 21 20:35:45 2023
- OS/Arch:           linux/amd64
- Context:           default
+# containerd版本: 1.6.24
+$ containerd --version
+containerd containerd.io 1.6.24 61f9fd88f79f081d64d6fa3bb1a0dc71ec870523
 
-Server: Docker Engine - Community
- Engine:
-  Version:          24.0.5
-  API version:      1.43 (minimum version 1.12)
-  Go version:       go1.20.6
-  Git commit:       a61e2b4
-  Built:            Fri Jul 21 20:35:45 2023
-  OS/Arch:          linux/amd64
-  Experimental:     false
- containerd:
-  Version:          1.6.22
-  GitCommit:        8165feabfdfe38c65b599c4993d227328c231fca
- runc:
-  Version:          1.1.8
-  GitCommit:        v1.1.8-0-g82f18fe
- docker-init:
-  Version:          0.19.0
-  GitCommit:        de40ad0
+# nerdctl版本: 1.7.0
+nerdctl --version
+nerdctl version 1.7.0
 
-# cri-dockerd版本: 0.3.4
-$ cri-dockerd --version
-cri-dockerd 0.3.4 (e88b1605)
+# buildkitd版本: v0.12.3
+$ buildkitd --version
+buildkitd github.com/moby/buildkit v0.12.3 438f47256f0decd64cc96084e22d3357da494c27
+
+# cni-plugins版本: v1.3.0
 
 # dorycli版本: v1.5.2
 $ dorycli version
 dorycli version: v1.5.2
 install dory-engine version: v2.5.2
 install dory-console version: v2.5.2
-
 
 # kubeadm版本: v1.28.0
 $ kubeadm version
@@ -100,47 +79,116 @@ k8s-master02   Ready    control-plane   31m   v1.28.0
 k8s-master03   Ready    control-plane   30m   v1.28.0
 ```
 
-## 安装docker
+## 安装containerd
 
-- 在所有节点安装docker服务
+- 在所有节点安装containerd服务
 
 ```bash
 # 安装基础软件
-apt-get update
-apt-get install -y sudo wget ca-certificates curl gnupg htop git jq tree
+apt-get -y update
+apt-get -y upgrade
+apt-get install -y sudo ca-certificates curl gnupg htop git jq tree
 
-# 安装docker
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
-echo   "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" |   tee /etc/apt/sources.list.d/docker.list > /dev/null
-apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
+# 安装containerd
+apt-get install apt-transport-https software-properties-common ca-certificates curl gnupg lsb-release
+curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/debian/gpg | apt-key add -
+add-apt-repository "deb [arch=amd64] https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian $(lsb_release -cs) stable"
 
-# 检查docker版本
-docker version
+apt-get -y update
+apt-get install -y containerd.io
 
-# 设置docker参数
-cat << EOF > /etc/docker/daemon.json
-{
-    "exec-opts": ["native.cgroupdriver=systemd"],
-    "log-driver": "json-file",
-    "log-opts": {
-        "max-size": "100m"
-    },
-    "storage-driver": "overlay2"
-}
+systemctl status containerd
+
+# 安装kubeadm
+curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
+EOF
+apt-get -y update
+apt-get install -y kubelet kubeadm kubectl
+kubeadm version
+
+# 获取pause镜像信息
+PAUSE_IMAGE=$(kubeadm config images list --image-repository registry.cn-hangzhou.aliyuncs.com/google_containers | grep pause)
+echo ${PAUSE_IMAGE}
+
+# 修改containerd配置
+containerd config default > /etc/containerd/config.toml
+
+# 设置containerd配置，查找并修改SystemdCgroup = true
+vi /etc/containerd/config.toml
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+  ...
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+    SystemdCgroup = true
+
+# 设置containerd配置，查找并修改sandbox_image配置，注意该项配置为之前获取的pause镜像信息，对应${PAUSE_IMAGE}
+vi /etc/containerd/config.toml
+sandbox_image = "registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.9"
+
+# 重启containerd
+systemctl restart containerd
+
+# 安装cni
+wget https://github.com/containernetworking/plugins/releases/download/v1.3.0/cni-plugins-linux-amd64-v1.3.0.tgz
+mkdir -p /opt/cni/bin
+tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.3.0.tgz
+
+# 安装nerdctl
+wget https://github.com/containerd/nerdctl/releases/download/v1.7.0/nerdctl-1.7.0-linux-amd64.tar.gz
+tar Cxzvf /usr/local/bin nerdctl-1.7.0-linux-amd64.tar.gz
+
+# nerdctl自动完成
+nerdctl completion bash > /etc/bash_completion.d/nerdctl
+
+# 安装buildkit
+wget https://github.com/moby/buildkit/releases/download/v0.12.3/buildkit-v0.12.3.linux-amd64.tar.gz
+tar Cxzvf /usr/local/ buildkit-v0.12.3.linux-amd64.tar.gz
+
+# 设置并启动buildkit
+cat << EOF > /etc/systemd/system/buildkit.service
+[Unit]
+Description=BuildKit
+Requires=buildkit.socket
+After=buildkit.socket
+Documentation=https://github.com/moby/buildkit
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/buildkitd --addr fd://
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
-# 重启docker服务
-systemctl restart docker
-systemctl status docker
+cat << EOF > /etc/systemd/system/buildkit.socket
+[Unit]
+Description=BuildKit
+Documentation=https://github.com/moby/buildkit
 
-# 验证docker服务是否正常
-docker images
-docker pull busybox
-docker run --rm busybox uname -m
+[Socket]
+ListenStream=%t/buildkit/buildkitd.sock
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target
+EOF
+
+systemctl daemon-reload
+systemctl enable buildkit --now
+
+# 验证nerdctl是否可以正常管理containerd
+nerdctl images
+nerdctl pull busybox
+nerdctl run --rm busybox uname -m
+
+# 验证nerdctl是否可以使用buildkit构建镜像
+cat << EOF > Dockerfile
+FROM alpine
+EOF
+nerdctl build -t xxx .
+nerdctl rmi xxx
+rm -f Dockerfile
 ```
 
 ## 安装kubernetes
@@ -148,99 +196,9 @@ docker run --rm busybox uname -m
 - 在所有节点安装kubernetes相关软件
 
 ```bash
-# 安装kubernetes相关组件
-curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add - 
-cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
-EOF
-apt-get update
-apt-get install -y kubelet kubeadm kubectl
-kubeadm version
-
-# 获取kubernetes所需要的镜像
-kubeadm config images list --image-repository registry.cn-hangzhou.aliyuncs.com/google_containers
-export PAUSE_IMAGE=$(kubeadm config images list --image-repository registry.cn-hangzhou.aliyuncs.com/google_containers | grep pause)
-
-# 注意pause镜像用于配置cri-dockerd的启动参数
-# 应该是输出 registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.9
-echo $PAUSE_IMAGE
-
-# 安装cri-dockerd，用于连接kubernetes和docker
-wget https://github.com/Mirantis/cri-dockerd/releases/download/v0.3.4/cri-dockerd-0.3.4.amd64.tgz
-tar zxvf cri-dockerd-0.3.4.amd64.tgz 
-cd cri-dockerd/
-mkdir -p /usr/local/bin
-install -o root -g root -m 0755 cri-dockerd /usr/local/bin/cri-dockerd
-
-# 创建cri-docker.socket启动文件
-cat << EOF > /etc/systemd/system/cri-docker.socket
-[Unit]
-Description=CRI Docker Socket for the API
-PartOf=cri-docker.service
-
-[Socket]
-ListenStream=%t/cri-dockerd.sock
-SocketMode=0660
-SocketUser=root
-SocketGroup=docker
-
-[Install]
-WantedBy=sockets.target
-EOF
-
-# 创建cri-docker.service启动文件
-# 注意设置pause容器镜像信息 --pod-infra-container-image=$PAUSE_IMAGE
-cat << EOF > /etc/systemd/system/cri-docker.service
-[Unit]
-Description=CRI Interface for Docker Application Container Engine
-Documentation=https://docs.mirantis.com
-After=network-online.target firewalld.service docker.service
-Wants=network-online.target
-Requires=cri-docker.socket
-
-[Service]
-Type=notify
-ExecStart=/usr/local/bin/cri-dockerd --container-runtime-endpoint fd:// --pod-infra-container-image=$PAUSE_IMAGE
-ExecReload=/bin/kill -s HUP \$MAINPID
-TimeoutSec=0
-RestartSec=2
-Restart=always
-
-# Note that StartLimit* options were moved from "Service" to "Unit" in systemd 229.
-# Both the old, and new location are accepted by systemd 229 and up, so using the old location
-# to make them work for either version of systemd.
-StartLimitBurst=3
-
-# Note that StartLimitInterval was renamed to StartLimitIntervalSec in systemd 230.
-# Both the old, and new name are accepted by systemd 230 and up, so using the old name to make
-# this option work for either version of systemd.
-StartLimitInterval=60s
-
-# Having non-zero Limit*s causes performance problems due to accounting overhead
-# in the kernel. We recommend using cgroups to do container-local accounting.
-LimitNOFILE=infinity
-LimitNPROC=infinity
-LimitCORE=infinity
-
-# Comment TasksMax if your systemd version does not support it.
-# Only systemd 226 and above support this option.
-TasksMax=infinity
-Delegate=yes
-KillMode=process
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# 启动cri-dockerd
-systemctl daemon-reload
-systemctl enable --now cri-docker.socket
-systemctl restart cri-docker
-systemctl status cri-docker
-
 # 通过kubeadm预先拉取所需的容器镜像
-kubeadm config images pull --image-repository registry.cn-hangzhou.aliyuncs.com/google_containers --cri-socket unix:///var/run/cri-dockerd.sock
-docker images
+kubeadm config images pull --image-repository registry.cn-hangzhou.aliyuncs.com/google_containers --cri-socket unix:///var/run/containerd/containerd.sock
+nerdctl -n k8s.io images
 ```
 
 - 在k8s-master01节点通过dorycli创建并启动高可用负载均衡器: keepalived, nginx-lb
@@ -279,10 +237,10 @@ virtualPort: 16443
 # 浮动ip地址映射的主机名，请在/etc/hosts配置文件中进行主机名映射设置
 virtualHostname: k8s-vip
 # kubernetes的容器运行时socket
-# docker情况下: unix:///var/run/cri-dockerd.sock
+# docker情况下: unix:///var/run/containerd/containerd.sock
 # containerd情况下: unix:///var/run/containerd/containerd.sock
 # cri-o情况下: unix:///var/run/crio/crio.sock
-criSocket: unix:///var/run/cri-dockerd.sock
+criSocket: unix:///var/run/containerd/containerd.sock
 # kubernetes集群的pod子网地址，如果不设置，使用默认的pod子网地址
 podSubnet: "10.244.0.0/24"
 # kubernetes集群的service子网地址，如果不设置，使用默认的service子网地址
@@ -346,7 +304,7 @@ networking:
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 nodeRegistration:
-  criSocket: unix:///var/run/cri-dockerd.sock
+  criSocket: unix:///var/run/containerd/containerd.sock
 
 # 设置master节点的kubernetes高可用负载均衡器的文件路径
 export LB_DIR=/data/k8s-lb
@@ -356,24 +314,24 @@ ssh k8s-master01 mkdir -p ${LB_DIR}
 scp -r k8s-master01/nginx-lb k8s-master01/keepalived root@k8s-master01:${LB_DIR}
 
 # 在 k8s-master01 节点上启动高可用负载均衡器
-ssh k8s-master01 "cd ${LB_DIR}/keepalived/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
-ssh k8s-master01 "cd ${LB_DIR}/nginx-lb/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
+ssh k8s-master01 "cd ${LB_DIR}/keepalived/ && nerdctl compose stop && nerdctl compose rm -f && nerdctl compose up -d"
+ssh k8s-master01 "cd ${LB_DIR}/nginx-lb/ && nerdctl compose stop && nerdctl compose rm -f && nerdctl compose up -d"
 
 # 把高可用负载均衡器的文件复制到k8s-master02
 ssh k8s-master02 mkdir -p ${LB_DIR}
 scp -r k8s-master02/nginx-lb k8s-master02/keepalived root@k8s-master02:${LB_DIR}
 
 # 在 k8s-master02 节点上启动高可用负载均衡器
-ssh k8s-master02 "cd ${LB_DIR}/keepalived/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
-ssh k8s-master02 "cd ${LB_DIR}/nginx-lb/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
+ssh k8s-master02 "cd ${LB_DIR}/keepalived/ && nerdctl compose stop && nerdctl compose rm -f && nerdctl compose up -d"
+ssh k8s-master02 "cd ${LB_DIR}/nginx-lb/ && nerdctl compose stop && nerdctl compose rm -f && nerdctl compose up -d"
 
 # 把高可用负载均衡器的文件复制到k8s-master03
 ssh k8s-master03 mkdir -p ${LB_DIR}
 scp -r k8s-master03/nginx-lb k8s-master03/keepalived root@k8s-master03:${LB_DIR}
 
 # 在 k8s-master03 节点上启动高可用负载均衡器
-ssh k8s-master03 "cd ${LB_DIR}/keepalived/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
-ssh k8s-master03 "cd ${LB_DIR}/nginx-lb/ && docker-compose stop && docker-compose rm -f && docker-compose up -d"
+ssh k8s-master03 "cd ${LB_DIR}/keepalived/ && nerdctl compose stop && nerdctl compose rm -f && nerdctl compose up -d"
+ssh k8s-master03 "cd ${LB_DIR}/nginx-lb/ && nerdctl compose stop && nerdctl compose rm -f && nerdctl compose up -d"
 
 # 在各个master节点上检验浮动IP是否已经创建，正常情况下浮动IP绑定在 k8s-master01 上
 ip address
@@ -406,10 +364,10 @@ kubeadm join 192.168.0.100:16443 --token tgszyf.c9dicrflqy85juaf \
     --control-plane --certificate-key xxx
 
 # 在k8s-master02 和 k8s-master03节点上执行以下命令，把k8s-master02 和 k8s-master03加入到高可用kubernetes集群
-# 记住kubeadm join命令需要设置--cri-socket unix:///var/run/cri-dockerd.sock
+# 记住kubeadm join命令需要设置--cri-socket unix:///var/run/containerd/containerd.sock
 kubeadm join 192.168.0.100:16443 --token tgszyf.c9dicrflqy85juaf \
         --discovery-token-ca-cert-hash sha256:xxx \
-        --control-plane --certificate-key xxx --cri-socket unix:///var/run/cri-dockerd.sock
+        --control-plane --certificate-key xxx --cri-socket unix:///var/run/containerd/containerd.sock
 
 # 在所有master节点上设置kubectl访问kubernetes集群
 mkdir -p $HOME/.kube
@@ -429,7 +387,8 @@ source $HOME/.bash_profile
 wget https://github.com/cilium/cilium-cli/releases/download/v0.15.6/cilium-linux-amd64.tar.gz
 tar zxvf cilium-linux-amd64.tar.gz 
 mv cilium /usr/local/bin/
-cilium install --version 1.14.0 --set cni.chainingMode=portmap
+# 注意，这里要设置cni.exclusive=false，避免cilium自动修改了nerdctl的cni配置
+cilium install --version 1.14.0 --set cni.chainingMode=portmap --set cni.exclusive=false
 
 # 设置所有master允许调度pod
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
