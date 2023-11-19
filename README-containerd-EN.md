@@ -1,4 +1,4 @@
-# Install kubernetes high availability cluster through kubeadm
+# Install kubernetes high availability cluster through kubeadm (Support docker and containerd as container runtime for kubernetes)
 
 - container runtime using docker
 - Applicable kubernetes version: v1.24.x and above

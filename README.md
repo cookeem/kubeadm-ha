@@ -1,4 +1,4 @@
-# 通过kubeadm安装kubernetes高可用集群
+# 通过kubeadm安装kubernetes高可用集群(支持docker和containerd作为kubernetes的容器运行时)
 
 - 容器运行时使用docker
 - 适用kubernetes版本: v1.24.x以上版本
