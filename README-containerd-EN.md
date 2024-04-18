@@ -495,7 +495,7 @@ kubectl -n kube-system get secret admin-user-secret -o jsonpath='{ .data.token }
 - Deploy traefik on all master nodes of kubernetes:
 ```shell script
 # Pull the traefik helm repo
-helm repo add traefik https://helm.traefik.io/traefik
+helm repo add traefik https://traefik.github.io/charts
 helm fetch traefik/traefik --untar
 
 # Deploy traefik in daemonset mode
@@ -505,11 +505,6 @@ deployment:
 image:
    name: traefik
    tag: v2.6.3
-pilot:
-   enabled: true
-experimental:
-   plugins:
-     enabled: true
 ports:
    web:
      hostPort: 80

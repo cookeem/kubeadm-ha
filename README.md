@@ -536,7 +536,7 @@ kubectl -n kube-system get secret admin-user-secret -o jsonpath='{ .data.token }
 - 在kubernetes所有master节点部署traefik: 
 ```shell script
 # 拉取 traefik helm repo
-helm repo add traefik https://helm.traefik.io/traefik
+helm repo add traefik https://traefik.github.io/charts
 helm fetch traefik/traefik --untar
 
 # 以daemonset方式部署traefik
@@ -546,11 +546,6 @@ deployment:
 image:
   name: traefik
   tag: v2.6.3
-pilot:
-  enabled: true
-experimental:
-  plugins:
-    enabled: true
 ports:
   web:
     hostPort: 80
