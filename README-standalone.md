@@ -96,8 +96,8 @@ systemctl status docker
 
 # 验证docker服务是否正常
 docker images
-docker pull docker.m.daocloud.io/library/busybox
-docker run --rm docker.m.daocloud.io/library/busybox uname -m
+docker pull busybox
+docker run --rm busybox uname -m
 ```
 
 ## 安装kubernetes
