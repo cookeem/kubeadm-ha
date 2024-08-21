@@ -9,6 +9,8 @@
 - [中文 容器运行时containerd](README-containerd.md)
 - [English container runtime containerd](README-containerd-EN.md)
 
+- [中文 kubernetes单节点安装指引](README-standalone.md)
+
 ## Deployment node information
 
 hostname | ip address | comment
