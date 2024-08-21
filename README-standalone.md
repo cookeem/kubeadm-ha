@@ -51,8 +51,8 @@ kubeadm version: &version.Info{Major:"1", Minor:"28", GitVersion:"v1.28.2", GitC
 
 # kubernetes版本: v1.28.2
 $ kubectl get nodes
-NAME           STATUS   ROLES           AGE   VERSION
-k8s-master01   Ready    control-plane   35m   v1.28.2
+NAME       STATUS   ROLES           AGE     VERSION
+k8s-demo   Ready    control-plane   3m15s   v1.28.2
 ```
 
 ## 安装docker
@@ -202,11 +202,14 @@ systemctl status cri-docker
 
 # 通过kubeadm预先拉取所需的容器镜像
 kubeadm config images pull --image-repository registry.cn-hangzhou.aliyuncs.com/google_containers --cri-socket unix:///var/run/cri-dockerd.sock
+
+# 查看拉取的镜像
 docker images
 
-# 部署kubernetes集群
+# 部署前清理旧的安装配置
 kubeadm reset -f --cri-socket unix:///var/run/cri-dockerd.sock
 
+# 使用kubeadm初始化kubernetes集群
 kubeadm init --image-repository registry.cn-hangzhou.aliyuncs.com/google_containers --cri-socket unix:///var/run/cri-dockerd.sock
 
 
@@ -224,20 +227,45 @@ source '$HOME/.kube/completion.bash.inc'
 " >> $HOME/.bash_profile
 source $HOME/.bash_profile
 
+# 检查节点就绪状态，未安装网路网络组件，节点状态为 NOT READY
+kubectl get nodes
 
-# 在k8s-master01节点上安装cilium网络组件
+# 检查pod状态，coredns状态为Pending
+kubectl -n kube-system get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+coredns-6554b8b87f-5r58j           0/1     Pending   0          2m40s
+coredns-6554b8b87f-wcbx7           0/1     Pending   0          2m40s
+etcd-k8s-demo                      1/1     Running   0          2m45s
+kube-apiserver-k8s-demo            1/1     Running   0          2m45s
+kube-controller-manager-k8s-demo   1/1     Running   0          2m48s
+kube-proxy-6vtzw                   1/1     Running   0          2m40s
+kube-scheduler-k8s-demo            1/1     Running   0          2m45s
+
+# 在k8s-demo节点上安装cilium网络组件
 wget https://github.com/cilium/cilium-cli/releases/download/v0.16.16/cilium-linux-amd64.tar.gz
 tar zxvf cilium-linux-amd64.tar.gz 
 mv cilium /usr/local/bin/
 cilium install --set cni.chainingMode=portmap
+
+# 检查cilium部署情况
+kubectl -n kube-system get pods
+
+# 检查节点就绪状态
+kubectl get nodes
+NAME       STATUS   ROLES           AGE     VERSION
+k8s-demo   Ready    control-plane   3m15s   v1.28.2
 
 # 设置所有master允许调度pod
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 
 # 测试部署应用到kubernetes集群
 # 部署一个nginx应用，并暴露到nodePort31000
-kubectl run nginx --image=nginx:1.23.1-alpine --image-pull-policy=IfNotPresent --port=80 -l=app=nginx
+kubectl run nginx --image=nginx --image-pull-policy=IfNotPresent --port=80 -l=app=nginx
 kubectl create service nodeport nginx --tcp=80:80 --node-port=31000
-curl k8s-vip:31000
 
+# 检查pod状态
+kubectl get pods,svc
+
+# 检查服务是否可以访问
+curl k8s-demo:31000
 ```
