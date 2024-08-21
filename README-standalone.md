@@ -63,6 +63,7 @@ k8s-master01   Ready    control-plane   35m   v1.28.2
 # 安装基础软件
 apt-get -y update
 apt-get install -y sudo wget ca-certificates curl gnupg htop git jq tree
+apt-get -y install apt-transport-https ca-certificates curl software-properties-common
 
 # 安装docker-ce
 install -m 0755 -d /etc/apt/keyrings
@@ -96,7 +97,11 @@ systemctl status docker
 
 # 验证docker服务是否正常
 docker images
+
+# 拉取测试镜像
 docker pull busybox
+
+# 运行测试镜像
 docker run --rm busybox uname -m
 ```
 
