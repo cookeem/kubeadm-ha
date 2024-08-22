@@ -269,3 +269,138 @@ kubectl get pods,svc
 # 检查服务是否可以访问
 curl k8s-demo:31000
 ```
+
+## 安装kubernetes-dashboard
+
+```bash
+# 安装helm
+wget https://get.helm.sh/helm-v3.15.4-linux-amd64.tar.gz
+tar zxvf helm-v3.15.4-linux-amd64.tar.gz
+mv linux-amd64/helm /usr/bin/
+rm -rf linux-amd64/
+
+# 测试helm
+helm --help
+
+# 添加 kubernetes-dashboard helm chart 仓库
+helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+
+# 把helm chart 下载到本地
+helm fetch kubernetes-dashboard/kubernetes-dashboard --untar
+
+# 获取镜像
+docker pull kubernetesui/dashboard-auth:1.1.3
+docker pull kubernetesui/dashboard-api:1.7.0
+docker pull kubernetesui/dashboard-web:1.4.0
+docker pull kubernetesui/dashboard-metrics-scraper:1.1.1
+docker pull kong:3.6
+
+# 设置 kubernetes-dashboard 的部署配置
+cat << EOF > kubernetes-dashboard.yaml
+auth:
+  image:
+    repository: kubernetesui/dashboard-auth
+    tag: 1.1.3
+api:
+  image:
+    repository: kubernetesui/dashboard-api
+    tag: 1.7.0
+web:
+  image:
+    repository: kubernetesui/dashboard-web
+    tag: 1.4.0
+metricsScraper:
+  image:
+    repository: kubernetesui/dashboard-metrics-scraper
+    tag: 1.1.1
+EOF
+
+# 部署 kubernetes-dashboard
+kubectl create namespace kubernetes-dashboard --dry-run=client -o yaml | kubectl apply -f -
+helm install -n kubernetes-dashboard kubernetes-dashboard kubernetes-dashboard/ -f kubernetes-dashboard.yaml
+
+# # 如果需要删除kubernetes-dashboard可以执行以下命令
+# helm uninstall -n kubernetes-dashboard kubernetes-dashboard
+
+# 删除kong的管理界面
+kubectl -n kubernetes-dashboard delete svc kubernetes-dashboard-kong-manager
+
+# 把kubernetes-dashboard暴露到30000端口
+kubectl -n kubernetes-dashboard patch svc kubernetes-dashboard-kong-proxy --type json --patch '
+[
+  {
+    "op": "replace",
+    "path": "/spec/type",
+    "value": "NodePort"
+  }
+]'
+
+kubectl -n kubernetes-dashboard patch svc kubernetes-dashboard-kong-proxy --type json --patch '
+[
+  {
+    "op": "replace",
+    "path": "/spec/ports/0/nodePort",
+    "value": 30000
+  }
+]'
+
+# 检查部署的pods
+kubectl -n kubernetes-dashboard get pods
+
+# 检查部署的services
+kubectl -n kubernetes-dashboard get services
+
+# 创建管理员serviceaccount
+kubectl create serviceaccount -n kube-system admin-user --dry-run=client -o yaml | kubectl apply -f -
+
+# 创建管理员clusterrolebinding
+kubectl create clusterrolebinding admin-user --clusterrole=cluster-admin --serviceaccount=kube-system:admin-user --dry-run=client -o yaml | kubectl apply -f -
+
+# 手动创建serviceaccount的secret
+cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admin-user-secret
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: admin-user
+type: kubernetes.io/service-account-token
+EOF
+
+# 获取kubernetes管理token
+kubectl -n kube-system get secret admin-user-secret -o jsonpath='{ .data.token }' | base64 -d
+
+# 使用浏览器访问kubernetes-dashboard: https://xxx:30000
+# 使用kubernetes管理token登录kubernetes-dashboard
+```
+
+## 安装metrics-server
+
+```bash
+# 拉取镜像
+docker pull k8s.m.daocloud.io/metrics-server/metrics-server:v0.7.1
+docker tag k8s.m.daocloud.io/metrics-server/metrics-server:v0.7.1 registry.k8s.io/metrics-server/metrics-server:v0.7.1
+
+# 获取metrics-server安装yaml
+curl -O -L https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.1/components.yaml
+
+# 添加--kubelet-insecure-tls参数
+sed -i 's/- args:/- args:\n        - --kubelet-insecure-tls/g' components.yaml
+
+# 安装metrics-server
+kubectl apply -f components.yaml
+
+# # 删除metrics-server
+# kubectl delete -f components.yaml
+
+# 等待metrics-server正常
+kubectl -n kube-system get pods -l=k8s-app=metrics-server
+
+# 查看节点的性能指标
+kubectl top nodes
+
+# 查看所有pods的性能指标
+kubectl top pods -A
+```
+
