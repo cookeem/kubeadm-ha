@@ -83,11 +83,11 @@ Server: Docker Engine - Community
 $ cri-dockerd --version
 cri-dockerd 0.3.4 (e88b1605)
 
-# dorycli版本: v1.6.4
+# dorycli版本: v1.6.5
 $ dorycli version
-dorycli version: v1.6.4
-install dory-engine version: v2.6.4
-install dory-console version: v2.6.4
+dorycli version: v1.6.5
+install dory-engine version: v2.6.5
+install dory-console version: v2.6.5
 
 
 # kubeadm版本: v1.28.0
@@ -251,8 +251,8 @@ docker images
 ```bash
 # 安装dorycli
 cd /root
-wget https://github.com/dory-engine/dorycli/releases/download/v1.6.4/dorycli-v1.6.4-linux-amd64.tgz
-tar zxvf dorycli-v1.6.4-linux-amd64.tgz
+wget https://github.com/dory-engine/dorycli/releases/download/v1.6.5/dorycli-v1.6.5-linux-amd64.tgz
+tar zxvf dorycli-v1.6.5-linux-amd64.tgz
 chmod a+x dorycli
 mv dorycli /usr/bin/
 
@@ -547,7 +547,7 @@ deployment:
   kind: DaemonSet
 image:
   name: traefik
-  tag: v2.6.4
+  tag: v2.6.5
 ports:
   web:
     hostPort: 80
