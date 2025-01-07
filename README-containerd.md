@@ -61,11 +61,11 @@ buildkitd github.com/moby/buildkit v0.12.3 438f47256f0decd64cc96084e22d3357da494
 
 # cni-plugins版本: v1.3.0
 
-# dorycli版本: v1.6.5
+# dorycli版本: v1.6.6
 $ dorycli version
-dorycli version: v1.6.5
-install dory-engine version: v2.6.5
-install dory-console version: v2.6.5
+dorycli version: v1.6.6
+install dory-engine version: v2.6.6
+install dory-console version: v2.6.6
 
 # kubeadm版本: v1.28.0
 $ kubeadm version
@@ -207,8 +207,8 @@ nerdctl -n k8s.io images
 ```bash
 # 安装dorycli
 cd /root
-wget https://github.com/dory-engine/dorycli/releases/download/v1.6.5/dorycli-v1.6.5-linux-amd64.tgz
-tar zxvf dorycli-v1.6.5-linux-amd64.tgz
+wget https://github.com/dory-engine/dorycli/releases/download/v1.6.6/dorycli-v1.6.6-linux-amd64.tgz
+tar zxvf dorycli-v1.6.6-linux-amd64.tgz
 chmod a+x dorycli
 mv dorycli /usr/bin/
 
@@ -230,6 +230,10 @@ cat kubeadm-ha.yaml
 version: "v1.28.0"
 # kubernetes的镜像仓库设置，如果不设置，那么使用官方的默认镜像仓库
 imageRepository: "registry.cn-hangzhou.aliyuncs.com/google_containers"
+# keepalived镜像
+keepalivedImage: "osixia/keepalived:release-2.1.5-dev"
+# nginx-lb镜像
+nginxlbImage: "nginx:1.27.0-alpine"
 # 使用keepalived创建的高可用kubernetes集群的浮动ip地址
 virtualIp: 192.168.0.100
 # 使用nginx映射的高可用kubernetes集群的apiserver映射端口
@@ -240,13 +244,15 @@ virtualHostname: k8s-vip
 # docker情况下: unix:///var/run/cri-dockerd.sock
 # containerd情况下: unix:///var/run/containerd/containerd.sock
 # cri-o情况下: unix:///var/run/crio/crio.sock
-criSocket: unix:///var/run/containerd/containerd.sock
+criSocket: unix:///var/run/cri-dockerd.sock
 # kubernetes集群的pod子网地址，如果不设置，使用默认的pod子网地址
 podSubnet: "10.244.0.0/24"
 # kubernetes集群的service子网地址，如果不设置，使用默认的service子网地址
 serviceSubnet: "10.96.0.0/16"
 # keepalived的鉴权密码，如果不设置那么使用随机生成的密码
-keepAlivedAuthPass: ""
+keepAlivedAuthPass: "input_your_password"
+# keepalived的virtual_router_id设置
+keepAlivedVirtualRouterId: 101
 # kubernetes的controlplane控制平面的主机配置，高可用master节点数量必须为单数并且至少3台
 masterHosts:
     # master节点的主机名，请在/etc/hosts配置文件中进行主机名映射设置
@@ -504,7 +510,7 @@ deployment:
   kind: DaemonSet
 image:
   name: traefik
-  tag: v2.6.5
+  tag: v2.6.6
 ports:
   web:
     hostPort: 80
@@ -589,18 +595,16 @@ istioctl install --set profile=demo \
 kubectl -n istio-system get pods,svc
 ```
 
-## [可选] 应用上云引擎 Dory-Engine
+## [可选] 非常简单的开源k8s远程开发环境 Dory-Engine
 
-[🚀🚀🚀 Dory-Engine平台工程最佳实践 (https://www.bilibili.com/video/BV1oM4y117Pj/)](https://www.bilibili.com/video/BV1oM4y117Pj/)
+[🚀🚀🚀 使用k8s快速搭建远程开发环境 (https://www.bilibili.com/video/BV1Zw4m1r7aw/)](https://www.bilibili.com/video/BV1Zw4m1r7aw/)
 
 ![](images/what-is-dory.png)
 
-- `Dory-Engine` 是一个非常简单的应用上云引擎，开发人员不用学、不用写、不用配就可以自行把自己编写的程序从源代码，编译、打包、部署到各类k8s环境或者主机环境中。
+- `Dory-Engine` 非常简单的开源k8s远程开发环境，开发人员不用学、不用写、不用配就可以自行把自己编写的程序从源代码，编译、打包、部署到各类k8s环境中。
 
-1. 不用学: 不需要学习如何编写复杂的上云脚本和如何部署应用到k8s，所有配置都所见即所得一看就懂
-2. 不用写: 不需要编写复杂的构建、打包、部署的上云脚本，也不需要编写复杂的k8s应用部署文件，只需要几项简单的配置就可以设置好自己的上云流水线
-3. 不用配: 不需要配置各个DevOps工具链和k8s环境如何互相配合完成应用上云，项目一开通所有工具链和环境自动完成配置
+1. 不用学: 不用学习复杂的k8s技术原理，5分钟即可快速上手部署应用
+2. 不用配: 不需要配置任何代码仓库、镜像仓库和k8s连接参数
+3. 不用写: 不需要编写任何k8s部署清单和流水线脚本
 
-- 安装指引参见: [https://github.com/dory-engine/dorycli](https://github.com/dory-engine/dorycli)
-
-[🚀🚀🚀 使用dorycli安装部署Dory-Engine (https://www.bilibili.com/video/BV1aG411D7Sj/)](https://www.bilibili.com/video/BV1aG411D7Sj/)
+- 安装指引参见: [https://github.com/dory-engine/dory-engine](https://github.com/dory-engine/dory-engine)

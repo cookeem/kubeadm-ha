@@ -61,11 +61,11 @@ buildkitd github.com/moby/buildkit v0.12.3 438f47256f0decd64cc96084e22d3357da494
 
 # cni-plugins version: v1.3.0
 
-# dorycli version: v1.6.5
+# dorycli version: v1.6.6
 $ dorycli version
-dorycli version: v1.6.5
-install dory-engine version: v2.6.5
-install dory-console version: v2.6.5
+dorycli version: v1.6.6
+install dory-engine version: v2.6.6
+install dory-console version: v2.6.6
 
 # kubeadm version: v1.28.0
 $ kubeadm version
@@ -207,8 +207,8 @@ nerdctl -n k8s.io images
 ```bash
 # install dorycli
 cd /root
-wget https://github.com/dory-engine/dorycli/releases/download/v1.6.5/dorycli-v1.6.5-linux-amd64.tgz
-tar zxvf dorycli-v1.6.5-linux-amd64.tgz
+wget https://github.com/dory-engine/dorycli/releases/download/v1.6.6/dorycli-v1.6.6-linux-amd64.tgz
+tar zxvf dorycli-v1.6.6-linux-amd64.tgz
 chmod a+x dorycli
 mv dorycli /usr/bin/
 
@@ -228,51 +228,57 @@ ip address
 cat kubeadm-ha.yaml
 # The version of kubernetes that needs to be installed
 version: "v1.28.0"
-# The mirror warehouse setting of kubernetes, if not set, then use the official default mirror warehouse
+# The kubernete image registry settings, if not set, then use the official default image registry
 imageRepository: "registry.cn-hangzhou.aliyuncs.com/google_containers"
-# The floating ip address of the highly available kubernetes cluster created using keepalived
+# keepalived image
+keepalivedImage: "osixia/keepalived:release-2.1.5-dev"
+# nginx-lb image
+nginxlbImage: "nginx:1.27.0-alpine"
+# The virtual ip address of the highly available kubernetes cluster created using keepalived
 virtualIp: 192.168.0.100
 # Use the apiserver mapping port of the highly available kubernetes cluster mapped by nginx
 virtualPort: 16443
-# The host name of the floating ip address mapping, please set the host name mapping in the /etc/hosts configuration file
+# The host name of the virtual ip address mapping, please set the host name mapping in the /etc/hosts configuration file
 virtualHostname: k8s-vip
 # kubernetes container runtime socket
-# In case of docker: unix:///var/run/cri-dockerd.sock
-# In case of containerd: unix:///var/run/containerd/containerd.sock
+# In the case of docker: unix:///var/run/cri-dockerd.sock
+# In the case of containerd: unix:///var/run/containerd/containerd.sock
 # In case of cri-o: unix:///var/run/crio/crio.sock
-criSocket: unix:///var/run/containerd/containerd.sock
+criSocket: unix:///var/run/cri-dockerd.sock
 # The pod subnet address of the kubernetes cluster, if not set, use the default pod subnet address
 podSubnet: "10.244.0.0/24"
 # The service subnet address of the kubernetes cluster, if not set, use the default service subnet address
 serviceSubnet: "10.96.0.0/16"
 # The authentication password of keepalived, if not set then use a randomly generated password
-keepAlivedAuthPass: ""
+keepAlivedAuthPass: "input_your_password"
+# keepalived virtual_router_id settings
+keepAlivedVirtualRouterId: 101
 # The host configuration of the controlplane control plane of kubernetes, the number of highly available master nodes must be singular and at least 3
 masterHosts:
-     # The host name of the master node, please set the host name mapping in the /etc/hosts configuration file
-   - hostname: k8s-master01
-     # The IP address of the master node
-     ipAddress: 192.168.0.101
-     # The name of the network card used by the master node for mutual access, used for keepalived network card binding
-     networkInterface: eth0
-     # keepalived election priority, the larger the value, the higher the priority, the priority of each master node cannot be the same
-     keepalivedPriority: 120
-     # The host name of the master node, please set the host name mapping in the /etc/hosts configuration file
-   - hostname: k8s-master02
-     # The IP address of the master node
-     ipAddress: 192.168.0.102
-     # The name of the network card used by the master node for mutual access, used for keepalived network card binding
-     networkInterface: eth0
-     # keepalived election priority, the larger the value, the higher the priority, the priority of each master node cannot be the same
-     keepalivedPriority: 110
-     # The host name of the master node, please set the host name mapping in the /etc/hosts configuration file
-   - hostname: k8s-master03
-     # The IP address of the master node
-     ipAddress: 192.168.0.103
-     # The name of the network card used by the master node for mutual access, used for keepalived network card binding
-     networkInterface: eth0
-     # keepalived election priority, the larger the value, the higher the priority, the priority of each master node cannot be the same
-     keepalivedPriority: 100
+    # The host name of the master node, please set the host name mapping in the /etc/hosts configuration file
+  - hostname: k8s-master01
+    # The IP address of the master node
+    ipAddress: 192.168.0.101
+    # The name of the network card used by the master node for mutual access, used for keepalived network interface binding
+    networkInterface: eth0
+    # keepalived election priority, the larger the value, the higher the priority, the priority of each master node cannot be the same
+    keepalivedPriority: 120
+    # The host name of the master node, please set the host name mapping in the /etc/hosts configuration file
+  - hostname: k8s-master02
+    # The IP address of the master node
+    ipAddress: 192.168.0.102
+    # The name of the network card used by the master node for mutual access, used for keepalived network interface binding
+    networkInterface: eth0
+    # keepalived election priority, the larger the value, the higher the priority, the priority of each master node cannot be the same
+    keepalivedPriority: 110
+    # The host name of the master node, please set the host name mapping in the /etc/hosts configuration file
+  - hostname: k8s-master03
+    # The IP address of the master node
+    ipAddress: 192.168.0.103
+    # The name of the network card used by the master node for mutual access, used for keepalived network interface binding
+    networkInterface: eth0
+    # keepalived election priority, the larger the value, the higher the priority, the priority of each master node cannot be the same
+    keepalivedPriority: 100
 
 # Create available load balancer configuration information through dorycli, and output the generated configuration to the current directory
 # After the naming is executed, the generated file description and the startup configuration file description will be output
@@ -504,7 +510,7 @@ deployment:
    kind: DaemonSet
 image:
    name: traefik
-   tag: v2.6.5
+   tag: v2.6.6
 ports:
    web:
      hostPort: 80
@@ -589,18 +595,16 @@ istioctl install --set profile=demo\
 kubectl -n istio-system get pods,svc
 ```
 
-## [Optional] Apply cloud engine Dory-Engine
+## [Optional] Very simple open source k8s remote development environment Dory-Engine
 
-[🚀🚀🚀 Dory-Engine Platform Engineering Best Practices (https://www.bilibili.com/video/BV1oM4y117Pj/)](https://www.bilibili.com/video/BV1oM4y117Pj/)
+[🚀🚀🚀 Use k8s to quickly build a remote development environment (https://www.bilibili.com/video/BV1Zw4m1r7aw/)](https://www.bilibili.com/video/BV1Zw4m1r7aw/)
 
 ![](images/what-is-dory.png)
 
-- `Dory-Engine` is a very simple application cloud engine. Developers can compile, package, and deploy their own programs from source code to various k8s environments or hosts without learning, writing, or configuring. Environment.
+- `Dory-Engine` Very simple open source k8s remote development environment, developers do not need to learn, write, or configure, they can compile, package, and deploy their own programs from source code to various k8s environments.
 
-1. No need to learn: No need to learn how to write complex cloud scripts and how to deploy applications to k8s, all configurations can be understood at a glance
-2. No need to write: You don’t need to write complex cloud scripts for building, packaging, and deploying, nor do you need to write complex k8s application deployment files. You only need a few simple configurations to set up your own cloud pipeline
-3. No need to configure: It is not necessary to configure how each DevOps toolchain and k8s environment cooperate with each other to complete the cloud application. Once the project is activated, all toolchains and environments are automatically configured.
+1. No need to learn: No need to learn complex k8s technical principles, you can quickly deploy applications in 5 minutes
+2. No need to configure: No need to configure any code repository, image repository and k8s connection parameters
+3. No need to write: No need to write any k8s deployment list and pipeline scripts
 
-- Refer to the installation guide: [https://github.com/dory-engine/dorycli](https://github.com/dory-engine/dorycli)
-
-[🚀🚀🚀 Use dorycli to install and deploy Dory-Engine (https://www.bilibili.com/video/BV1aG411D7Sj/)](https://www.bilibili.com/video/BV1aG411D7Sj/)
+- For installation instructions, see: [https://github.com/dory-engine/dory-engine](https://github.com/dory-engine/dory-engine)
