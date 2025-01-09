@@ -601,6 +601,8 @@ kubectl -n istio-system get pods,svc
 
 ![](images/what-is-dory.png)
 
+![](images/dory-engine-webui)
+
 - `Dory-Engine` Very simple open source k8s remote development environment, developers do not need to learn, write, or configure, they can compile, package, and deploy their own programs from source code to various k8s environments.
 
 1. No need to learn: No need to learn complex k8s technical principles, you can quickly deploy applications in 5 minutes
