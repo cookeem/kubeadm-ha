@@ -643,7 +643,7 @@ kubectl -n istio-system get pods,svc
 
 ![](images/what-is-dory.png)
 
-![](images/dory-engine-webui)
+![](images/dory-engine-webui.png)
 
 - `Dory-Engine` Very simple open source k8s remote development environment, developers do not need to learn, write, or configure, they can compile, package, and deploy their own programs from source code to various k8s environments.
 

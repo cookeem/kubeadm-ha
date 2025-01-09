@@ -644,7 +644,7 @@ kubectl -n istio-system get pods,svc
 
 ![](images/what-is-dory.png)
 
-![](images/dory-engine-webui)
+![](images/dory-engine-webui.png)
 
 - `Dory-Engine` 非常简单的开源k8s远程开发环境，开发人员不用学、不用写、不用配就可以自行把自己编写的程序从源代码，编译、打包、部署到各类k8s环境中。
 
